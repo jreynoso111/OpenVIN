@@ -1,0 +1,29 @@
+name: Broken/changed data source
+description: Report a dead, moved, or changed endpoint/portal referenced in the docs or used by an adapter
+title: "[broken] "
+labels: ["source-rot"]
+body:
+  - type: input
+    id: source
+    attributes:
+      label: Which source?
+      placeholder: e.g., GM window-sticker endpoint / Ohio BMV title search
+    validations:
+      required: true
+  - type: input
+    id: doc_ref
+    attributes:
+      label: Where is it referenced?
+      placeholder: e.g., docs/RESEARCH_REPORT.md §E.4, or adapter name
+  - type: textarea
+    id: what
+    attributes:
+      label: What changed?
+      description: 404 / new URL / CAPTCHA added / schema changed / ToS changed. Include the response you saw and the date.
+    validations:
+      required: true
+  - type: textarea
+    id: replacement
+    attributes:
+      label: Known replacement?
+      description: New URL or alternative source, if any.

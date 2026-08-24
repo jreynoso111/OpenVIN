@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Builds & caches
+dist/
+build/
+.next/
+.svelte-kit/
+.turbo/
+coverage/
+*.tsbuildinfo
+
+# Local data mirrors (large, regenerable — see docs/ARCHITECTURE.md §2)
+data/mirrors/
+*.bak
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/

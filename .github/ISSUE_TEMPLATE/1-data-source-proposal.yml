@@ -1,0 +1,62 @@
+name: Data source proposal
+description: Propose a new data source for vehicle history reports
+title: "[source] "
+labels: ["data-source"]
+body:
+  - type: input
+    id: name
+    attributes:
+      label: Source name
+      placeholder: e.g., Nevada DMV title status lookup
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: URL / endpoint
+    validations:
+      required: true
+  - type: textarea
+    id: data
+    attributes:
+      label: What data does it provide?
+      description: Fields returned, historical depth, geographic coverage.
+    validations:
+      required: true
+  - type: dropdown
+    id: vin_level
+    attributes:
+      label: VIN-level?
+      options:
+        - Yes — full VIN lookup
+        - Partial — truncated VIN / plate / other key
+        - No — year/make/model level
+    validations:
+      required: true
+  - type: dropdown
+    id: access
+    attributes:
+      label: Access type
+      options:
+        - Open API (no key)
+        - Free API with key/registration
+        - Bulk/open-data download
+        - Public web form (no ToS-assent wall)
+        - Link-out only (ToS or bot protection)
+        - Paid
+    validations:
+      required: true
+  - type: textarea
+    id: legal
+    attributes:
+      label: Terms of use / legal notes
+      description: ToS link, robots.txt, rate limits, license. See docs/LEGAL.md source tiers.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I checked this source against the prohibited list and source tiers in docs/LEGAL.md
+          required: true
+        - label: This source exposes no owner personal information (or I flagged it above)
+          required: true

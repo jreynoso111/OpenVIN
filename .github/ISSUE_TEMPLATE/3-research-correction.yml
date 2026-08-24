@@ -1,0 +1,31 @@
+name: Research correction
+description: Report an error or outdated claim in the docs
+title: "[docs] "
+labels: ["documentation"]
+body:
+  - type: input
+    id: location
+    attributes:
+      label: Document & section
+      placeholder: e.g., docs/CARFAX_SUPPLY_CHAIN.md §3
+    validations:
+      required: true
+  - type: textarea
+    id: wrong
+    attributes:
+      label: What is incorrect or outdated?
+    validations:
+      required: true
+  - type: textarea
+    id: correct
+    attributes:
+      label: Correct information
+    validations:
+      required: true
+  - type: input
+    id: citation
+    attributes:
+      label: Citation URL
+      description: Research claims need a source.
+    validations:
+      required: true
