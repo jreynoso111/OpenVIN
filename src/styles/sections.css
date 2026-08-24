@@ -1,0 +1,406 @@
+/* OpenVIN — data-heavy sections: safety, odometer, fuel, warranty, coverage. */
+/* ---------- Safety ---------- */
+
+.safety-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 720px) {
+  .safety-grid--with-photo {
+    grid-template-columns: 1fr minmax(14rem, 18rem);
+    align-items: start;
+  }
+}
+
+.rating-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.rating-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 44px;
+  padding-block: 0.5rem;
+  border-top: 1px solid var(--color-hairline);
+}
+
+.rating-row:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.rating-row__label {
+  font-size: var(--text-small);
+  font-weight: 500;
+}
+
+.rating-row--overall .rating-row__label {
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+
+.stars {
+  display: inline-flex;
+  gap: 0.14em;
+  font-size: 1.1rem;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.rating-row--overall .stars {
+  font-size: 1.45rem;
+}
+
+.stars .on {
+  color: var(--color-star);
+}
+
+.stars .off {
+  color: var(--color-hairline-strong);
+}
+
+.stars__na {
+  font-size: var(--text-small);
+  color: var(--color-text-tertiary);
+}
+
+.safety-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.75rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-hairline);
+  font-size: var(--text-micro);
+  color: var(--color-text-secondary);
+}
+
+.safety-counts strong {
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.safety-photo {
+  border-radius: var(--radius-card-small);
+  border: 1px solid var(--color-hairline);
+  width: 100%;
+  height: auto;
+  background: var(--color-inset);
+}
+
+/* ---------- Odometer chart ---------- */
+
+.odo-chart {
+  width: 100%;
+  height: auto;
+}
+
+.odo-chart .line {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.odo-chart .area {
+  fill: var(--tint-accent);
+  stroke: none;
+}
+
+.odo-chart .dot {
+  fill: var(--color-card);
+  stroke: var(--color-accent);
+  stroke-width: 2;
+}
+
+.odo-chart .value-label {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--color-text);
+}
+
+.odo-chart .date-label {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  fill: var(--color-text-tertiary);
+}
+
+.odo-chart .baseline {
+  stroke: var(--color-hairline-strong);
+  stroke-width: 1;
+}
+
+.odo-table-details {
+  margin-top: 1rem;
+}
+
+.odo-table-details summary {
+  cursor: pointer;
+  font-size: var(--text-small);
+  color: var(--color-accent);
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-small);
+}
+
+.data-table th {
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-tertiary);
+  padding: 0.5rem 1rem 0.5rem 0;
+  border-bottom: 1px solid var(--color-hairline-strong);
+  white-space: nowrap;
+}
+
+.data-table td {
+  padding: 0.625rem 1rem 0.625rem 0;
+  border-bottom: 1px solid var(--color-hairline);
+  vertical-align: top;
+}
+
+.data-table .num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ---------- Fuel economy ---------- */
+
+.mpg-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  text-align: center;
+  max-width: 26rem;
+}
+
+.mpg__num {
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.mpg--combined .mpg__num {
+  color: var(--color-accent);
+}
+
+.mpg__label {
+  margin-top: 0.3rem;
+  font-size: var(--text-micro);
+  color: var(--color-text-secondary);
+}
+
+.fuel-meta {
+  margin-top: 1.125rem;
+  font-size: var(--text-small);
+  color: var(--color-text-secondary);
+}
+
+/* ---------- Warranty ---------- */
+
+.warranty-table td {
+  min-width: 0;
+}
+
+.warranty-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-width: 12rem;
+}
+
+.meter {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.meter__track {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--skeleton-base);
+  overflow: hidden;
+}
+
+.meter__fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--color-accent);
+}
+
+.meter__label {
+  font-size: var(--text-micro);
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.expired {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-small);
+}
+
+.assumption {
+  margin-top: 1rem;
+  font-size: var(--text-micro);
+  color: var(--color-text-tertiary);
+  line-height: 1.55;
+}
+
+/* ---------- Coverage panel ---------- */
+
+.coverage {
+  border: 1px solid var(--color-hairline);
+  border-radius: calc(var(--radius-card) + 4px);
+  background:
+    linear-gradient(
+      color-mix(in oklab, var(--color-accent) 3%, var(--color-card)),
+      var(--color-card) 30%
+    );
+  box-shadow: var(--shadow-card);
+  padding: clamp(1.5rem, 1.2rem + 1.6vw, 2.5rem);
+}
+
+.coverage__kicker {
+  font-size: var(--text-micro);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--color-accent);
+  margin-bottom: 0.5rem;
+}
+
+.coverage__lede {
+  margin-top: 0.625rem;
+  max-width: 44rem;
+  color: var(--color-text-secondary);
+  font-size: var(--text-small);
+  line-height: 1.55;
+  margin-bottom: 1.75rem;
+}
+
+.coverage__rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.coverage-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.875rem;
+  min-height: 44px;
+  padding-block: 0.7rem;
+  border-top: 1px solid var(--color-hairline);
+}
+
+.coverage-row__name {
+  font-size: var(--text-small);
+  font-weight: 500;
+  min-width: 0;
+}
+
+.coverage-row__source {
+  display: block;
+  font-weight: 400;
+  font-size: var(--text-micro);
+  color: var(--color-text-tertiary);
+  margin-top: 0.1rem;
+}
+
+.coverage-row__status {
+  font-size: var(--text-micro);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.coverage-row--gap .coverage-row__name {
+  color: var(--color-text-secondary);
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.dot--ok {
+  background: var(--color-ok);
+  box-shadow: 0 0 8px color-mix(in oklab, var(--color-ok) 55%, transparent);
+}
+
+.dot--none {
+  background: var(--color-neutral-dot);
+}
+
+.dot--warn {
+  background: var(--color-warn);
+  box-shadow: 0 0 8px color-mix(in oklab, var(--color-warn) 50%, transparent);
+}
+
+.dot--accent {
+  background: var(--color-accent);
+  box-shadow: 0 0 8px color-mix(in oklab, var(--color-accent) 50%, transparent);
+}
+
+.dot--gap {
+  background: var(--color-danger);
+  box-shadow: 0 0 8px color-mix(in oklab, var(--color-danger) 45%, transparent);
+}
+
+.dot--loading {
+  background: var(--color-neutral-dot);
+  opacity: 0.5;
+}
+
+@media (max-width: 560px) {
+  .coverage-row {
+    grid-template-columns: auto 1fr;
+  }
+
+  .coverage-row__status {
+    grid-column: 2;
+    text-align: left;
+    padding-left: 0;
+    margin-top: -0.35rem;
+    padding-bottom: 0.25rem;
+  }
+}
+
+/* SVG text is sized in viewBox units; enlarge on small screens so labels
+   stay legible when the 640-unit chart renders at phone width. */
+@media (max-width: 540px) {
+  .odo-chart .value-label {
+    font-size: 17px;
+  }
+
+  .odo-chart .date-label {
+    font-size: 15px;
+  }
+}

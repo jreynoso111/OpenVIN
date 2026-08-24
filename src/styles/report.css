@@ -1,0 +1,466 @@
+/* OpenVIN — report sections, cards, chart, coverage panel. */
+
+.report {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2.75rem, 2rem + 2.5vw, 4.25rem);
+  padding-block: clamp(2rem, 1.5rem + 2vw, 3.5rem) 0;
+}
+
+.section__head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 1.125rem;
+}
+
+.section__title {
+  font-size: clamp(1.375rem, 1.2rem + 0.8vw, var(--text-title));
+  font-weight: 600;
+  letter-spacing: var(--tracking-title);
+}
+
+.status-pill {
+  font-size: var(--text-micro);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-pill);
+  padding: 0.15rem 0.65rem;
+  white-space: nowrap;
+}
+
+.status-pill--unavailable {
+  color: var(--color-warn);
+  border-color: color-mix(in oklab, var(--color-warn) 35%, transparent);
+}
+
+.section__source {
+  margin-top: 0.875rem;
+  font-size: var(--text-micro);
+  color: var(--color-text-tertiary);
+}
+
+.section__source a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--color-hairline-strong);
+}
+
+.section__source a:hover {
+  color: var(--color-accent);
+}
+
+/* ---------- Cards ---------- */
+
+.card {
+  background: var(--color-card);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-card);
+}
+
+.card--interactive {
+  transition:
+    transform var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease,
+    border-color var(--duration-fast) ease;
+}
+
+.card--interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+  border-color: var(--color-hairline-strong);
+}
+
+.note {
+  font-size: var(--text-small);
+  color: var(--color-text-secondary);
+}
+
+/* ---------- Badges ---------- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 0.14rem 0.6rem;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+
+.badge--danger {
+  color: var(--color-danger);
+  background: var(--tint-danger);
+}
+
+.badge--warn {
+  color: color-mix(in oklab, var(--color-warn) 72%, var(--color-text));
+  background: var(--tint-warn);
+}
+
+.badge--accent {
+  color: var(--color-accent);
+  background: var(--tint-accent);
+}
+
+.badge--ok {
+  color: var(--color-ok);
+  background: var(--tint-ok);
+}
+
+.badge--neutral {
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-hairline);
+}
+
+/* ---------- Skeleton ---------- */
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--skeleton-base);
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    100deg,
+    transparent 25%,
+    var(--skeleton-sheen) 50%,
+    transparent 75%
+  );
+  animation: skeleton-slide 1.8s ease-in-out infinite;
+}
+
+@keyframes skeleton-slide {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+/* ---------- Identity ---------- */
+
+.identity__name {
+  font-size: clamp(1.6rem, 1.3rem + 1.6vw, 2.4rem);
+  font-weight: 700;
+  letter-spacing: var(--tracking-display);
+  line-height: 1.12;
+  text-wrap: balance;
+}
+
+.identity__sub {
+  margin-top: 0.375rem;
+  color: var(--color-text-secondary);
+  font-size: var(--text-small);
+}
+
+.spec-grid {
+  margin-top: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr));
+  gap: 1.125rem 1.5rem;
+}
+
+.spec {
+  border-top: 1px solid var(--color-hairline);
+  padding-top: 0.625rem;
+}
+
+.spec__label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--color-text-tertiary);
+}
+
+.spec__value {
+  margin-top: 0.2rem;
+  font-size: var(--text-small);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.decode-warning {
+  margin-top: 1.25rem;
+  font-size: var(--text-micro);
+  color: var(--color-text-tertiary);
+  border-left: 2px solid var(--color-hairline-strong);
+  padding-left: 0.75rem;
+}
+
+/* ---------- Guided links ---------- */
+
+.link-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  gap: 1rem;
+}
+
+.link-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 1.125rem 1.25rem;
+  color: inherit;
+  min-height: 44px;
+}
+
+.link-card:hover {
+  text-decoration: none;
+}
+
+.link-card__top {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.link-card__label {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  flex: 1;
+  min-width: 0;
+}
+
+.link-card__arrow {
+  flex: none;
+  color: var(--color-accent);
+  transition: transform var(--duration-fast) ease;
+}
+
+.link-card:hover .link-card__arrow {
+  transform: translate(2px, -2px);
+}
+
+.link-card__desc {
+  font-size: var(--text-small);
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+}
+
+.link-card--hero {
+  border-color: color-mix(in oklab, var(--color-accent) 32%, var(--color-hairline));
+  padding: 1.375rem 1.5rem;
+}
+
+.link-card--hero .link-card__label {
+  font-size: 1.125rem;
+}
+
+.link-group {
+  margin-bottom: 1.75rem;
+}
+
+.link-group:last-child {
+  margin-bottom: 0;
+}
+
+.link-group__title {
+  font-size: var(--text-micro);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--color-text-tertiary);
+  margin-bottom: 0.75rem;
+}
+
+/* ---------- Recalls ---------- */
+
+.count-headline {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.count-headline__num {
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.count-headline__label {
+  color: var(--color-text-secondary);
+  font-size: var(--text-small);
+}
+
+.recall-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.recall {
+  border-top: 1px solid var(--color-hairline);
+}
+
+.recall:last-child {
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.recall summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 44px;
+  padding: 0.875rem 0.25rem;
+  cursor: pointer;
+}
+
+.recall summary::-webkit-details-marker {
+  display: none;
+}
+
+.recall summary:hover .recall__component {
+  color: var(--color-accent);
+}
+
+.recall__component {
+  font-weight: 600;
+  font-size: var(--text-small);
+  flex: 1;
+  min-width: 0;
+  transition: color var(--duration-fast) ease;
+}
+
+.recall__date {
+  font-size: var(--text-micro);
+  color: var(--color-text-tertiary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.recall__chevron {
+  flex: none;
+  color: var(--color-text-tertiary);
+  transition: transform var(--duration-fast) ease;
+}
+
+.recall[open] .recall__chevron {
+  transform: rotate(90deg);
+}
+
+.recall__body {
+  padding: 0.25rem 0.25rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  font-size: var(--text-small);
+  color: var(--color-text-secondary);
+  line-height: 1.55;
+}
+
+.recall__body strong {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.all-clear {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.125rem 0;
+  font-weight: 500;
+}
+
+.all-clear .dot {
+  flex: none;
+}
+
+.all-clear__precision {
+  display: block;
+  font-weight: 400;
+  font-size: var(--text-micro);
+  color: var(--color-text-tertiary);
+  margin-top: 0.15rem;
+}
+
+.callout {
+  margin-top: 1.25rem;
+  border: 1px solid color-mix(in oklab, var(--color-accent) 25%, transparent);
+  background: var(--tint-accent);
+  border-radius: var(--radius-card-small);
+  padding: 1rem 1.25rem;
+}
+
+.callout--danger {
+  border-color: color-mix(in oklab, var(--color-danger) 30%, transparent);
+  background: var(--tint-danger);
+}
+
+/* ---------- Complaints ---------- */
+
+.complaint-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.complaint-card {
+  border-color: color-mix(in oklab, var(--color-accent) 30%, var(--color-hairline));
+  padding: 1.125rem 1.25rem;
+}
+
+.complaint-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.625rem;
+}
+
+.complaint-card__meta {
+  font-size: var(--text-micro);
+  color: var(--color-text-tertiary);
+  margin-bottom: 0.45rem;
+}
+
+.complaint-card__summary {
+  font-size: var(--text-small);
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+}
+
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+  gap: 1rem;
+}
+
+.stat {
+  padding: 1rem 1.25rem;
+}
+
+.stat__num {
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.stat__label {
+  margin-top: 0.2rem;
+  font-size: var(--text-micro);
+  color: var(--color-text-secondary);
+}
+

@@ -1,0 +1,117 @@
+/**
+ * OpenVIN design tokens.
+ * One accent (Apple-blue), used only semantically. Status colors muted,
+ * reserved for dots and badges. Both themes are designed, not inverted.
+ */
+
+:root {
+  color-scheme: light dark;
+
+  /* Typography */
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto,
+    Inter, sans-serif;
+  --text-body: 1.0625rem; /* 17px */
+  --text-small: 0.875rem;
+  --text-micro: 0.8125rem;
+  --text-title: 1.75rem; /* 28px section titles */
+  --text-display: clamp(2.4rem, 1.35rem + 4.6vw, 4.5rem);
+  --tracking-display: -0.02em;
+  --tracking-title: -0.015em;
+
+  /* Rhythm */
+  --space-section: clamp(4rem, 2.75rem + 4.4vw, 7rem);
+  --space-card: clamp(1.25rem, 1rem + 1.2vw, 1.75rem);
+  --container: 58rem;
+
+  /* Surfaces */
+  --radius-card: 18px;
+  --radius-card-small: 16px;
+  --radius-control: 12px;
+  --radius-pill: 999px;
+
+  /* Motion */
+  --duration-fast: 160ms;
+  --duration-reveal: 450ms;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Light theme */
+  --color-bg: oklch(98.4% 0.002 250);
+  --color-card: oklch(100% 0 0);
+  --color-inset: oklch(97% 0.003 250);
+  --color-text: oklch(21% 0.01 250);
+  --color-text-secondary: oklch(50% 0.012 250);
+  --color-text-tertiary: oklch(64% 0.01 250);
+  --color-accent: oklch(58% 0.17 255);
+  --color-accent-hover: oklch(52% 0.17 255);
+  --color-on-accent: oklch(99% 0 0);
+
+  --color-hairline: color-mix(in oklab, var(--color-text) 11%, transparent);
+  --color-hairline-strong: color-mix(in oklab, var(--color-text) 20%, transparent);
+
+  /* Status — muted, dots and badges only */
+  --color-ok: oklch(60% 0.13 152);
+  --color-warn: oklch(70% 0.13 70);
+  --color-danger: oklch(56% 0.18 26);
+  --color-neutral-dot: oklch(72% 0.01 250);
+  --color-star: oklch(70% 0.14 75);
+
+  --tint-ok: color-mix(in oklab, var(--color-ok) 11%, transparent);
+  --tint-warn: color-mix(in oklab, var(--color-warn) 14%, transparent);
+  --tint-danger: color-mix(in oklab, var(--color-danger) 10%, transparent);
+  --tint-accent: color-mix(in oklab, var(--color-accent) 9%, transparent);
+
+  --shadow-card:
+    0 1px 2px oklch(25% 0.02 255 / 0.04),
+    0 10px 28px oklch(25% 0.02 255 / 0.05);
+  --shadow-card-hover:
+    0 2px 4px oklch(25% 0.02 255 / 0.05),
+    0 16px 36px oklch(25% 0.02 255 / 0.08);
+
+  --header-glass: color-mix(in oklab, var(--color-bg) 74%, transparent);
+  --hero-glow: oklch(58% 0.17 255 / 0.09);
+  --skeleton-base: color-mix(in oklab, var(--color-text) 6%, transparent);
+  --skeleton-sheen: color-mix(in oklab, var(--color-card) 65%, transparent);
+  --selection: color-mix(in oklab, var(--color-accent) 22%, transparent);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: oklch(17% 0.005 250);
+    --color-card: oklch(22% 0.007 250);
+    --color-inset: oklch(19.5% 0.006 250);
+    --color-text: oklch(93% 0.004 250);
+    --color-text-secondary: oklch(68% 0.008 250);
+    --color-text-tertiary: oklch(54% 0.008 250);
+    --color-accent: oklch(66% 0.15 255);
+    --color-accent-hover: oklch(72% 0.14 255);
+    --color-on-accent: oklch(15% 0.02 255);
+
+    --color-hairline: color-mix(in oklab, var(--color-text) 13%, transparent);
+    --color-hairline-strong: color-mix(in oklab, var(--color-text) 24%, transparent);
+
+    --color-ok: oklch(72% 0.13 152);
+    --color-warn: oklch(76% 0.12 70);
+    --color-danger: oklch(68% 0.16 26);
+    --color-neutral-dot: oklch(48% 0.01 250);
+    --color-star: oklch(76% 0.13 75);
+
+    --tint-ok: color-mix(in oklab, var(--color-ok) 13%, transparent);
+    --tint-warn: color-mix(in oklab, var(--color-warn) 15%, transparent);
+    --tint-danger: color-mix(in oklab, var(--color-danger) 14%, transparent);
+    --tint-accent: color-mix(in oklab, var(--color-accent) 12%, transparent);
+
+    --shadow-card:
+      0 1px 2px oklch(5% 0 0 / 0.3),
+      0 10px 28px oklch(5% 0 0 / 0.25);
+    --shadow-card-hover:
+      0 2px 4px oklch(5% 0 0 / 0.35),
+      0 16px 36px oklch(5% 0 0 / 0.32);
+
+    --header-glass: color-mix(in oklab, var(--color-bg) 70%, transparent);
+    --hero-glow: oklch(66% 0.15 255 / 0.1);
+    --skeleton-base: color-mix(in oklab, var(--color-text) 8%, transparent);
+    --skeleton-sheen: color-mix(in oklab, var(--color-text) 7%, transparent);
+    --selection: color-mix(in oklab, var(--color-accent) 34%, transparent);
+  }
+}

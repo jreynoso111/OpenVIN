@@ -5,12 +5,15 @@ history report legally assemblable from open data — with every section labeled
 source and coverage, including what *no* report (free or paid) can see.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-[![Status: Planning](https://img.shields.io/badge/status-planning-blue.svg)](./docs/TASKS.md)
+[![Deploy](https://github.com/FrancoisChastel/OpenVIN/actions/workflows/deploy.yml/badge.svg)](https://github.com/FrancoisChastel/OpenVIN/actions/workflows/deploy.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 
-> **Status: research & hand-off complete — implementation starting.** This repository
-> currently contains a complete, citation-backed research and development package. If
-> you want to help build it, start with [CONTRIBUTING.md](./CONTRIBUTING.md).
+**Try it: <https://francoischastel.github.io/OpenVIN/>**
+
+> **Status: static MVP live** ([scope](./docs/STATIC_MVP.md)) — a fully client-side
+> report built on CORS-enabled public APIs, deployed on GitHub Pages. The full
+> backend architecture is specced in [docs/](./docs/) and comes next. To help, start
+> with [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## Why
 
@@ -56,6 +59,21 @@ was checked, what was found, and what nobody can see.
    international (UK MOT, France Histovec).
 
 Full backlog: [docs/TASKS.md](./docs/TASKS.md).
+
+## Development
+
+```bash
+npm install
+npm run dev       # local dev server
+npm test          # vitest unit suite
+npm run build     # typecheck + production build (dist/)
+```
+
+Zero runtime dependencies — vanilla TypeScript + Vite. All vehicle data is fetched in
+the visitor's browser from public APIs (NHTSA vPIC, NHTSA recalls/complaints/ratings,
+NY State open data, fueleconomy.gov); sources that can't be fetched client-side are
+guided link-outs by design (see [docs/STATIC_MVP.md](./docs/STATIC_MVP.md)). Pushes to
+`master` deploy automatically to GitHub Pages via Actions.
 
 ## Contributing
 
