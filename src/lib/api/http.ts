@@ -4,11 +4,29 @@
  * human-readable note, so callers can degrade to SectionStatus 'unavailable'.
  */
 
-const DEFAULT_TIMEOUT_MS = 10_000;
+const DEFAULT_TIMEOUT_MS = 12_000;
+
+/**
+ * api.nhtsa.gov rate-limits bursts from a single IP with intermittent 503s
+ * (observed in production: 3–4 simultaneous calls → some fail). Requests to
+ * hosts listed here are serialized with a small gap; transient failures
+ * (429/5xx, timeouts, network errors) are retried with backoff.
+ */
+const PACED_HOSTS: ReadonlySet<string> = new Set(['api.nhtsa.gov']);
+
+/** Test seam: report tests stub fetch and zero these to stay fast. */
+export const httpTuning: { retryDelaysMs: readonly number[]; pacingGapMs: number } = {
+  retryDelaysMs: [900, 2200],
+  pacingGapMs: 350,
+};
 
 export type FetchJsonResult =
   | { ok: true; data: unknown }
   | { ok: false; note: string };
+
+type AttemptResult =
+  | { ok: true; data: unknown }
+  | { ok: false; note: string; transient: boolean };
 
 interface FetchJsonOptions {
   timeoutMs?: number;
@@ -16,15 +34,42 @@ interface FetchJsonOptions {
   accept?: string;
 }
 
-/**
- * GET a URL and parse the body as JSON.
- * Timeouts (AbortController), HTTP errors, network/CORS failures, and
- * unparsable bodies all resolve to `{ ok: false, note }` — never a rejection.
- */
-export async function fetchJson(
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function hostOf(url: string): string {
+  try {
+    return new URL(url).host;
+  } catch {
+    return '';
+  }
+}
+
+const hostQueues = new Map<string, Promise<void>>();
+
+/** Run one attempt; for burst-sensitive hosts, wait our turn plus a small gap. */
+function paced(url: string, run: () => Promise<AttemptResult>): Promise<AttemptResult> {
+  const host = hostOf(url);
+  if (!PACED_HOSTS.has(host)) return run();
+  const previous = hostQueues.get(host) ?? Promise.resolve();
+  const current = previous
+    .then(() => delay(httpTuning.pacingGapMs))
+    .then(run);
+  hostQueues.set(
+    host,
+    current.then(
+      () => undefined,
+      () => undefined,
+    ),
+  );
+  return current;
+}
+
+async function attemptFetch(
   url: string,
-  options: FetchJsonOptions = {},
-): Promise<FetchJsonResult> {
+  options: FetchJsonOptions,
+): Promise<AttemptResult> {
   const { timeoutMs = DEFAULT_TIMEOUT_MS, accept } = options;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -37,28 +82,56 @@ export async function fetchJson(
       return {
         ok: false,
         note: `The source responded with HTTP ${response.status} — it may be temporarily down.`,
+        transient: response.status === 429 || response.status >= 500,
       };
     }
     try {
       const data: unknown = await response.json();
       return { ok: true, data };
     } catch {
-      return { ok: false, note: 'The source returned an unreadable response.' };
+      return {
+        ok: false,
+        note: 'The source returned an unreadable response.',
+        transient: false,
+      };
     }
   } catch (error: unknown) {
     if (error instanceof DOMException && error.name === 'AbortError') {
       return {
         ok: false,
         note: `The source did not respond within ${Math.round(timeoutMs / 1000)}s.`,
+        transient: true,
       };
     }
     return {
       ok: false,
       note: 'The source could not be reached (network or browser security restriction).',
+      transient: true,
     };
   } finally {
     clearTimeout(timer);
   }
+}
+
+/**
+ * GET a URL and parse the body as JSON.
+ * Timeouts (AbortController), HTTP errors, network/CORS failures, and
+ * unparsable bodies all resolve to `{ ok: false, note }` — never a rejection.
+ * Transient failures are retried with backoff; burst-sensitive hosts are
+ * paced so parallel report sections don't trip per-IP rate limits.
+ */
+export async function fetchJson(
+  url: string,
+  options: FetchJsonOptions = {},
+): Promise<FetchJsonResult> {
+  let result = await paced(url, () => attemptFetch(url, options));
+  for (const backoffMs of httpTuning.retryDelaysMs) {
+    if (result.ok || !result.transient) break;
+    await delay(backoffMs + Math.random() * 300);
+    result = await paced(url, () => attemptFetch(url, options));
+  }
+  if (result.ok) return { ok: true, data: result.data };
+  return { ok: false, note: result.note };
 }
 
 /** Narrow an unknown JSON value to a plain object, else null. */

@@ -1,10 +1,21 @@
-import { afterEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { httpTuning } from '../src/lib/api/http';
 import { startReport } from '../src/lib/report';
 
 // No live endpoints: fetch is stubbed to fail, proving every section promise
 // still resolves (never rejects) and degrades to 'unavailable'.
 
+const PRODUCTION_TUNING = { ...httpTuning, retryDelaysMs: httpTuning.retryDelaysMs };
+
+beforeEach(() => {
+  // Zero the retry/pacing delays so stubbed-failure paths resolve instantly.
+  httpTuning.retryDelaysMs = [];
+  httpTuning.pacingGapMs = 0;
+});
+
 afterEach(() => {
+  httpTuning.retryDelaysMs = PRODUCTION_TUNING.retryDelaysMs;
+  httpTuning.pacingGapMs = PRODUCTION_TUNING.pacingGapMs;
   vi.unstubAllGlobals();
 });
 
