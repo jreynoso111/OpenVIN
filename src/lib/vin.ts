@@ -46,8 +46,16 @@ function computeCheckDigit(vin: string): string {
 export type VinValidation = { valid: true } | { valid: false; error: string };
 
 /**
- * Validate a (normalized) VIN: length, character set, and the ISO 3779
- * check digit in position 9.
+ * Check digits are mandated only for vehicles built in North America
+ * (WMI first character 1–5, per FMVSS 565 / Canadian CMVSS). European and
+ * other-market VINs use position 9 as ordinary VDS data, so enforcing the
+ * ISO 3779 check digit there would wrongly reject legitimate VINs.
+ */
+const NA_WMI_PREFIX = /^[1-5]/;
+
+/**
+ * Validate a (normalized) VIN: length and character set for all VINs, plus
+ * the ISO 3779 check digit in position 9 for North-American-built vehicles.
  */
 export function validateVin(vin: string): VinValidation {
   if (vin.length === 0) {
@@ -72,13 +80,15 @@ export function validateVin(vin: string): VinValidation {
       error: 'VINs contain only letters A–Z (except I, O, Q) and digits 0–9.',
     };
   }
-  const expected = computeCheckDigit(vin);
-  const actual = vin[CHECK_DIGIT_POSITION];
-  if (actual !== expected) {
-    return {
-      valid: false,
-      error: `Check digit mismatch (position 9 is "${actual}", expected "${expected}") — one or more characters are mistyped.`,
-    };
+  if (NA_WMI_PREFIX.test(vin)) {
+    const expected = computeCheckDigit(vin);
+    const actual = vin[CHECK_DIGIT_POSITION];
+    if (actual !== expected) {
+      return {
+        valid: false,
+        error: `Check digit mismatch (position 9 is "${actual}", expected "${expected}") — one or more characters are mistyped.`,
+      };
+    }
   }
   return { valid: true };
 }

@@ -32,6 +32,12 @@ describe('validateVin', () => {
     if (!result.valid) expect(result.error).toMatch(/check digit/i);
   });
 
+  test('does not enforce the check digit on European-built VINs', () => {
+    // EU-market VINs use position 9 as ordinary VDS data, not a check digit.
+    expect(validateVin('VF7SA5FX8EW123456')).toEqual({ valid: true }); // France
+    expect(validateVin('WVWZZZ1JZ3W386752')).toEqual({ valid: true }); // Germany
+  });
+
   test.each(['I', 'O', 'Q'])('rejects the forbidden letter %s', (letter) => {
     const result = validateVin(`1HGCM8263${letter}A004352`.slice(0, 17));
     expect(result.valid).toBe(false);
