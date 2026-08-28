@@ -56,6 +56,11 @@ button {
   border-radius: 4px;
 }
 
+/* Author display values (flex/grid) must not defeat the hidden attribute. */
+[hidden] {
+  display: none !important;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -389,6 +394,7 @@ button {
   }
 
   .reveal,
+  .panel-fade,
   .skeleton::after {
     animation: none !important;
   }

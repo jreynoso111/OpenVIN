@@ -1,4 +1,8 @@
-/** Report orchestrator: builds the section skeletons, hydrates as data lands. */
+/**
+ * Report orchestrator: persistent identity + summary band, tabbed detail
+ * panels. Every section stays mounted and hydrates as promises resolve,
+ * regardless of which tab is visible.
+ */
 
 import type {
   ComplaintsSummary,
@@ -13,12 +17,13 @@ import type {
 } from '../lib/types';
 import { renderComplaints } from './complaints';
 import { createCoveragePanel } from './coverage';
-import { el } from './dom';
+import { el, revealOnce } from './dom';
 import { createSection, type SectionFrame, type SectionMeta } from './frame';
 import { renderFuel } from './fuel';
 import { renderIdentity } from './identity';
 import { findLink, findLinks, renderOfficialRecords, renderRecordsElsewhere } from './links';
 import { renderOdometer } from './odometer';
+import { createOverview } from './overview';
 import { renderRecalls } from './recalls';
 import { renderSafety } from './safety';
 import {
@@ -28,6 +33,17 @@ import {
   linesSkeleton,
   rowsSkeleton,
 } from './skeleton';
+import {
+  complaintsTileState,
+  createSummaryBand,
+  jumpToSection,
+  odometerTileState,
+  officialTileState,
+  recallsTileState,
+  safetyTileState,
+  warrantyTileState,
+} from './summary';
+import { createTabs } from './tabs';
 import { renderWarranty } from './warranty';
 
 /** Mirror of the data layer's startReport() return shape (src/lib/report). */
@@ -49,6 +65,19 @@ export interface ReportCallbacks {
 }
 
 const STAGGER_MS = 55;
+
+/** Which tab owns each detail section (tile clicks switch tab, then scroll). */
+const TAB_FOR_SECTION: Readonly<Record<string, string>> = {
+  recalls: 'safety',
+  complaints: 'safety',
+  safety: 'safety',
+  odometer: 'history',
+  warranty: 'history',
+  'fuel-economy': 'history',
+  'official-records': 'records',
+  'records-elsewhere': 'records',
+  coverage: 'records',
+};
 
 function unavailableMeta(sourceName: string): SectionMeta {
   return {
@@ -115,7 +144,7 @@ export function renderReport(
   const elsewhere = createSection({
     id: 'records-elsewhere',
     title: 'Records elsewhere',
-    skeleton: cardsSkeleton(4),
+    skeleton: linesSkeleton(5),
   });
   const coverage = createCoveragePanel([
     { id: 'identity', name: 'Vehicle identity' },
@@ -129,24 +158,43 @@ export function renderReport(
     { id: 'records-elsewhere', name: 'State, auction & service records' },
   ]);
 
-  const sections: readonly HTMLElement[] = [
-    identity.root,
-    official.root,
-    recalls.root,
-    complaints.root,
-    safety.root,
-    odometer.root,
-    fuel.root,
-    warranty.root,
-    elsewhere.root,
-    coverage.root,
-  ];
+  const tabs = createTabs(
+    [
+      { id: 'overview', label: 'Overview' },
+      { id: 'safety', label: 'Safety & recalls' },
+      { id: 'history', label: 'History' },
+      { id: 'records', label: 'Records' },
+    ],
+    'overview',
+  );
+
+  const navigate = (sectionId: string): void => {
+    tabs.activate(TAB_FOR_SECTION[sectionId] ?? 'overview');
+    jumpToSection(sectionId);
+  };
+
+  const summary = createSummaryBand(navigate);
+  const overview = createOverview(() => navigate('recalls'));
+
+  tabs.panel('overview').append(overview.root);
+  const safetyPanel = tabs.panel('safety');
+  safetyPanel.classList.add('report-grid');
+  safetyPanel.append(recalls.root, complaints.root, safety.root);
+  const historyPanel = tabs.panel('history');
+  historyPanel.classList.add('report-grid');
+  warranty.root.classList.add('section--half');
+  fuel.root.classList.add('section--half');
+  historyPanel.append(odometer.root, warranty.root, fuel.root);
+  const recordsPanel = tabs.panel('records');
+  recordsPanel.classList.add('report-grid');
+  recordsPanel.append(official.root, elsewhere.root, coverage.root);
+
   const container = el('div', { class: 'report container' });
-  sections.forEach((section, index) => {
-    section.classList.add('reveal');
-    section.style.animationDelay = `${index * STAGGER_MS}ms`;
-    container.append(section);
+  [identity.root, summary.root, tabs.control].forEach((target, index) => {
+    revealOnce(target);
+    target.style.animationDelay = `${index * STAGGER_MS}ms`;
   });
+  container.append(identity.root, summary.root, tabs.control, tabs.panels);
   main.replaceChildren(container);
 
   const hydrate = <T>(
@@ -177,6 +225,8 @@ export function renderReport(
     };
     official.hydrate(meta, renderOfficialRecords(links));
     coverage.setRow('official-records', 'guided', meta.source.name);
+    summary.set('official-records', officialTileState(links));
+    overview.setOfficial(links);
 
     const elsewhereMeta: SectionMeta = {
       status: 'guided',
@@ -188,25 +238,35 @@ export function renderReport(
 
   void Promise.all([settle(handles.recalls, 'NHTSA Recalls'), guidedLinks]).then(
     ([result, links]) => {
+      if (!callbacks.isCurrent()) return;
       const content = renderRecalls(result, findLink(links, 'oem-recall'));
       hydrate(recalls, 'recalls', result, content);
+      summary.set('recalls', recallsTileState(result));
+      overview.setRecalls(result);
     },
   );
 
   void settle(handles.complaints, 'NHTSA Complaints').then((result) => {
+    if (!callbacks.isCurrent()) return;
     hydrate(complaints, 'complaints', result, renderComplaints(result));
+    summary.set('complaints', complaintsTileState(result));
   });
 
   void settle(handles.safety, 'NHTSA NCAP').then((result) => {
+    if (!callbacks.isCurrent()) return;
     hydrate(safety, 'safety', result, renderSafety(result));
+    summary.set('safety', safetyTileState(result));
   });
 
   void Promise.all([
     settle(handles.nyInspections, 'NY State inspections'),
     guidedLinks,
   ]).then(([result, links]) => {
+    if (!callbacks.isCurrent()) return;
     const content = renderOdometer(result, findLinks(links, 'state-emissions'));
     hydrate(odometer, 'odometer', result, content);
+    summary.set('odometer', odometerTileState(result));
+    overview.setOdometer(result);
   });
 
   void settle(handles.fuelEconomy, 'fueleconomy.gov').then((result) => {
@@ -214,6 +274,8 @@ export function renderReport(
   });
 
   void settle(handles.warranty, 'OpenVIN estimate').then((result) => {
+    if (!callbacks.isCurrent()) return;
     hydrate(warranty, 'warranty', result, renderWarranty(result));
+    summary.set('warranty', warrantyTileState(result));
   });
 }

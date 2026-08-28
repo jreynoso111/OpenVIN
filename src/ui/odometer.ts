@@ -2,13 +2,13 @@
 
 import type { GuidedLink, OdometerReading, SectionResult } from '../lib/types';
 import { el, formatDate, formatNumber, svgEl } from './dom';
-import { guidedLinkCard } from './links';
+import { guidedLinkRow } from './links';
 
-const VIEW_W = 640;
-const VIEW_H = 250;
-const PAD = { top: 30, right: 26, bottom: 34, left: 26 } as const;
-const MAX_VALUE_LABELS = 8;
-const MAX_DATE_LABELS = 5;
+const VIEW_W = 480;
+const VIEW_H = 220;
+const PAD = { top: 28, right: 24, bottom: 32, left: 24 } as const;
+const MAX_VALUE_LABELS = 6;
+const MAX_DATE_LABELS = 4;
 
 interface Point {
   readonly x: number;
@@ -16,7 +16,8 @@ interface Point {
   readonly reading: OdometerReading;
 }
 
-function sortReadings(readings: readonly OdometerReading[]): OdometerReading[] {
+/** Chronological copy — shared with the summary tile. */
+export function sortReadings(readings: readonly OdometerReading[]): OdometerReading[] {
   return [...readings].sort(
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
   );
@@ -44,6 +45,22 @@ function computePoints(readings: readonly OdometerReading[]): Point[] {
     const y = PAD.top + innerH - ((reading.miles - minMiles) / milesSpan) * innerH;
     return { x, y, reading };
   });
+}
+
+const MS_PER_YEAR = 365.25 * 24 * 60 * 60 * 1000;
+
+/** Average accumulation rate across sorted readings; null when not estimable. */
+function averageMilesPerYear(
+  readings: readonly OdometerReading[],
+): number | null {
+  if (readings.length < 2) return null;
+  const first = readings[0];
+  const last = readings[readings.length - 1];
+  if (!first || !last) return null;
+  const spanMs = new Date(last.date).getTime() - new Date(first.date).getTime();
+  const deltaMiles = last.miles - first.miles;
+  if (!Number.isFinite(spanMs) || spanMs <= 0 || deltaMiles <= 0) return null;
+  return Math.round(deltaMiles / (spanMs / MS_PER_YEAR));
 }
 
 function pickIndexes(count: number, max: number): Set<number> {
@@ -80,6 +97,36 @@ function buildChart(points: readonly Point[]): SVGElement {
       y2: baselineY,
     }),
   );
+
+  // Light horizontal gridlines at quarter heights of the plot area.
+  const innerH = VIEW_H - PAD.top - PAD.bottom;
+  for (const fraction of [0.25, 0.5, 0.75]) {
+    chart.append(
+      svgEl('line', {
+        class: 'gridline',
+        x1: PAD.left - 12,
+        y1: (PAD.top + innerH * fraction).toFixed(1),
+        x2: VIEW_W - PAD.right + 12,
+        y2: (PAD.top + innerH * fraction).toFixed(1),
+      }),
+    );
+  }
+
+  const perYear = averageMilesPerYear(points.map((point) => point.reading));
+  if (perYear !== null) {
+    chart.append(
+      svgEl(
+        'text',
+        {
+          class: 'annotation',
+          x: VIEW_W - PAD.right + 12,
+          y: 14,
+          'text-anchor': 'end',
+        },
+        `≈ ${formatNumber(perYear)} mi/yr`,
+      ),
+    );
+  }
 
   if (points.length > 1) {
     const lineD = points
@@ -144,6 +191,18 @@ function findRollbacks(
     if (prev && next && next.miles < prev.miles) drops.push({ prev, next });
   }
   return drops;
+}
+
+/** True when any later reading is lower than an earlier one (sorted input). */
+export function hasRollback(readings: readonly OdometerReading[]): boolean {
+  return findRollbacks(readings).length > 0;
+}
+
+/** Standalone chart for reuse (overview panel). ViewBox-based — safe hidden. */
+export function buildOdometerChart(
+  readings: readonly OdometerReading[],
+): SVGElement {
+  return buildChart(computePoints(sortReadings(readings)));
 }
 
 function rollbackCallout(
@@ -246,16 +305,16 @@ export function renderOdometer(
     ),
   );
   if (stateEmissionLinks.length > 0) {
-    const grid = el('div', { class: 'link-grid', style: 'margin-top:1.25rem' });
-    for (const link of stateEmissionLinks) grid.append(guidedLinkCard(link));
+    const rows = el('div', { class: 'link-rows', style: 'margin-top:0.5rem' });
+    for (const link of stateEmissionLinks) rows.append(guidedLinkRow(link));
     wrap.append(
       el(
         'p',
-        { class: 'note', style: 'margin-top:1.25rem' },
+        { class: 'note', style: 'margin-top:1rem' },
         el('strong', {}, 'Check your state instead: '),
         'many emissions and inspection programs publish per-VIN mileage.',
       ),
-      grid,
+      rows,
     );
   }
   return wrap;

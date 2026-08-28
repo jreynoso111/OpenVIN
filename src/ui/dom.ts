@@ -57,6 +57,19 @@ export function clear(node: Element): void {
   node.replaceChildren();
 }
 
+/**
+ * Play the rise-in reveal once, then drop the class so re-displaying the
+ * element (e.g. a tab panel) does not replay the animation.
+ */
+export function revealOnce(node: HTMLElement): void {
+  node.classList.add('reveal');
+  node.addEventListener(
+    'animationend',
+    () => node.classList.remove('reveal'),
+    { once: true },
+  );
+}
+
 /** Format an integer with thousands separators; em dash for null. */
 export function formatNumber(value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) return '—';

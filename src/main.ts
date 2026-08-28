@@ -3,6 +3,10 @@
 import './styles/tokens.css';
 import './styles/global.css';
 import './styles/report.css';
+import './styles/lists.css';
+import './styles/summary.css';
+import './styles/tabs.css';
+import './styles/viz.css';
 import './styles/sections.css';
 
 import { normalizeVin, validateVin } from './lib/vin';

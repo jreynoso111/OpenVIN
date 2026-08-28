@@ -1,7 +1,7 @@
 /** Shared section chrome: title, status pill, source footer, reveal motion. */
 
 import type { SectionStatus, SourceMeta } from '../lib/types';
-import { clear, el } from './dom';
+import { clear, el, revealOnce } from './dom';
 
 export interface SectionMeta {
   readonly status: SectionStatus;
@@ -71,6 +71,8 @@ export function createSection(options: SectionOptions): SectionFrame {
     {
       class: options.hideTitle ? 'visually-hidden' : 'section__title',
       id: headingId,
+      // Summary tiles move focus here after scrolling to the section.
+      tabindex: '-1',
     },
     options.title,
   );
@@ -95,7 +97,7 @@ export function createSection(options: SectionOptions): SectionFrame {
       pill.hidden = false;
     }
     body.append(sourceFooter(meta));
-    body.classList.add('reveal');
+    revealOnce(body);
     announce(`${options.title} section loaded`);
   };
 

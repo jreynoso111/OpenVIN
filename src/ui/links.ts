@@ -1,4 +1,4 @@
-/** Guided link-out cards: official records (NMVTIS/NICB) + records elsewhere. */
+/** Guided link-outs: official records (NMVTIS/NICB) + records elsewhere. */
 
 import type { GuidedLink, GuidedLinkKind } from '../lib/types';
 import { el, svgEl } from './dom';
@@ -26,12 +26,15 @@ function arrowIcon(): SVGElement {
 
 export function guidedLinkCard(
   link: GuidedLink,
-  options: { readonly hero?: boolean } = {},
+  options: { readonly hero?: boolean; readonly compact?: boolean } = {},
 ): HTMLElement {
+  const modifiers = `${options.hero ? ' link-card--hero' : ''}${
+    options.compact ? ' link-card--compact' : ''
+  }`;
   return el(
     'a',
     {
-      class: `card card--interactive link-card${options.hero ? ' link-card--hero' : ''}`,
+      class: `card card--interactive link-card${modifiers}`,
       href: link.url,
       target: '_blank',
       rel: 'noopener noreferrer',
@@ -49,17 +52,25 @@ export function guidedLinkCard(
 
 const OFFICIAL_KINDS: readonly GuidedLinkKind[] = ['nmvtis', 'nicb'];
 
-/** Section 2 — the two highest-value official free checks, prominent. */
-export function renderOfficialRecords(links: readonly GuidedLink[]): HTMLElement {
+/** The two official-check action cards as a 2-up grid (shared with Overview). */
+export function officialActionGrid(links: readonly GuidedLink[]): HTMLElement {
   const official = links.filter((link) => OFFICIAL_KINDS.includes(link.kind));
   const grid = el('div', { class: 'link-grid' });
-  for (const link of official) grid.append(guidedLinkCard(link, { hero: true }));
+  for (const link of official) {
+    grid.append(guidedLinkCard(link, { hero: true, compact: true }));
+  }
+  return grid;
+}
+
+/** Official checks — slim horizontal 2-up action row. */
+export function renderOfficialRecords(links: readonly GuidedLink[]): HTMLElement {
+  const grid = officialActionGrid(links);
   return el(
     'div',
     {},
     el(
       'p',
-      { class: 'note', style: 'margin-bottom:1rem' },
+      { class: 'note note--micro', style: 'margin-bottom:0.75rem' },
       'Two official databases cover title brands, salvage history, and theft ' +
       'records. They only answer per-VIN lookups, so run them yourself — ' +
       'both take under a minute.',
@@ -72,37 +83,58 @@ const ELSEWHERE_GROUPS: readonly {
   readonly kind: GuidedLinkKind;
   readonly title: string;
 }[] = [
-  { kind: 'state-title', title: 'State title & lien records' },
-  { kind: 'sticker', title: 'Window sticker (original build sheet)' },
-  { kind: 'auction', title: 'Auction & salvage photo history' },
-  { kind: 'service', title: 'Dealer & owner service portals' },
+  { kind: 'state-title', title: 'State titles & liens' },
+  { kind: 'sticker', title: 'Window sticker' },
+  { kind: 'auction', title: 'Auctions & salvage' },
+  { kind: 'service', title: 'Service records' },
 ];
 
-/** Section 9 — remaining guided links grouped by kind. */
+/** Compact inline link row (label · badge · ↗ + one-line description). */
+export function guidedLinkRow(link: GuidedLink): HTMLElement {
+  return el(
+    'a',
+    {
+      class: 'link-row',
+      href: link.url,
+      target: '_blank',
+      rel: 'noopener noreferrer',
+    },
+    el(
+      'span',
+      { class: 'link-row__main' },
+      el('span', { class: 'link-row__label' }, link.label),
+      link.badge ? el('span', { class: 'badge badge--accent' }, link.badge) : null,
+      arrowIcon(),
+    ),
+    el('span', { class: 'link-row__desc' }, link.description),
+  );
+}
+
+/** Records elsewhere — compact grouped link list, two columns on desktop. */
 export function renderRecordsElsewhere(
   links: readonly GuidedLink[],
 ): HTMLElement {
-  const wrap = el('div', {});
+  const cols = el('div', { class: 'elsewhere-cols' });
   for (const group of ELSEWHERE_GROUPS) {
     const groupLinks = links.filter((link) => link.kind === group.kind);
     if (groupLinks.length === 0) continue;
-    const grid = el('div', { class: 'link-grid' });
-    for (const link of groupLinks) grid.append(guidedLinkCard(link));
-    wrap.append(
+    cols.append(
       el(
         'div',
-        { class: 'link-group' },
+        { class: 'link-group link-group--compact' },
         el('h3', { class: 'link-group__title' }, group.title),
-        grid,
+        el('div', { class: 'link-rows' }, ...groupLinks.map(guidedLinkRow)),
       ),
     );
   }
-  if (wrap.childElementCount === 0) {
-    wrap.append(
-      el('p', { class: 'note' }, 'No additional record sources for this vehicle.'),
+  if (cols.childElementCount === 0) {
+    return el(
+      'p',
+      { class: 'note' },
+      'No additional record sources for this vehicle.',
     );
   }
-  return wrap;
+  return cols;
 }
 
 export function findLink(

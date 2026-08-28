@@ -1,0 +1,174 @@
+/* OpenVIN — hand-rolled SVG mini-charts: shared ink, labels, and shapes. */
+
+.viz {
+  margin: 0 0 1.25rem;
+  max-width: 40rem;
+}
+
+.viz--flush {
+  margin-bottom: 1rem;
+}
+
+.viz-caption {
+  font-size: var(--text-micro);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--color-text-tertiary);
+  margin-bottom: 0.625rem;
+}
+
+.viz-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.viz-svg text {
+  font-family: var(--font-sans);
+}
+
+.viz-label {
+  font-size: 12px;
+  fill: var(--color-text-secondary);
+}
+
+.viz-value {
+  font-size: 12px;
+  font-weight: 600;
+  fill: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.viz-num {
+  font-size: 15px;
+  font-weight: 700;
+  fill: var(--color-text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.viz-num--accent {
+  fill: var(--color-accent);
+}
+
+.viz-bar {
+  fill: color-mix(in oklab, var(--color-accent) 45%, transparent);
+}
+
+.viz-bar--accent {
+  fill: var(--color-accent);
+}
+
+.viz-axis {
+  stroke: var(--color-hairline-strong);
+  stroke-width: 1;
+  stroke-linecap: round;
+}
+
+.viz-dot {
+  fill: color-mix(in oklab, var(--color-accent) 70%, var(--color-card));
+  stroke: var(--color-card);
+  stroke-width: 1.5;
+}
+
+.viz-dot--danger {
+  fill: var(--color-danger);
+}
+
+/* Recalls timeline sits between the count headline and the list. */
+.viz-timeline {
+  max-width: 34rem;
+}
+
+/* MPG bars stay compact even in a wide card. */
+.viz-mpg {
+  max-width: 17rem;
+}
+
+/* ---------- Safety rating segments ---------- */
+
+.rating-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.viz-segments {
+  width: 7.5rem;
+  height: 0.625rem;
+  display: block;
+}
+
+.viz-seg {
+  fill: var(--skeleton-base);
+}
+
+.viz-seg--on {
+  fill: var(--color-star);
+}
+
+.rating-cell__num {
+  font-size: var(--text-micro);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+  min-width: 2rem;
+  text-align: right;
+}
+
+.rating-cell__na {
+  font-size: var(--text-micro);
+  color: var(--color-text-tertiary);
+  min-width: 2rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* ---------- Fuel chips ---------- */
+
+.fuel-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+
+/* ---------- Odometer chart extras ---------- */
+
+.odo-chart .gridline {
+  stroke: var(--color-hairline);
+  stroke-width: 1;
+  stroke-dasharray: 1 5;
+  stroke-linecap: round;
+}
+
+.odo-chart .annotation {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Expired warranty label may be a sentence — let it wrap. */
+.meter__label--expired {
+  white-space: normal;
+  color: var(--color-text-tertiary);
+}
+
+/* SVG text scales with the viewBox; bump on small screens for legibility. */
+@media (max-width: 540px) {
+  .viz-label,
+  .viz-value {
+    font-size: 16px;
+  }
+
+  .viz-num {
+    font-size: 19px;
+  }
+
+  .odo-chart .annotation {
+    font-size: 15px;
+  }
+}

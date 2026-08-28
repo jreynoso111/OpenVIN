@@ -1,31 +1,8 @@
-/** Section 5 — NCAP safety ratings: stars, rollover, counts, photo. */
+/** Section 5 — NCAP safety ratings: segment bars, counts, photo. */
 
 import type { SafetyRating, SectionResult } from '../lib/types';
 import { el, formatNumber } from './dom';
-
-const MAX_STARS = 5;
-
-function stars(rating: string | null): HTMLElement {
-  const parsed = rating === null ? NaN : Number.parseInt(rating, 10);
-  if (Number.isNaN(parsed) || parsed < 1 || parsed > MAX_STARS) {
-    return el('span', { class: 'stars__na' }, rating ?? 'Not rated');
-  }
-  const wrap = el('span', {
-    class: 'stars',
-    role: 'img',
-    'aria-label': `${parsed} out of ${MAX_STARS} stars`,
-  });
-  for (let i = 0; i < MAX_STARS; i += 1) {
-    wrap.append(
-      el(
-        'span',
-        { class: i < parsed ? 'on' : 'off', 'aria-hidden': 'true' },
-        i < parsed ? '★' : '☆',
-      ),
-    );
-  }
-  return wrap;
-}
+import { ratingSegments } from './viz';
 
 function ratingRow(
   label: string,
@@ -36,7 +13,7 @@ function ratingRow(
     'div',
     { class: `rating-row${isOverall ? ' rating-row--overall' : ''}` },
     el('span', { class: 'rating-row__label' }, label),
-    stars(rating),
+    ratingSegments(rating),
   );
 }
 
@@ -80,12 +57,7 @@ export function renderSafety(result: SectionResult<SafetyRating>): HTMLElement {
   }
   if (counts.childElementCount > 0) ratings.append(counts);
 
-  const hasPhoto = Boolean(safety.vehiclePicture);
-  const grid = el(
-    'div',
-    { class: `safety-grid${hasPhoto ? ' safety-grid--with-photo' : ''}` },
-    ratings,
-  );
+  const grid = el('div', { class: 'safety-grid' }, ratings);
 
   if (safety.vehiclePicture) {
     grid.append(

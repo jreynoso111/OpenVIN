@@ -1,17 +1,11 @@
 /* OpenVIN — data-heavy sections: safety, odometer, fuel, warranty, coverage. */
 /* ---------- Safety ---------- */
 
+/* Safety now lives in a half-width card: photo stacks under the ratings. */
 .safety-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1.5rem;
-}
-
-@media (min-width: 720px) {
-  .safety-grid--with-photo {
-    grid-template-columns: 1fr minmax(14rem, 18rem);
-    align-items: start;
-  }
+  gap: 1.25rem;
 }
 
 .rating-rows {
@@ -44,29 +38,9 @@
   font-weight: 600;
 }
 
-.stars {
-  display: inline-flex;
-  gap: 0.14em;
-  font-size: 1.1rem;
-  line-height: 1;
-  letter-spacing: 0;
-}
-
-.rating-row--overall .stars {
-  font-size: 1.45rem;
-}
-
-.stars .on {
-  color: var(--color-star);
-}
-
-.stars .off {
-  color: var(--color-hairline-strong);
-}
-
-.stars__na {
-  font-size: var(--text-small);
-  color: var(--color-text-tertiary);
+.rating-row--overall .viz-segments {
+  width: 8.75rem;
+  height: 0.75rem;
 }
 
 .safety-counts {
@@ -89,6 +63,7 @@
   border-radius: var(--radius-card-small);
   border: 1px solid var(--color-hairline);
   width: 100%;
+  max-width: 17rem;
   height: auto;
   background: var(--color-inset);
 }
@@ -119,16 +94,17 @@
   stroke-width: 2;
 }
 
+/* SVG text is sized in 480-unit viewBox units — tuned for a half-width card. */
 .odo-chart .value-label {
   font-family: var(--font-sans);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   fill: var(--color-text);
 }
 
 .odo-chart .date-label {
   font-family: var(--font-sans);
-  font-size: 10px;
+  font-size: 11px;
   fill: var(--color-text-tertiary);
 }
 
@@ -186,32 +162,6 @@
 
 /* ---------- Fuel economy ---------- */
 
-.mpg-row {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
-  text-align: center;
-  max-width: 26rem;
-}
-
-.mpg__num {
-  font-size: 2.2rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-}
-
-.mpg--combined .mpg__num {
-  color: var(--color-accent);
-}
-
-.mpg__label {
-  margin-top: 0.3rem;
-  font-size: var(--text-micro);
-  color: var(--color-text-secondary);
-}
-
 .fuel-meta {
   margin-top: 1.125rem;
   font-size: var(--text-small);
@@ -228,7 +178,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
-  min-width: 12rem;
+  min-width: 9rem;
 }
 
 .meter {
@@ -251,6 +201,11 @@
   background: var(--color-accent);
 }
 
+/* Active (non-expired) coverage reads green; the empty track reads expired. */
+.meter__fill--active {
+  background: var(--color-ok);
+}
+
 .meter__label {
   font-size: var(--text-micro);
   color: var(--color-text-secondary);
@@ -270,7 +225,7 @@
   line-height: 1.55;
 }
 
-/* ---------- Coverage panel ---------- */
+/* ---------- Coverage strip (slim) ---------- */
 
 .coverage {
   border: 1px solid var(--color-hairline);
@@ -281,7 +236,7 @@
       var(--color-card) 30%
     );
   box-shadow: var(--shadow-card);
-  padding: clamp(1.5rem, 1.2rem + 1.6vw, 2.5rem);
+  padding: clamp(1.125rem, 1rem + 0.8vw, 1.5rem);
 }
 
 .coverage__kicker {
@@ -290,57 +245,85 @@
   text-transform: uppercase;
   letter-spacing: 0.09em;
   color: var(--color-accent);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.3rem;
 }
 
 .coverage__lede {
-  margin-top: 0.625rem;
-  max-width: 44rem;
+  margin-top: 0.4rem;
+  max-width: 52rem;
   color: var(--color-text-secondary);
-  font-size: var(--text-small);
-  line-height: 1.55;
-  margin-bottom: 1.75rem;
+  font-size: var(--text-micro);
+  line-height: 1.5;
+  margin-bottom: 0.875rem;
 }
 
-.coverage__rows {
+.coverage-chips {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 0.45rem;
 }
 
-.coverage-row {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+.coverage-chip {
+  display: inline-flex;
   align-items: center;
-  gap: 0.875rem;
-  min-height: 44px;
-  padding-block: 0.7rem;
-  border-top: 1px solid var(--color-hairline);
-}
-
-.coverage-row__name {
-  font-size: var(--text-small);
-  font-weight: 500;
-  min-width: 0;
-}
-
-.coverage-row__source {
-  display: block;
-  font-weight: 400;
-  font-size: var(--text-micro);
-  color: var(--color-text-tertiary);
-  margin-top: 0.1rem;
-}
-
-.coverage-row__status {
+  gap: 0.45rem;
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-pill);
+  background: var(--color-card);
   font-size: var(--text-micro);
   font-weight: 500;
   color: var(--color-text-secondary);
-  text-align: right;
   white-space: nowrap;
 }
 
-.coverage-row--gap .coverage-row__name {
+.coverage-gaps {
+  margin-top: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.coverage-gap {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  font-size: var(--text-micro);
+  color: var(--color-text-tertiary);
+  line-height: 1.45;
+}
+
+.coverage-gap .dot {
+  flex: none;
+  transform: translateY(-1px);
+}
+
+.coverage-gap strong {
   color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.coverage-legend {
+  margin-top: 0.75rem;
+  padding-top: 0.625rem;
+  border-top: 1px solid var(--color-hairline);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 1.1rem;
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+}
+
+.coverage-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.coverage-legend .dot {
+  width: 7px;
+  height: 7px;
+  box-shadow: none;
 }
 
 .dot {
@@ -379,28 +362,14 @@
   opacity: 0.5;
 }
 
-@media (max-width: 560px) {
-  .coverage-row {
-    grid-template-columns: auto 1fr;
-  }
-
-  .coverage-row__status {
-    grid-column: 2;
-    text-align: left;
-    padding-left: 0;
-    margin-top: -0.35rem;
-    padding-bottom: 0.25rem;
-  }
-}
-
 /* SVG text is sized in viewBox units; enlarge on small screens so labels
-   stay legible when the 640-unit chart renders at phone width. */
+   stay legible when the 480-unit chart renders at phone width. */
 @media (max-width: 540px) {
   .odo-chart .value-label {
-    font-size: 17px;
+    font-size: 16px;
   }
 
   .odo-chart .date-label {
-    font-size: 15px;
+    font-size: 14px;
   }
 }

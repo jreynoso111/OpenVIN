@@ -2,7 +2,11 @@
 
 import type { GuidedLink, RecallCampaign, SectionResult } from '../lib/types';
 import { el, formatDate, svgEl } from './dom';
+import { collapsedList } from './expander';
 import { guidedLinkCard } from './links';
+import { recallTimeline } from './viz';
+
+const VISIBLE_ROWS = 3;
 
 function chevron(): SVGElement {
   const icon = svgEl('svg', {
@@ -115,9 +119,17 @@ export function renderRecalls(
           ),
         ),
       );
-      const list = el('div', { class: 'recall-list' });
-      for (const campaign of campaigns) list.append(recallRow(campaign));
-      wrap.append(list);
+      const timeline = recallTimeline(campaigns);
+      if (timeline) wrap.append(timeline);
+      wrap.append(
+        collapsedList({
+          items: campaigns.map(recallRow),
+          visibleCount: VISIBLE_ROWS,
+          listClass: 'recall-list',
+          expandLabel: `Show all ${campaigns.length} recalls`,
+          collapseLabel: 'Show fewer recalls',
+        }),
+      );
     }
   } else {
     wrap.append(

@@ -2,6 +2,10 @@
 
 import type { ComplaintRecord, ComplaintsSummary, SectionResult } from '../lib/types';
 import { el, formatDate, formatNumber } from './dom';
+import { collapsedList } from './expander';
+import { componentsBarChart } from './viz';
+
+const VISIBLE_CARDS = 3;
 
 function complaintCard(record: ComplaintRecord): HTMLElement {
   const badges = el(
@@ -65,15 +69,31 @@ export function renderComplaints(
   const summary = result.data;
   const wrap = el('div', {});
 
+  // Components are only published per-record; we chart the VIN-matched set.
+  const chart =
+    summary.vinMatches.length > 1
+      ? componentsBarChart(
+          summary.vinMatches,
+          'Top components in complaints filed on this exact vehicle',
+        )
+      : null;
+  if (chart) wrap.append(chart);
+
   if (summary.vinMatches.length > 0) {
-    const cards = el('div', { class: 'complaint-cards' });
-    for (const record of summary.vinMatches) cards.append(complaintCard(record));
-    wrap.append(cards);
+    wrap.append(
+      collapsedList({
+        items: summary.vinMatches.map(complaintCard),
+        visibleCount: VISIBLE_CARDS,
+        listClass: 'complaint-cards',
+        expandLabel: `Show all ${summary.vinMatches.length} complaints on this VIN`,
+        collapseLabel: 'Show fewer complaints',
+      }),
+    );
   } else {
     wrap.append(
       el(
         'p',
-        { class: 'note', style: 'margin-bottom:1.25rem' },
+        { class: 'note' },
         'No federal complaint on file matches this exact VIN. ' +
         'Figures below cover the whole vehicle line.',
       ),
@@ -83,7 +103,7 @@ export function renderComplaints(
   wrap.append(
     el(
       'div',
-      { class: 'stat-row' },
+      { class: 'stat-row', style: 'margin-top:1rem' },
       stat(formatNumber(summary.totalForVehicleLine), 'complaints for this vehicle line'),
       stat(formatNumber(summary.crashCount), 'involved a crash'),
       stat(formatNumber(summary.fireCount), 'involved a fire'),

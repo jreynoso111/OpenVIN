@@ -10,14 +10,23 @@ function block(heightRem: number, widthPercent: number): HTMLElement {
   });
 }
 
-/** Big headline + spec grid shape (identity). */
+/** Compact headline + meta line shape (identity header). */
 export function identitySkeleton(): HTMLElement {
   return el(
     'div',
     { class: 'skeleton-stack' },
-    block(2.4, 62),
-    block(1, 38),
-    block(5.5, 100),
+    block(1.8, 46),
+    block(0.9, 72),
+  );
+}
+
+/** Label + value + detail shape (summary tiles). */
+export function tileSkeleton(): HTMLElement {
+  return el(
+    'div',
+    { class: 'skeleton-stack skeleton-stack--tile', 'aria-hidden': 'true' },
+    block(1.4, 55),
+    block(0.8, 82),
   );
 }
 

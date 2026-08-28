@@ -14,14 +14,14 @@
   --text-body: 1.0625rem; /* 17px */
   --text-small: 0.875rem;
   --text-micro: 0.8125rem;
-  --text-title: 1.75rem; /* 28px section titles */
+  --text-title: 1.2rem; /* ~19px section titles — dense report chrome */
   --text-display: clamp(2.4rem, 1.35rem + 4.6vw, 4.5rem);
   --tracking-display: -0.02em;
   --tracking-title: -0.015em;
 
   /* Rhythm */
   --space-section: clamp(4rem, 2.75rem + 4.4vw, 7rem);
-  --space-card: clamp(1.25rem, 1rem + 1.2vw, 1.75rem);
+  --space-card: clamp(1rem, 0.85rem + 0.8vw, 1.375rem);
   --container: 58rem;
 
   /* Surfaces */

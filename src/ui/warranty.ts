@@ -1,4 +1,4 @@
-/** Section 8 — factory warranty estimate: coverage table with remaining bars. */
+/** Section 8 — factory warranty estimate: coverage table with progress bars. */
 
 import type { SectionResult, WarrantyCoverageRow, WarrantyEstimate } from '../lib/types';
 import { el, formatNumber } from './dom';
@@ -11,17 +11,49 @@ function meter(remaining: number, term: number, label: string): HTMLElement {
     el(
       'div',
       { class: 'meter__track' },
-      el('div', { class: 'meter__fill', style: `width:${percent.toFixed(1)}%` }),
+      el('div', {
+        class: 'meter__fill meter__fill--active',
+        style: `width:${percent.toFixed(1)}%`,
+      }),
     ),
     el('span', { class: 'meter__label' }, label),
   );
 }
 
+/** Expired coverage still gets a track — an empty bar reads at a glance. */
+function expiredMeter(label: string): HTMLElement {
+  return el(
+    'div',
+    { class: 'meter' },
+    el('div', { class: 'meter__track' }),
+    el('span', { class: 'meter__label meter__label--expired' }, label),
+  );
+}
+
+function termLabel(row: WarrantyCoverageRow): string {
+  const miles = Number.isFinite(row.termMiles)
+    ? `${formatNumber(row.termMiles)} mi`
+    : 'unlimited miles';
+  return `${formatNumber(row.termMonths)} mo / ${miles}`;
+}
+
 function remainingCell(row: WarrantyCoverageRow): HTMLElement {
-  const hasMonths = row.estRemainingMonths !== null && row.termMonths > 0;
-  const hasMiles = row.estRemainingMiles !== null && row.termMiles > 0;
+  const hasMonths =
+    row.estRemainingMonths !== null &&
+    row.termMonths > 0 &&
+    row.estRemainingMonths > 0;
+  const hasMiles =
+    row.estRemainingMiles !== null &&
+    Number.isFinite(row.termMiles) &&
+    row.termMiles > 0 &&
+    row.estRemainingMiles > 0;
   if (!hasMonths && !hasMiles) {
-    return el('td', {}, el('span', { class: 'expired' }, row.note ?? 'Expired'));
+    const cell = el(
+      'td',
+      {},
+      el('div', { class: 'warranty-bars' }, expiredMeter(row.note ?? 'Expired')),
+    );
+    return cell;
   }
   const bars = el('div', { class: 'warranty-bars' });
   if (hasMonths && row.estRemainingMonths !== null) {
@@ -66,11 +98,7 @@ export function renderWarranty(
       'tr',
       {},
       el('td', {}, el('strong', {}, row.coverage)),
-      el(
-        'td',
-        { class: 'num' },
-        `${formatNumber(row.termMonths)} mo / ${formatNumber(row.termMiles)} mi`,
-      ),
+      el('td', { class: 'num' }, termLabel(row)),
       remainingCell(row),
     ),
   );

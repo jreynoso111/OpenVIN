@@ -1,4 +1,4 @@
-/** Section 1 — vehicle identity: name headline + spec grid. */
+/** Section 1 — compact identity header: name + one wrapping spec meta line. */
 
 import type { SectionResult, VehicleIdentity } from '../lib/types';
 import { el, formatNumber } from './dom';
@@ -13,6 +13,7 @@ export function vehicleDisplayName(identity: VehicleIdentity): string {
   return parts.join(' ');
 }
 
+/** Space-joined so it reads as one item inside the dot-separated meta line. */
 function engineSummary(identity: VehicleIdentity): string | null {
   const { engine } = identity;
   const parts = [
@@ -25,7 +26,7 @@ function engineSummary(identity: VehicleIdentity): string | null {
     engine.horsepower !== null ? `${formatNumber(engine.horsepower)} hp` : null,
     engine.fuelType,
   ].filter((part): part is string => Boolean(part));
-  return parts.length > 0 ? parts.join(' · ') : null;
+  return parts.length > 0 ? parts.join(' ') : null;
 }
 
 function plantSummary(identity: VehicleIdentity): string | null {
@@ -37,16 +38,6 @@ function plantSummary(identity: VehicleIdentity): string | null {
   return parts.length > 0 ? parts.join(', ') : null;
 }
 
-function spec(label: string, value: string | null): HTMLElement | null {
-  if (!value) return null;
-  return el(
-    'div',
-    { class: 'spec' },
-    el('div', { class: 'spec__label' }, label),
-    el('div', { class: 'spec__value' }, value),
-  );
-}
-
 export function renderIdentity(
   result: SectionResult<VehicleIdentity>,
 ): { content: HTMLElement; vehicleName: string | null } {
@@ -54,11 +45,11 @@ export function renderIdentity(
     return {
       content: el(
         'div',
-        { class: 'card' },
+        { class: 'identity-compact' },
         el('p', { class: 'identity__name' }, 'This VIN could not be decoded'),
         el(
           'p',
-          { class: 'note', style: 'margin-top:0.5rem' },
+          { class: 'note', style: 'margin-top:0.4rem' },
           result.note ??
             'The federal VIN decoder did not return a usable result. ' +
             'The rest of the report may still find records.',
@@ -73,28 +64,25 @@ export function renderIdentity(
   const subParts = [identity.series, identity.vehicleType].filter(
     (part): part is string => Boolean(part && part.trim()),
   );
-
-  const grid = el('div', { class: 'spec-grid' });
-  const specs = [
-    spec('Engine', engineSummary(identity)),
-    spec('Drive', identity.driveType),
-    spec('Transmission', identity.transmission),
-    spec('Body', identity.bodyClass),
-    spec('Assembly plant', plantSummary(identity)),
-    spec('GVWR', identity.gvwr),
-  ];
-  for (const item of specs) {
-    if (item) grid.append(item);
-  }
+  const metaParts = [
+    engineSummary(identity),
+    identity.transmission,
+    identity.driveType,
+    identity.bodyClass,
+    plantSummary(identity),
+    identity.gvwr,
+  ].filter((part): part is string => Boolean(part && part.trim()));
 
   const content = el(
     'div',
-    { class: 'card' },
+    { class: 'identity-compact' },
     el('p', { class: 'identity__name' }, name || identity.vin),
     subParts.length > 0
       ? el('p', { class: 'identity__sub' }, subParts.join(' · '))
       : null,
-    grid,
+    metaParts.length > 0
+      ? el('p', { class: 'identity__meta' }, metaParts.join(' · '))
+      : null,
     identity.decodeWarning
       ? el(
           'p',
