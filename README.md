@@ -11,9 +11,11 @@ source and coverage, including what *no* report (free or paid) can see.
 **Try it: <https://francoischastel.github.io/OpenVIN/>**
 
 > **Status: static MVP live** ([scope](./docs/STATIC_MVP.md)) — a fully client-side
-> report built on CORS-enabled public APIs, deployed on GitHub Pages. The full
-> backend architecture is specced in [docs/](./docs/) and comes next. To help, start
-> with [CONTRIBUTING.md](./CONTRIBUTING.md).
+> report built on CORS-enabled public APIs, deployed on GitHub Pages: summary tiles,
+> tabbed report, SVG charts, guided official checks. The full backend architecture is
+> specced in [docs/](./docs/) and comes next. **Hands-on state of the project:
+> [docs/HANDBOOK.md](./docs/HANDBOOK.md).** To help, start with
+> [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## Why
 
@@ -40,6 +42,7 @@ was checked, what was found, and what nobody can see.
 
 | Doc | Purpose |
 |---|---|
+| [docs/HANDBOOK.md](./docs/HANDBOOK.md) | **Start here to work on the code** — current state, codebase map, invariants, data-source quirks, next steps |
 | [docs/RESEARCH_REPORT.md](./docs/RESEARCH_REPORT.md) | **The master reference** — every data source with live-tested endpoints, limits, pricing, and state-by-state tables |
 | [docs/PLAN.md](./docs/PLAN.md) | Sourcing strategy: each report section → its free source |
 | [docs/CARFAX_SUPPLY_CHAIN.md](./docs/CARFAX_SUPPLY_CHAIN.md) | How the incumbent actually acquires its data (verified, with confidence levels) |
