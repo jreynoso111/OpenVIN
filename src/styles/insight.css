@@ -6,6 +6,10 @@
 
 /* ---------- Header actions ---------- */
 
+.rail-block[hidden] {
+  display: none;
+}
+
 .case__actions {
   display: inline-flex;
   gap: 0.35rem;
