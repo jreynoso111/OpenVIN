@@ -5,6 +5,7 @@
  */
 
 import type {
+  CommercialInspection,
   ComplaintsSummary,
   FuelEconomy,
   GuidedLink,
@@ -21,6 +22,7 @@ import { getRecalls } from './api/recalls';
 import { getComplaints } from './api/complaints';
 import { getSafetyRating } from './api/safety';
 import { getNyInspections } from './api/ny';
+import { getCommercialInspections } from './api/fmcsa';
 import { getFuelEconomy } from './api/fueleconomy';
 import { estimateWarranty } from './warranty';
 import { buildGuidedLinks } from './links';
@@ -31,6 +33,7 @@ export interface ReportHandle {
   complaints: Promise<SectionResult<ComplaintsSummary>>;
   safety: Promise<SectionResult<SafetyRating>>;
   nyInspections: Promise<SectionResult<OdometerReading[]>>;
+  commercialInspections: Promise<SectionResult<CommercialInspection[]>>;
   fuelEconomy: Promise<SectionResult<FuelEconomy>>;
   warranty: Promise<SectionResult<WarrantyEstimate>>;
   guidedLinks: Promise<GuidedLink[]>;
@@ -76,6 +79,13 @@ export function startReport(vin: string): ReportHandle {
     ),
   );
 
+  const commercialInspections = getCommercialInspections(normalized).catch(() =>
+    unavailable<CommercialInspection[]>(
+      'FMCSA roadside inspections (U.S. DOT Open Data)',
+      'The FMCSA vehicle-inspection lookup failed unexpectedly.',
+    ),
+  );
+
   const warranty = Promise.all([identity, nyInspections]).then(
     ([decoded, ny]): SectionResult<WarrantyEstimate> => {
       if (!decoded.data) {
@@ -104,6 +114,7 @@ export function startReport(vin: string): ReportHandle {
     ),
     safety: withIdentity('NHTSA Safety Ratings (NCAP)', (decoded) => getSafetyRating(decoded)),
     nyInspections,
+    commercialInspections,
     fuelEconomy: withIdentity('EPA fueleconomy.gov', (decoded) => getFuelEconomy(decoded)),
     warranty,
     guidedLinks,

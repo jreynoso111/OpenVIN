@@ -4,6 +4,7 @@
  */
 
 import type {
+  CommercialInspection,
   ComplaintsSummary,
   FuelEconomy,
   GuidedLink,
@@ -15,6 +16,7 @@ import type {
   WarrantyEstimate,
 } from '../lib/types';
 import { renderComplaints } from './complaints';
+import { renderCommercialInspections } from './commercial';
 import { createCoveragePanel } from './coverage';
 import { el, revealOnce } from './dom';
 import { createSection, type SectionFrame, type SectionMeta } from './frame';
@@ -34,6 +36,7 @@ import {
 } from './skeleton';
 import {
   complaintsTileState,
+  commercialInspectionsTileState,
   createSummaryBand,
   jumpToSection,
   odometerTileState,
@@ -51,6 +54,7 @@ export interface ReportHandles {
   readonly complaints: Promise<SectionResult<ComplaintsSummary>>;
   readonly safety: Promise<SectionResult<SafetyRating>>;
   readonly nyInspections: Promise<SectionResult<OdometerReading[]>>;
+  readonly commercialInspections: Promise<SectionResult<CommercialInspection[]>>;
   readonly fuelEconomy: Promise<SectionResult<FuelEconomy>>;
   readonly warranty: Promise<SectionResult<WarrantyEstimate>>;
   readonly guidedLinks: Promise<GuidedLink[]>;
@@ -157,6 +161,11 @@ export function renderReport(
     title: 'Odometer history',
     skeleton: chartSkeleton(),
   });
+  const commercial = createSection({
+    id: 'commercial-inspections',
+    title: 'FMCSA commercial roadside inspections',
+    skeleton: rowsSkeleton(3),
+  });
   const fuel = createSection({
     id: 'fuel-economy',
     title: 'Fuel economy',
@@ -177,6 +186,7 @@ export function renderReport(
     { id: 'official-records', name: 'Title, salvage & theft' },
     { id: 'recalls', name: 'Recall campaigns' },
     { id: 'complaints', name: 'NHTSA complaint reports' },
+    { id: 'commercial-inspections', name: 'Commercial roadside history' },
     { id: 'safety', name: 'Crash-test ratings' },
     { id: 'odometer', name: 'Odometer history' },
     { id: 'fuel-economy', name: 'Fuel economy' },
@@ -192,29 +202,37 @@ export function renderReport(
   complaints.root.classList.add('section--half');
   safety.root.classList.add('section--half');
   odometer.root.classList.add('section--full');
+  commercial.root.classList.add('section--full');
   warranty.root.classList.add('section--half');
   fuel.root.classList.add('section--half');
   elsewhere.root.classList.add('section--full');
   official.root.classList.add('section--half');
   coverage.root.classList.add('section--half');
 
+  const commercialGroup = recordGroup(
+    'commercial-records',
+    '01 / COMMERCIAL FLEET',
+    'Commercial roadside history',
+    'FMCSA joins the exact VIN to inspection, plate, carrier and vehicle-level violation records. Inspections may be reported by state or federal enforcement; locations are historical, not live tracking.',
+    el('div', { class: 'report-grid' }, commercial.root),
+  );
   const federalGroup = recordGroup(
     'federal-records',
-    '01 / FEDERAL',
+    '02 / FEDERAL',
     'Safety & federal records',
     'NHTSA results may describe the model line. Complaint matches use an 11-character VIN prefix.',
     el('div', { class: 'report-grid' }, recalls.root, complaints.root, safety.root),
   );
   const stateGroup = recordGroup(
     'state-records',
-    '02 / STATE + VEHICLE',
+    '03 / STATE + VEHICLE',
     'Mileage, specifications & other sources',
-    'New York is the only state inspection dataset connected today. Other state portals are listed for manual review.',
+    'New York is the only state vehicle-safety and emissions dataset connected today. FMCSA also includes reported commercial roadside inspections across states; other state VIN portals remain manual.',
     el('div', { class: 'report-grid' }, odometer.root, warranty.root, fuel.root, elsewhere.root),
   );
   const officialGroup = recordGroup(
     'official-checks',
-    '03 / VERIFICATION',
+    '04 / VERIFICATION',
     'Title, brand & theft checks',
     'These official or authorized lookups open on their own sites; their results are not imported into High View.',
     el('div', { class: 'report-grid' }, official.root, coverage.root),
@@ -227,6 +245,7 @@ export function renderReport(
     el('p', { class: 'ops-navigation__label' }, 'JUMP TO'),
     navigationLink('Latest activity', 'latest-activity'),
     navigationLink('Source checks', 'source-status'),
+    navigationLink('Roadside history', 'commercial-records'),
     navigationLink('Federal', 'federal-records'),
     navigationLink('State & history', 'state-records'),
     navigationLink('Official checks', 'official-records'),
@@ -241,6 +260,7 @@ export function renderReport(
     summary.root,
     operations.root,
     navigation,
+    commercialGroup,
     federalGroup,
     stateGroup,
     officialGroup,
@@ -320,6 +340,18 @@ export function renderReport(
     hydrate(odometer, 'odometer', result, content);
     operations.setOdometer(result);
     summary.set('odometer', odometerTileState(result));
+  });
+
+  void settle(handles.commercialInspections, 'FMCSA roadside inspections').then((result) => {
+    if (!callbacks.isCurrent()) return;
+    hydrate(
+      commercial,
+      'commercial-inspections',
+      result,
+      renderCommercialInspections(result),
+    );
+    operations.setCommercialInspections(result);
+    summary.set('commercial-inspections', commercialInspectionsTileState(result));
   });
 
   void settle(handles.fuelEconomy, 'fueleconomy.gov').then((result) => {

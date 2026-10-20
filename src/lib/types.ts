@@ -100,6 +100,37 @@ export interface OdometerReading {
   note?: string; // e.g. inspection result
 }
 
+/** Public vehicle-unit findings from a commercial roadside inspection. */
+export interface CommercialInspectionViolation {
+  code: string | null;
+  description: string | null;
+  part: string | null;
+  outOfService: boolean;
+}
+
+/** VIN-matched FMCSA event; location is an inspection site, never live GPS. */
+export interface CommercialInspection {
+  inspectionId: string;
+  date: string | null;
+  state: string | null;
+  location: string | null;
+  level: string | null;
+  carrierDotNumber: string | null;
+  carrierStatusCode: string | null;
+  plate: string | null;
+  plateState: string | null;
+  vehicleMake: string | null;
+  vehicleTypeCode: string | null;
+  /** Whole inspection totals can include the driver as well as the vehicle. */
+  inspectionViolations: number | null;
+  inspectionOutOfService: number | null;
+  /** Counts specifically attributed to the inspected vehicle. */
+  vehicleViolations: number | null;
+  vehicleOutOfService: number | null;
+  /** Violation descriptions joined to the exact FMCSA vehicle unit ID. */
+  vehicleFindings: CommercialInspectionViolation[];
+}
+
 export interface FuelEconomy {
   city: number | null;
   highway: number | null;

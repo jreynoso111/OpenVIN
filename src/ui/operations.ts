@@ -1,6 +1,7 @@
 /** Operational snapshot: latest dated public records and source freshness. */
 
 import type {
+  CommercialInspection,
   ComplaintRecord,
   ComplaintsSummary,
   GuidedLink,
@@ -31,6 +32,7 @@ export interface OperationsSnapshot {
   setRecalls(result: SectionResult<RecallCampaign[]>): void;
   setComplaints(result: SectionResult<ComplaintsSummary>): void;
   setOdometer(result: SectionResult<OdometerReading[]>): void;
+  setCommercialInspections(result: SectionResult<CommercialInspection[]>): void;
   setSafety(result: SectionResult<unknown>): void;
   setFuelEconomy(result: SectionResult<unknown>): void;
   setGuided(links: readonly GuidedLink[]): void;
@@ -42,6 +44,7 @@ const SOURCE_SPECS: readonly SourceCardSpec[] = [
   { id: 'complaints', label: 'Safety complaints', scope: 'FEDERAL · VIN PREFIX' },
   { id: 'safety', label: 'Crash-test ratings', scope: 'FEDERAL · NHTSA NCAP' },
   { id: 'odometer', label: 'Inspection mileage', scope: 'STATE · NEW YORK ONLY' },
+  { id: 'commercial-inspections', label: 'Commercial roadside inspections', scope: 'FMCSA · STATE + FEDERAL ENFORCEMENT' },
   { id: 'fuel-economy', label: 'Vehicle specifications', scope: 'FEDERAL · EPA' },
 ];
 
@@ -116,7 +119,7 @@ export function createOperationsSnapshot(): OperationsSnapshot {
   const activityMessage = el(
     'p',
     { class: 'activity-empty' },
-    'Checking NHTSA and New York public records…',
+    'Checking NHTSA, FMCSA and state public records…',
   );
   const checkedAt = el('span', { class: 'source-board__checked' }, 'Checks are starting…');
   const sourceRows = new Map<
@@ -169,7 +172,7 @@ export function createOperationsSnapshot(): OperationsSnapshot {
       el(
         'p',
         { class: 'source-row__detail' },
-        'No authorized Vektor TMS feed is connected. Dispatch status and last-known fleet location are not available in High View.',
+        'No authorized Vektor TMS feed is connected. FMCSA records show historical inspections, not dispatch status or live fleet location.',
       ),
     ),
   );
@@ -242,13 +245,13 @@ export function createOperationsSnapshot(): OperationsSnapshot {
       activityMessage.hidden = true;
       return;
     }
-    if (settled.size < 3) {
-      activityMessage.textContent = 'Checking NHTSA and New York public records…';
+    if (settled.size < 4) {
+      activityMessage.textContent = 'Checking NHTSA, FMCSA and state public records…';
       activityMessage.hidden = false;
       return;
     }
     activityMessage.textContent =
-      'No dated event was returned by the connected NHTSA and New York feeds. This does not rule out records from other sources or a vehicle’s current location.';
+      'No dated event was returned by the connected NHTSA, FMCSA and New York feeds. This does not rule out records from other sources or a vehicle’s current location.';
     activityMessage.hidden = false;
   };
 
@@ -280,6 +283,39 @@ export function createOperationsSnapshot(): OperationsSnapshot {
         title: campaign.component || `Campaign ${campaign.campaignNumber}`,
         detail: `${shortText(campaign.summary || campaign.consequence || 'Recall record published.')} · Model-line result; verify this VIN with the manufacturer.`,
         scope: 'MODEL LINE',
+      }];
+    });
+
+  const commercialInspectionEvents = (
+    records: readonly CommercialInspection[],
+  ): ActivityItem[] =>
+    records.flatMap((record) => {
+      if (!record.date) return [];
+      const dateValue = parsedDate(record.date);
+      if (dateValue === null) return [];
+      const carrier = record.carrierDotNumber
+        ? 'USDOT ' + record.carrierDotNumber
+        : 'Carrier not returned';
+      const plate = record.plate
+        ? 'Plate ' + record.plate + (record.plateState ? ' (' + record.plateState + ')' : '')
+        : null;
+      const vehicleStatus =
+        record.vehicleOutOfService === null
+          ? 'vehicle OOS result not reported'
+          : record.vehicleOutOfService > 0
+            ? 'vehicle placed out of service'
+            : 'no vehicle OOS recorded';
+      const findings =
+        record.vehicleViolations === null
+          ? 'Vehicle violation count not reported'
+          : formatNumber(record.vehicleViolations) + ' vehicle violation(s)';
+      return [{
+        date: record.date,
+        dateValue,
+        label: 'FMCSA · roadside inspection',
+        title: [record.state, record.location].filter((part): part is string => Boolean(part)).join(' · ') || 'Commercial roadside inspection',
+        detail: [carrier, plate, findings, vehicleStatus].filter((part): part is string => Boolean(part)).join(' · '),
+        scope: 'HISTORICAL · NOT LIVE LOCATION',
       }];
     });
 
@@ -322,6 +358,19 @@ export function createOperationsSnapshot(): OperationsSnapshot {
           }];
         });
         activity.splice(0, activity.length, ...activity.filter((item) => item.label !== 'New York · state inspection'), ...inspections);
+      }
+      renderActivity();
+    },
+    setCommercialInspections(result): void {
+      settled.add('commercial-inspections');
+      setSource('commercial-inspections', result);
+      if (result.data) {
+        activity.splice(
+          0,
+          activity.length,
+          ...activity.filter((item) => item.label !== 'FMCSA · roadside inspection'),
+          ...commercialInspectionEvents(result.data),
+        );
       }
       renderActivity();
     },

@@ -1,10 +1,11 @@
 /**
- * At-a-glance summary band — six stat tiles under the identity header.
+ * At-a-glance summary band — stat tiles under the identity header.
  * Each tile hydrates from the same section promise as its detail section
  * and jump-scrolls to it on click (focus moves to the section heading).
  */
 
 import type {
+  CommercialInspection,
   ComplaintsSummary,
   GuidedLink,
   OdometerReading,
@@ -45,6 +46,7 @@ export type SummaryTarget =
   | 'complaints'
   | 'safety'
   | 'odometer'
+  | 'commercial-inspections'
   | 'warranty'
   | 'official-records';
 
@@ -59,6 +61,7 @@ const TILE_SPECS: readonly { readonly target: SummaryTarget; readonly label: str
   { target: 'complaints', label: 'Complaints' },
   { target: 'safety', label: 'Safety' },
   { target: 'odometer', label: 'Odometer' },
+  { target: 'commercial-inspections', label: 'Roadside' },
   { target: 'warranty', label: 'Warranty' },
   { target: 'official-records', label: 'Official checks' },
 ];
@@ -266,6 +269,40 @@ export function odometerTileState(result: SectionResult<OdometerReading[]>): Til
     kind: 'number',
     value: `${formatNumber(last.miles)} mi`,
     detail: `last reading · ${formatDate(last.date)}`,
+  };
+}
+
+export function commercialInspectionsTileState(
+  result: SectionResult<CommercialInspection[]>,
+): TileState {
+  if (result.status === 'unavailable' && !result.data) return unavailableState();
+  const records = result.data ?? [];
+  if (records.length === 0) {
+    return {
+      tone: 'neutral',
+      kind: 'text',
+      value: result.status === 'miss' ? 'No match' : 'No records',
+      detail: 'FMCSA VIN-matched inspections',
+    };
+  }
+  const newest = records.find((record) => record.date !== null);
+  const outOfServiceCount = records.filter((record) => (record.vehicleOutOfService ?? 0) > 0).length;
+  const detail = [
+    newest?.date ? 'latest · ' + formatDate(newest.date) : 'date unavailable',
+    outOfServiceCount > 0 ? formatNumber(outOfServiceCount) + ' vehicle OOS event(s) in history' : null,
+  ]
+    .filter((part): part is string => part !== null)
+    .join(' · ');
+  return {
+    tone: outOfServiceCount > 0 ? 'warn' : 'neutral',
+    kind: 'number',
+    value: formatNumber(records.length),
+    detail,
+    badges: result.status === 'unavailable'
+      ? [{ label: 'Partial source response', tone: 'warn' }]
+      : outOfServiceCount > 0
+        ? [{ label: 'Past vehicle OOS', tone: 'warn' }]
+        : undefined,
   };
 }
 

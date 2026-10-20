@@ -3,6 +3,27 @@
 Checked 2026-10-19. This is a source and architecture note; OpenVIN does not
 currently call Vektor or store Vektor records.
 
+## Free FMCSA data now connected to High View
+
+High View now queries the public FMCSA datasets directly from the browser, without
+an API key or a Vektor subscription. `src/lib/api/fmcsa.ts` joins Inspections Per
+Unit to the Vehicle Inspection File by `inspection_id`, then joins violation
+descriptions by both `inspection_id` and the exact `insp_unit_id` matched to the
+VIN. It also reads only the USDOT number and status code from Company Census.
+
+The report shows historical inspection date, state and site, observed plate, USDOT
+carrier ID, vehicle-level violation counts, unit-linked violation descriptions,
+out-of-service results, and inspection IDs. It does not display driver records,
+company contacts, addresses, or legal names. An inspection site is not a live
+vehicle location. FMCSA says its inspection files are updated daily from a
+24-hour-old database and include three years of history; older reports may be
+missing even when another service retained them.
+
+The FMCSA connection covers the public commercial-roadside portion of the data
+Vektor exposes, but it is not a replacement for Vektor TMS dispatch or tracking.
+Vektor remains unconnected; a private TMS feed still requires an authorized
+account/API key and its own integration approval.
+
 ## What the public documentation describes
 
 Vektor publishes a separate **Carrier Intelligence API** for FMCSA/NHTSA-derived
