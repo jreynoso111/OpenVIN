@@ -156,6 +156,35 @@ function hasUsefulSourceData(id: string, data: unknown): boolean {
   return false;
 }
 
+function sourceDetail(id: string, result: SectionResult<unknown>, hasData: boolean): string {
+  if (result.note) return result.note;
+  if (result.status !== 'hit' || !hasData) return sourceStatusLabel(result.status);
+  if (id === 'identity') {
+    const identity = result.data as VehicleIdentity;
+    return [identity.modelYear, identity.make, identity.model]
+      .filter((part): part is string | number => part !== null && part !== '')
+      .join(' ');
+  }
+  if (id === 'safety') {
+    const rating = result.data as SafetyRating;
+    const details = [
+      rating.vehicleDescription.trim(),
+      rating.overallRating ? `Overall rating ${rating.overallRating}` : null,
+      rating.frontCrashRating ? `front ${rating.frontCrashRating}` : null,
+      rating.sideCrashRating ? `side ${rating.sideCrashRating}` : null,
+      rating.rolloverRating ? `rollover ${rating.rolloverRating}` : null,
+    ].filter((part): part is string => Boolean(part));
+    return details.length > 0
+      ? `NCAP match: ${details.join(' · ')}.`
+      : 'NHTSA returned NCAP data for this vehicle line.';
+  }
+  if (id === 'fuel-economy') {
+    const fuel = result.data as FuelEconomy;
+    return `EPA vehicle match: ${fuel.matchedName ?? 'fuel economy data returned'}.`;
+  }
+  return 'Data returned by the source.';
+}
+
 export function createOperationsSnapshot(): OperationsSnapshot {
   const activityFeatured = el('div', { class: 'activity-featured' });
   const activityList = el('div', { class: 'activity-list' });
@@ -298,7 +327,7 @@ export function createOperationsSnapshot(): OperationsSnapshot {
     const status = sourceStatusLabel(result.status);
     elements.status.textContent = status;
     elements.status.className = `source-row__status source-row__status--${result.status}`;
-    elements.detail.textContent = result.note ?? status;
+    elements.detail.textContent = sourceDetail(id, result, hasData);
     elements.checked.textContent = timestamp === null
       ? 'Query time not reported'
       : `Queried ${formatDateTime(new Date(timestamp).toISOString())}`;
