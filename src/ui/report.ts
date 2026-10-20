@@ -107,10 +107,12 @@ export function renderReport(
   main.replaceChildren(
     caseLayout(
       header.root,
-      [summary.root, where.root, links.root, timeline.root, log.root, carriers.root, recallPanel.root, complaintPanel.root, odometer.root],
+      [summary.root, where.root, links.root, timeline.root, log.root, carriers.root, odometer.root],
       [
         ledger.root,
         checks,
+        recallPanel.root,
+        complaintPanel.root,
         limitsNote(
           'Roadside records show where a unit was stopped and under which carrier, up to about three years back. They are not a live position, and a carrier on an inspection is not proof of current owner or operator.',
         ),
