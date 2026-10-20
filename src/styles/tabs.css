@@ -9,13 +9,46 @@
 .seg-track {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--tab-count, 4), minmax(0, 1fr));
   width: 100%;
   max-width: 34rem;
   padding: 3px;
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-pill);
   background: var(--color-inset);
+}
+
+/* The report workspace uses a compact vertical rail on wide screens. */
+.seg-track--vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 100%;
+  max-width: none;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.seg-track--vertical .seg-indicator {
+  display: none;
+}
+
+.seg-track--vertical .seg-tab {
+  width: 100%;
+  min-height: 2.875rem;
+  padding-inline: 0.75rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.seg-track--vertical .seg-tab[aria-selected='true'] {
+  background: var(--color-card);
+  border-color: var(--color-hairline);
+  box-shadow: var(--shadow-card);
 }
 
 .seg-indicator {
@@ -58,6 +91,25 @@
   .seg-tab {
     font-size: var(--text-micro);
     padding-inline: 0.25rem;
+  }
+}
+
+@media (max-width: 860px) {
+  .seg-track--vertical {
+    flex-direction: row;
+    width: max-content;
+    min-width: 100%;
+    padding: 3px;
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-pill);
+    background: var(--color-inset);
+  }
+
+  .seg-track--vertical .seg-tab {
+    width: auto;
+    min-height: 2.75rem;
+    padding-inline: 0.75rem;
+    border-radius: var(--radius-pill);
   }
 }
 

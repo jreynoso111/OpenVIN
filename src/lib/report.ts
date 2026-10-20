@@ -79,13 +79,13 @@ export function startReport(vin: string): ReportHandle {
   const warranty = Promise.all([identity, nyInspections]).then(
     ([decoded, ny]): SectionResult<WarrantyEstimate> => {
       if (!decoded.data) {
-        return unavailable<WarrantyEstimate>('OpenVIN estimate', DECODE_FAILED_NOTE);
+        return unavailable<WarrantyEstimate>('High View estimate', DECODE_FAILED_NOTE);
       }
       try {
         return estimateWarranty(decoded.data, latestMiles(ny));
       } catch {
         return unavailable<WarrantyEstimate>(
-          'OpenVIN estimate',
+          'High View estimate',
           'The warranty estimate failed unexpectedly.',
         );
       }

@@ -123,11 +123,12 @@ rental/fleet companies · manufacturers (build data, warranty, recalls, connecte
 ### 2.3 Complaints, investigations, TSBs — ✅ FREE (Carfax doesn't even show these)
 - `GET https://api.nhtsa.gov/complaints/complaintsByVehicle?make=&model=&modelYear=` —
   complaint records carry an **11-char truncated VIN** → match against our VIN's first 11
-  ("squish VIN") for vehicle-specific complaint hits, incl. crash/fire/injury flags.
+  ("squish VIN"). This identifies prefix matches, not the exact 17-character vehicle;
+  records include crash/fire/injury flags.
 - Bulk (daily refresh, S3, no auth): `https://static.nhtsa.gov/odi/ffdd/{cmpl,rcl,inv,tsbs}/`
   — complaints 1995→ (370 MB), investigations, TSB metadata w/ summaries.
-- Bonus differentiator: Carfax shows none of this. We show "3 complaints filed on this
-  exact vehicle-line, 12 TSBs, 1 open investigation."
+- Bonus differentiator: Carfax shows none of this. We show prefix-matched complaints,
+  exact vehicle-line totals, 12 TSBs, and 1 open investigation.
 
 ### 2.4 Title history, brands, total loss, odometer-at-title — 🟡 the NMVTIS problem
 NMVTIS is the *only* database all states + insurers + junk/salvage yards must report into

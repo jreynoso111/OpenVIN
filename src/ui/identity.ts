@@ -76,7 +76,22 @@ export function renderIdentity(
   const content = el(
     'div',
     { class: 'identity-compact' },
-    el('p', { class: 'identity__name' }, name || identity.vin),
+    el(
+      'div',
+      { class: 'identity__header' },
+      el(
+        'div',
+        {},
+        el('p', { class: 'identity__eyebrow' }, 'VEHICLE IDENTIFIED BY VIN'),
+        el('p', { class: 'identity__name' }, name || identity.vin),
+      ),
+      el(
+        'div',
+        { class: 'identity__vin' },
+        el('span', { class: 'identity__vin-label' }, 'VIN'),
+        el('code', {}, identity.vin),
+      ),
+    ),
     subParts.length > 0
       ? el('p', { class: 'identity__sub' }, subParts.join(' · '))
       : null,

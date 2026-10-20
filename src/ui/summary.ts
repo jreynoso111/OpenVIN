@@ -213,7 +213,7 @@ export function complaintsTileState(result: SectionResult<ComplaintsSummary>): T
     tone: summary.vinMatches.length > 0 ? 'warn' : 'neutral',
     kind: 'number',
     value: String(summary.vinMatches.length),
-    detail: `on this exact VIN · ${formatNumber(summary.totalForVehicleLine)} for the vehicle line`,
+    detail: `share this VIN's 11-character prefix · ${formatNumber(summary.totalForVehicleLine)} for the vehicle line`,
     badges: badges.length > 0 ? badges : undefined,
   };
 }

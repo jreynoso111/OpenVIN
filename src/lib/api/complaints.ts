@@ -1,7 +1,7 @@
 /**
  * NHTSA ODI complaints by year/make/model (Tier 0, CORS: reflects Origin).
- * Records carry an 11-char truncated VIN we match against this vehicle's
- * squish VIN. Complaint data is published anonymized — no owner PII.
+ * Records carry an 11-char truncated VIN. A prefix match cannot identify the
+ * exact 17-character vehicle. Complaint data is published anonymized.
  */
 
 import type { ComplaintRecord, ComplaintsSummary, SectionResult, VehicleIdentity } from '../types';
@@ -91,7 +91,7 @@ export async function getComplaints(
   const summary = summarizeComplaints(records, vin);
   const matchNote =
     summary.vinMatches.length > 0
-      ? `${summary.vinMatches.length} complaint(s) share this VIN's 11-character prefix — likely filed about this exact vehicle or its twins from the same production run.`
-      : 'No complaints match this VIN’s 11-character prefix; totals cover the whole year/make/model line.';
+      ? `${summary.vinMatches.length} NHTSA complaint record(s) share the first 11 characters of this VIN; this does not identify the exact 17-character vehicle.`
+      : 'No NHTSA complaint records share this VIN’s first 11 characters; totals cover the whole year, make and model line.';
   return { status: 'hit', data: summary, source, note: matchNote };
 }

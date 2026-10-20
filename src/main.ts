@@ -6,6 +6,7 @@ import './styles/report.css';
 import './styles/lists.css';
 import './styles/summary.css';
 import './styles/tabs.css';
+import './styles/workspace.css';
 import './styles/viz.css';
 import './styles/sections.css';
 
@@ -14,7 +15,7 @@ import { startReport } from './lib/report';
 import { renderReport, type ReportHandles } from './ui/report';
 import { mountShell, renderHero } from './ui/shell';
 
-const BASE_TITLE = 'OpenVIN — Free Vehicle History Reports';
+const BASE_TITLE = 'High View — Vehicle Record Search';
 const GENERIC_VIN_ERROR =
   'That doesn’t look like a valid 17-character VIN. Check for typos — ' +
   'VINs never contain the letters I, O, or Q.';
@@ -97,7 +98,7 @@ function pushVin(vin: string | null): void {
 /* ---------- Views ---------- */
 
 const app = document.getElementById('app');
-if (!app) throw new Error('OpenVIN: #app mount point is missing');
+if (!app) throw new Error('High View: #app mount point is missing');
 
 let currentVin: string | null | undefined;
 /** Bumped on every view change; in-flight report callbacks from older views no-op. */
@@ -143,14 +144,14 @@ function showReport(vin: string): void {
   reportGeneration += 1;
   const generation = reportGeneration;
   currentVin = vin;
-  document.title = `${vin} — OpenVIN`;
+  document.title = `${vin} — High View`;
   shell.showReportHeader(vin);
   const handles = startReport(vin) as ReportHandles;
   renderReport(shell.main, handles, {
     isCurrent: () => generation === reportGeneration,
     onVehicleName: (name) => {
       shell.setHeaderVehicle(name);
-      document.title = name ? `${name} — OpenVIN` : `${vin} — OpenVIN`;
+      document.title = name ? `${name} — High View` : `${vin} — High View`;
     },
   });
   window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });

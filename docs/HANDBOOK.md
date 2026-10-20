@@ -2,7 +2,7 @@
 
 > The practical "pick up the project here" document. What is actually built and live,
 > how it works, the invariants you must not break, and what to do next.
-> Last updated: 2026-08-29. Strategy/research background lives in the other docs
+> Last updated: 2026-10-19. Strategy/research background lives in the other docs
 > (see the map in [../README.md](../README.md)).
 
 ## 1. Snapshot
@@ -24,15 +24,16 @@ tiles (Recalls · Complaints · Safety · Odometer · Warranty · Official check
 button that switches to the owning tab and focuses the section. Tiles hydrate
 independently with skeletons and show honest failure states.
 
-Below: an Apple-style **segmented control** with four tabs (ARIA tabs pattern,
-arrow-key navigation, reduced-motion-safe):
+Below: a **vehicle-file workspace** with a vertical section rail on desktop and a
+horizontal scrollable rail on smaller screens (ARIA tabs pattern, arrow-key
+navigation, reduced-motion-safe):
 
 | Tab | Contents |
 |---|---|
-| Overview | Park-it/park-outside recall alert card · compact odometer trend · the two official-check actions (free NMVTIS via Carsforsale, NICB VINCheck) |
-| Safety & recalls | Recalls (year-timeline chart + collapsed list + OEM VIN-lookup callout) · Owner complaints (squish-VIN-matched cards + component bar chart) · NCAP ratings (segment bars) |
-| History | Odometer chart (gridlines, mi/yr annotation, rollback detection) · Warranty progress meters · Fuel-economy MPG bars |
-| Records | Official checks · grouped link-outs (state titles, emissions/odometer portals, auctions, service) · coverage strip (per-source status + the two structural-gap disclosures) |
+| Overview | Vehicle identity · at-a-glance source results · recall hazard card · compact odometer trend · official-check actions |
+| Federal records | NHTSA recalls · complaint reports (11-character VIN-prefix matches are labeled as such) · NCAP ratings |
+| State & history | State inspection/odometer records · warranty estimate · fuel economy · state and supplemental source links |
+| Official checks | NMVTIS/NICB guided lookups · per-source coverage and structural-gap disclosures |
 
 All charts are hand-rolled inline SVG, theme-token colored, `viewBox`-sized (safe
 inside hidden tab panels), `aria-hidden` with text/table fallbacks.
@@ -57,6 +58,7 @@ src/lib/            DATA LAYER (pure + fetchers; UI never parses raw API JSON)
   report.ts         startReport(vin) → 8 promises that ALWAYS resolve (never reject)
 src/ui/             UI LAYER (renders SectionResult; one module per concern)
   report.ts         orchestrator: layout, tabs, hydration wiring (all isCurrent-guarded)
+  workspace.css     search-first landing page + responsive report section rail
   summary.ts        tile band + per-section tile-state mappers + jumpToSection
   tabs.ts           segmented control + panels (panels stay mounted; display:none)
   overview.ts       Overview tab composition
@@ -121,7 +123,7 @@ git push           # → auto test + build + deploy to Pages
 ```
 
 - Sample VIN for manual testing: `1HGCM82633A004352` (2003 Accord — 24 recalls,
-  24 VIN-matched complaints; NCAP "Not rated" is correct for its era).
+  24 complaints sharing its 11-character VIN prefix; NCAP "Not rated" is correct for its era).
 - **Adding a data source**: check LEGAL.md tier first → new module in `src/lib/api/`
   returning `SectionResult` via `fetchJson` → export a pure mapper and test it on a
   real-response fixture → wire into `src/lib/report.ts` → render in a section module →

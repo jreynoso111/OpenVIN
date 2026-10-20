@@ -4,10 +4,10 @@ import { clear, el, svgEl } from './dom';
 
 export const SAMPLE_VIN = '1HGCM82633A004352';
 
-const GITHUB_URL = 'https://github.com/FrancoisChastel/OpenVIN';
+const GITHUB_URL = 'https://github.com/jreynoso111/OpenVIN';
 
 const DISCLAIMER =
-  'OpenVIN aggregates publicly available vehicle data. It is not affiliated ' +
+  'High View aggregates publicly available vehicle data. It is not affiliated ' +
   'with CARFAX, Inc. or any data provider. No vehicle history source — free ' +
   'or paid — is complete: events never reported to any public system will ' +
   'not appear here or anywhere else. Estimates are labeled as estimates. ' +
@@ -72,7 +72,7 @@ export function mountShell(app: HTMLElement, callbacks: ShellCallbacks): Shell {
         },
       },
       brandMark(),
-      'OpenVIN',
+      'High View',
     );
 
   let vehicleName: HTMLElement | null = null;
@@ -173,50 +173,87 @@ export function renderHero(onSubmit: (rawVin: string) => void): Hero {
       'div',
       { class: 'vin-form__row' },
       input,
-      el('button', { class: 'btn btn--primary', type: 'submit' }, 'Run report'),
+      el('button', { class: 'btn btn--primary', type: 'submit' }, 'Search vehicle'),
     ),
     error,
   );
 
+  const sourceCards = [
+    {
+      eyebrow: 'FEDERAL',
+      title: 'Safety & defect records',
+      detail: 'NHTSA recalls, complaints and crash-test ratings.',
+    },
+    {
+      eyebrow: 'STATE',
+      title: 'Inspection history',
+      detail: 'Public odometer and inspection data where a state publishes it.',
+    },
+    {
+      eyebrow: 'VEHICLE',
+      title: 'Specifications',
+      detail: 'VIN decode, fuel economy and a labeled warranty estimate.',
+    },
+    {
+      eyebrow: 'OFFICIAL CHECKS',
+      title: 'Title & theft sources',
+      detail: 'Guided links to official lookups that must be completed on their sites.',
+    },
+  ];
+
   const root = el(
     'section',
-    { class: 'hero container', 'aria-labelledby': 'hero-heading' },
-    el('h1', { class: 'hero__title', id: 'hero-heading' },
-      'Every VIN has a history.'),
-    el('p', { class: 'hero__tagline' },
-      'OpenVIN assembles a free vehicle history from public data — recalls, ' +
-      'federal complaints, safety ratings, and official records. ' +
-      'Open source. No signup.'),
-    form,
+    { class: 'hero vehicle-search-home container', 'aria-labelledby': 'hero-heading' },
     el(
-      'p',
-      { class: 'vin-sample' },
-      'No VIN handy? ',
+      'div',
+      { class: 'hero__search' },
+      el('p', { class: 'hero__eyebrow' }, 'HIGH VIEW · VEHICLE RECORDS'),
+      el('h1', { class: 'hero__title', id: 'hero-heading' },
+        'Search a VIN. Review the evidence.'),
+      el('p', { class: 'hero__tagline' },
+        'Build a vehicle-focused file from federal safety sources, available state data and guided official lookups.'),
+      form,
       el(
-        'button',
-        {
-          type: 'button',
-          onclick: () => {
-            input.value = SAMPLE_VIN;
-            submit(SAMPLE_VIN);
+        'p',
+        { class: 'vin-sample' },
+        'Preview an example: ',
+        el(
+          'button',
+          {
+            type: 'button',
+            onclick: () => {
+              input.value = SAMPLE_VIN;
+              submit(SAMPLE_VIN);
+            },
           },
-        },
-        `Try a sample: ${SAMPLE_VIN}`,
+          `2003 Honda Accord · ${SAMPLE_VIN}`,
+        ),
+      ),
+      el(
+        'p',
+        { class: 'hero__honesty' },
+        'A missing record means that source returned no match; it does not prove an event never happened. High View does not provide owner profiles or live vehicle location.',
       ),
     ),
     el(
-      'ul',
-      { class: 'hero__props' },
-      el('li', {}, 'Recalls & complaints, VIN-matched'),
-      el('li', {}, 'NCAP safety ratings & odometer records'),
-      el('li', {}, 'Guided official title & theft checks'),
-    ),
-    el(
-      'p',
-      { class: 'hero__honesty' },
-      'Free public data sees federal safety records and some state records. ' +
-      'It cannot see private sales or anything never reported — ' +
-      'and neither can any paid report.',
+      'section',
+      { class: 'hero__sources', 'aria-labelledby': 'sources-heading' },
+      el('p', { class: 'hero__sources-kicker' }, 'SEARCH SCOPE'),
+      el('h2', { class: 'hero__sources-heading', id: 'sources-heading' },
+        'One vehicle file, organized by source'),
+      el(
+        'div',
+        { class: 'hero__source-grid' },
+        ...sourceCards.map((card) =>
+          el(
+            'article',
+            { class: 'hero-source card' },
+            el('p', { class: 'hero-source__eyebrow' }, card.eyebrow),
+            el('h3', { class: 'hero-source__title' }, card.title),
+            el('p', { class: 'hero-source__detail' }, card.detail),
+          ),
+        ),
+      ),
     ),
   );
 
@@ -245,7 +282,7 @@ function buildFooter(): HTMLElement {
       el(
         'div',
         { class: 'site-footer__row' },
-        el('span', { class: 'brand' }, brandMark(), 'OpenVIN'),
+        el('span', { class: 'brand' }, brandMark(), 'High View'),
         el(
           'a',
           { href: GITHUB_URL, target: '_blank', rel: 'noopener noreferrer' },

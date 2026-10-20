@@ -10,6 +10,6 @@
     <path d="M27 46 L37 18 L45 18 L35 46 Z" fill="#FFFFFF" opacity="0.4"/>
     <path d="M17 33 L28 44 L47 17" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
-  <text x="600" y="430" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Roboto, sans-serif" font-size="84" font-weight="700" letter-spacing="-2" fill="#F4F6F9">OpenVIN</text>
-  <text x="600" y="500" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Roboto, sans-serif" font-size="30" fill="#9AA3B0">Free vehicle history from public data — open source, no signup</text>
+  <text x="600" y="430" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Roboto, sans-serif" font-size="84" font-weight="700" letter-spacing="-2" fill="#F4F6F9">High View</text>
+  <text x="600" y="500" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Roboto, sans-serif" font-size="30" fill="#9AA3B0">Vehicle records organized by source</text>
 </svg>

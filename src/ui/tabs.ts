@@ -22,7 +22,11 @@ export interface Tabs {
 
 const NAV_KEYS = ['ArrowRight', 'ArrowLeft', 'Home', 'End'] as const;
 
-export function createTabs(specs: readonly TabSpec[], defaultId: string): Tabs {
+export function createTabs(
+  specs: readonly TabSpec[],
+  defaultId: string,
+  orientation: 'horizontal' | 'vertical' = 'horizontal',
+): Tabs {
   const buttons = new Map<string, HTMLButtonElement>();
   const panelMap = new Map<string, HTMLElement>();
   let activeId = defaultId;
@@ -30,9 +34,14 @@ export function createTabs(specs: readonly TabSpec[], defaultId: string): Tabs {
   const indicator = el('span', { class: 'seg-indicator', 'aria-hidden': 'true' });
   const track = el(
     'div',
-    { class: 'seg-track', role: 'tablist', 'aria-label': 'Report sections' },
+    {
+      class: `seg-track${orientation === 'vertical' ? ' seg-track--vertical' : ''}`,
+      role: 'tablist',
+      'aria-label': orientation === 'vertical' ? 'Vehicle file sections' : 'Report sections',
+    },
     indicator,
   );
+  track.style.setProperty('--tab-count', String(specs.length));
   const panelsWrap = el('div', { class: 'tab-panels' });
 
   const activate = (

@@ -1,4 +1,4 @@
-/** Section 4 — owner complaints: exact-VIN matches first, then line stats. */
+/** NHTSA complaint records matched by the first 11 VIN characters, then line stats. */
 
 import type { ComplaintRecord, ComplaintsSummary, SectionResult } from '../lib/types';
 import { el, formatDate, formatNumber } from './dom';
@@ -11,7 +11,7 @@ function complaintCard(record: ComplaintRecord): HTMLElement {
   const badges = el(
     'div',
     { class: 'complaint-card__badges' },
-    el('span', { class: 'badge badge--accent' }, 'Filed on this exact vehicle'),
+    el('span', { class: 'badge badge--accent' }, '11-character VIN-prefix match'),
     record.crash ? el('span', { class: 'badge badge--danger' }, 'Crash') : null,
     record.fire ? el('span', { class: 'badge badge--danger' }, 'Fire') : null,
     record.numberOfInjuries > 0
@@ -69,12 +69,22 @@ export function renderComplaints(
   const summary = result.data;
   const wrap = el('div', {});
 
-  // Components are only published per-record; we chart the VIN-matched set.
+  // Components are published per record; these records match only the VIN prefix.
+  if (summary.vinMatches.length > 0) {
+    wrap.append(
+      el(
+        'p',
+        { class: 'note' },
+        'NHTSA complaint records expose only the first 11 VIN characters. These matches may describe this vehicle or another vehicle with the same prefix; they do not identify this exact 17-character VIN.',
+      ),
+    );
+  }
+
   const chart =
     summary.vinMatches.length > 1
       ? componentsBarChart(
           summary.vinMatches,
-          'Top components in complaints filed on this exact vehicle',
+          'Top components in 11-character VIN-prefix matches',
         )
       : null;
   if (chart) wrap.append(chart);
@@ -85,7 +95,7 @@ export function renderComplaints(
         items: summary.vinMatches.map(complaintCard),
         visibleCount: VISIBLE_CARDS,
         listClass: 'complaint-cards',
-        expandLabel: `Show all ${summary.vinMatches.length} complaints on this VIN`,
+        expandLabel: `Show all ${summary.vinMatches.length} VIN-prefix matches`,
         collapseLabel: 'Show fewer complaints',
       }),
     );
@@ -94,8 +104,8 @@ export function renderComplaints(
       el(
         'p',
         { class: 'note' },
-        'No federal complaint on file matches this exact VIN. ' +
-        'Figures below cover the whole vehicle line.',
+        'No NHTSA complaint record shares the first 11 VIN characters. ' +
+        'Figures below cover the year, make and model line.',
       ),
     );
   }
