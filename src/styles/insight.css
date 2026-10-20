@@ -15,6 +15,28 @@
   font-weight: 700;
 }
 
+/* ---------- Empty history notice ---------- */
+
+.nohist {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.nohist__why {
+  margin: 0;
+  padding: 0.6rem 0.8rem;
+  border: var(--rule);
+  border-left: 3px solid var(--color-warn);
+  border-radius: var(--radius);
+  background: var(--tint-warn);
+  font-size: var(--text-small);
+  color: var(--color-text-secondary);
+}
+
+.nohist__why strong {
+  color: var(--color-text);
+}
+
 /* ---------- Header actions ---------- */
 
 .rail-block[hidden] {

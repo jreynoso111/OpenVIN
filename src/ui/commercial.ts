@@ -69,11 +69,28 @@ function span(first: string | null, last: string | null): string {
   return formatDate(first) + ' – ' + formatDate(last);
 }
 
+/** Empty state that explains the limits of the public FMCSA file instead of implying "no history". */
+export function noHistoryNote(subject: string): HTMLElement {
+  return el(
+    'div',
+    { class: 'nohist' },
+    el('p', { class: 'empty' }, 'No roadside inspection in the public FMCSA file records this ' + subject + '.'),
+    el(
+      'p',
+      { class: 'nohist__why' },
+      el('strong', {}, 'This does not mean the truck has no history. '),
+      'The public file keeps only about the last three years of inspections and, in our checks, leaves out inspections of carriers that are now inactive. ',
+      'A truck whose earlier operators closed, lost authority or were sold can show nothing here even when older inspections exist. ',
+      'Commercial history services that keep their own archives may show more.',
+    ),
+  );
+}
+
 /* ---------- Where it has been seen ---------- */
 
 export function renderWhereSeen(records: readonly CommercialInspection[]): HTMLElement {
   const latest = records[0];
-  if (!latest) return emptyNote('No roadside inspection has recorded this VIN in the current FMCSA files (about three years).');
+  if (!latest) return noHistoryNote('VIN');
 
   const uses = carrierUses(records);
   const bases = uses
