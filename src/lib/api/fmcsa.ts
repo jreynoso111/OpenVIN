@@ -165,9 +165,10 @@ export async function getCommercialInspections(
   vin: string,
 ): Promise<SectionResult<CommercialInspection[]>> {
   const fetchedAt = new Date().toISOString();
+  const requestedVin = vin.trim().toUpperCase();
   const unitResponse = await fetchJson(
     socrataUrl(UNIT_DATASET, {
-      where: 'insp_unit_vehicle_id_number=' + soqlString(vin.toUpperCase()),
+      where: 'insp_unit_vehicle_id_number=' + soqlString(requestedVin),
       select: UNIT_SELECT,
       limit: MAX_UNITS,
     }),
@@ -183,7 +184,10 @@ export async function getCommercialInspections(
 
   const unitMap = new Map<string, UnitRow>();
   for (const unit of rawUnits.map(parseUnit)) {
-    if (!unit) continue;
+    // Socrata applies the VIN predicate server-side, but keep the VIN-file
+    // boundary here too: roadside rows must never inherit another unit from
+    // a shared carrier, plate, or inspection.
+    if (!unit || unit.vin !== requestedVin) continue;
     const key = unit.inspectionId + ':' + (unit.unitId ?? unit.plate + '|' + unit.plateState);
     unitMap.set(key, unit);
   }
@@ -228,7 +232,7 @@ export async function getCommercialInspections(
 
   const companionsByInspection = new Map<string, UnitRow[]>();
   for (const unit of allUnits ?? []) {
-    if (unit.vin === vin.toUpperCase()) continue;
+    if (unit.vin === requestedVin) continue;
     const list = companionsByInspection.get(unit.inspectionId) ?? [];
     list.push(unit);
     companionsByInspection.set(unit.inspectionId, list);
@@ -240,7 +244,7 @@ export async function getCommercialInspections(
     const carrier = dot ? carrierMap?.get(dot) : undefined;
     const unitFindings = unit.unitId
       ? findingsByUnit.get(unit.inspectionId + ':' + unit.unitId) ?? []
-      : [];
+      : null;
     return {
       inspectionId: unit.inspectionId,
       date: inspection?.date ?? null,
@@ -273,9 +277,15 @@ export async function getCommercialInspections(
         .sort((a, b) => (a.position ?? 9) - (b.position ?? 9)),
       inspectionViolations: inspection?.violations ?? null,
       inspectionOutOfService: inspection?.outOfService ?? null,
-      vehicleViolations: inspection?.vehicleViolations ?? null,
-      vehicleOutOfService: inspection?.vehicleOutOfService ?? null,
-      vehicleFindings: unitFindings.sort((a, b) => {
+      // The inspection dataset's vehicle totals cover the entire inspection.
+      // Use the citation rows joined to this exact unit ID instead, or leave
+      // the unit result unknown when that join is unavailable.
+      vehicleViolations: violationRows && unitFindings ? unitFindings.length : null,
+      vehicleOutOfService:
+        violationRows && unitFindings
+          ? unitFindings.some((finding) => finding.outOfService) ? 1 : 0
+          : null,
+      vehicleFindings: (unitFindings ?? []).sort((a, b) => {
         if (a.outOfService !== b.outOfService) return a.outOfService ? -1 : 1;
         return (a.code ?? '').localeCompare(b.code ?? '');
       }),

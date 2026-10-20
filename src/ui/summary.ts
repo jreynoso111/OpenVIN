@@ -49,6 +49,13 @@ export function renderSummary(
   const order: Record<Flag['tone'], number> = { danger: 0, warn: 1, info: 2 };
   const flags = [...buildFlags(vin, records, links), ...extraFlags].sort((a, b) => order[a.tone] - order[b.tone]);
   const age = ageLabel(summary.lastDate);
+  const resultNotes = [
+    summary.outOfService > 0 ? formatNumber(summary.outOfService) + ' out of service' : null,
+    summary.vehicleViolations > 0 ? formatNumber(summary.vehicleViolations) + ' vehicle violations' : null,
+    summary.unknownVehicleResults > 0
+      ? formatNumber(summary.unknownVehicleResults) + ' unit results unavailable'
+      : null,
+  ].filter((note): note is string => note !== null);
 
   const stats: Stat[] = [
     {
@@ -59,11 +66,7 @@ export function renderSummary(
     {
       label: 'Inspections',
       value: formatNumber(summary.inspections),
-      sub: summary.outOfService > 0
-        ? formatNumber(summary.outOfService) + ' out of service'
-        : summary.vehicleViolations > 0
-          ? formatNumber(summary.vehicleViolations) + ' vehicle violations'
-          : 'no vehicle violations',
+      sub: resultNotes.join(' · ') || 'no vehicle violations',
       tone: summary.outOfService > 0 ? 'danger' : undefined,
     },
     {
@@ -112,7 +115,9 @@ export function renderSummary(
           { class: 'flags__clear' },
           plateLinks === null
             ? 'Checking plates for other vehicles…'
-            : 'Nothing stands out in the public roadside records.',
+            : summary.unknownVehicleResults > 0
+              ? 'Some unit-level inspection results could not be attributed to this VIN.'
+              : 'Nothing stands out in the public roadside records.',
         ),
   );
 }

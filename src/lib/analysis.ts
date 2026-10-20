@@ -21,6 +21,8 @@ export interface VinSummary {
   inspections: number;
   outOfService: number;
   vehicleViolations: number;
+  /** Inspections whose unit-specific citations could not be joined. */
+  unknownVehicleResults: number;
   carriers: number;
   plates: number;
   states: number;
@@ -77,6 +79,9 @@ export function summarize(
     inspections: records.length,
     outOfService: records.filter((r) => (r.vehicleOutOfService ?? 0) > 0).length,
     vehicleViolations: records.reduce((sum, r) => sum + (r.vehicleViolations ?? 0), 0),
+    unknownVehicleResults: records.filter(
+      (r) => r.vehicleViolations === null || r.vehicleOutOfService === null,
+    ).length,
     carriers: distinct(records.map((r) => r.carrierDotNumber)).length,
     plates: distinct(records.map((r) => (r.plate ? r.plate + '|' + (r.plateState ?? '') : null))).length,
     states: distinct(records.map((r) => r.state)).length,
@@ -246,13 +251,20 @@ export function buildTimeline(records: readonly CommercialInspection[]): Timelin
 
     const oos = (record.vehicleOutOfService ?? 0) > 0;
     const violations = record.vehicleViolations ?? 0;
+    const resultKnown = record.vehicleViolations !== null && record.vehicleOutOfService !== null;
     events.push({
       date: record.date,
       kind: oos ? 'oos' : 'inspection',
       title: oos ? 'Out of service' : 'Roadside inspection',
       detail:
         where +
-        (oos ? '' : violations > 0 ? ' · ' + plural(violations, 'vehicle violation') : ' · clean'),
+        (oos
+          ? ''
+          : !resultKnown
+            ? ' · unit result unavailable'
+            : violations > 0
+              ? ' · ' + plural(violations, 'vehicle violation')
+              : ' · clean'),
     });
   }
 

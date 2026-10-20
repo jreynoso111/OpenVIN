@@ -258,12 +258,15 @@ export function renderCarriers(records: readonly CommercialInspection[]): HTMLEl
 function findings(record: CommercialInspection): Node {
   const oos = (record.vehicleOutOfService ?? 0) > 0;
   const count = record.vehicleViolations ?? 0;
+  const resultKnown = record.vehicleViolations !== null && record.vehicleOutOfService !== null;
   const summary = el(
     'span',
     {},
     oos
       ? el('span', { class: 'tag', 'data-tone': 'danger' }, 'Out of service')
-      : el('span', { class: count > 0 ? '' : 'muted' }, count > 0 ? formatNumber(count) + ' vehicle violation' + (count === 1 ? '' : 's') : 'Clean'),
+      : !resultKnown
+        ? el('span', { class: 'muted' }, 'Unit result unavailable')
+        : el('span', { class: count > 0 ? '' : 'muted' }, count > 0 ? formatNumber(count) + ' vehicle violation' + (count === 1 ? '' : 's') : 'Clean'),
   );
   if (record.vehicleFindings.length === 0) return summary;
   const details = el('details', { class: 'findings' }, el('summary', {}, summary));
