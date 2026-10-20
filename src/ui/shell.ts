@@ -1,7 +1,7 @@
 /** Page shell: header with the search box, landing page, footer. */
 
 import { describeQuery, queryHref, type SearchQuery } from '../lib/query';
-import { clear, el } from './dom';
+import { clear, el, svgEl } from './dom';
 import { createSearchForm, type SearchForm } from './searchForm';
 
 const DISCLAIMER =
@@ -18,6 +18,31 @@ export const EXAMPLES: ReadonlyArray<{ query: SearchQuery; note: string }> = [
   { query: { kind: 'dot', value: '53467', state: null }, note: 'Carrier fleet' },
 ];
 
+/** Viewfinder corners around an upward chevron: the elevated vantage point. */
+function logoMark(): SVGElement {
+  return svgEl(
+    'svg',
+    { class: 'wordmark__glyph', viewBox: '0 0 64 64', 'aria-hidden': 'true', focusable: 'false' },
+    svgEl('rect', { width: '64', height: '64', rx: '12', fill: 'currentColor', class: 'wordmark__plate' }),
+    svgEl('path', {
+      d: 'M12 23V12H23M41 12H52V23M52 41V52H41M23 52H12V41',
+      fill: 'none',
+      stroke: '#E8EEF8',
+      'stroke-width': '3.5',
+      'stroke-linecap': 'square',
+    }),
+    svgEl('path', {
+      d: 'M19 38 32 24 45 38',
+      fill: 'none',
+      stroke: '#4D9BFF',
+      'stroke-width': '6',
+      'stroke-linecap': 'round',
+      'stroke-linejoin': 'round',
+    }),
+    svgEl('circle', { cx: '32', cy: '45.5', r: '3', fill: '#E8EEF8' }),
+  );
+}
+
 function wordmark(onHome: () => void): HTMLElement {
   return el(
     'a',
@@ -29,8 +54,13 @@ function wordmark(onHome: () => void): HTMLElement {
         onHome();
       },
     },
-    el('span', { class: 'wordmark__glyph', 'aria-hidden': 'true' }, 'HV'),
-    el('span', { class: 'wordmark__text' }, 'High View'),
+    logoMark(),
+    el(
+      'span',
+      { class: 'wordmark__text' },
+      el('span', { class: 'wordmark__name' }, 'High View'),
+      el('span', { class: 'wordmark__byline' }, 'A service for Truckline Capital LLC'),
+    ),
   );
 }
 

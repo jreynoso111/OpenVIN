@@ -5,11 +5,12 @@
     <stop offset="1" stop-color="#3573F0" stop-opacity="0"/>
   </radialGradient>
   <rect width="1200" height="630" fill="url(#glow)"/>
-  <g transform="translate(508 140) scale(2.9)">
-    <rect width="64" height="64" rx="18" fill="#3573F0"/>
-    <path d="M27 46 L37 18 L45 18 L35 46 Z" fill="#FFFFFF" opacity="0.4"/>
-    <path d="M17 33 L28 44 L47 17" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <g transform="translate(508 140) scale(3)">
+    <rect width="64" height="64" rx="12" fill="#1C2A44"/>
+  <path d="M12 23V12H23M41 12H52V23M52 41V52H41M23 52H12V41" fill="none" stroke="#E8EEF8" stroke-width="3.5" stroke-linecap="square"/>
+  <path d="M19 38 32 24 45 38" fill="none" stroke="#4D9BFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="32" cy="45.5" r="3" fill="#E8EEF8"/>
   </g>
   <text x="600" y="430" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Roboto, sans-serif" font-size="84" font-weight="700" letter-spacing="-2" fill="#F4F6F9">High View</text>
-  <text x="600" y="500" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Roboto, sans-serif" font-size="30" fill="#9AA3B0">Vehicle records organized by source</text>
+  <text x="600" y="500" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Roboto, sans-serif" font-size="28" fill="#9AA3B0">Truck investigation desk · A service for Truckline Capital LLC</text>
 </svg>
