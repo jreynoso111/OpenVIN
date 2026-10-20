@@ -213,7 +213,7 @@ export function renderReport(
     'commercial-records',
     '01 / COMMERCIAL FLEET',
     'Commercial roadside history',
-    'FMCSA joins the exact VIN to inspection, plate, carrier and vehicle-level violation records. Inspections may be reported by state or federal enforcement; locations are historical, not live tracking.',
+    'FMCSA joins the exact VIN to historical inspection and plate observations, then adds non-personal carrier fleet, authority and safety fields by USDOT. Open SAFER for the carrier identity; High View does not import contact or person data. Inspection sites are historical, not live tracking.',
     el('div', { class: 'report-grid' }, commercial.root),
   );
   const federalGroup = recordGroup(

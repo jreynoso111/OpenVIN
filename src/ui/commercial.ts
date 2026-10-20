@@ -3,6 +3,22 @@
 import type { CommercialInspection, SectionResult } from '../lib/types';
 import { el, formatDate, formatNumber } from './dom';
 
+function saferSnapshotUrl(dot: string | null): string | null {
+  if (!dot || !/^\d+$/.test(dot)) return null;
+  const params = new URLSearchParams({
+    query_param: 'USDOT',
+    query_string: dot,
+    query_type: 'queryCarrierSnapshot',
+    searchtype: 'ANY',
+  });
+  return 'https://safer.fmcsa.dot.gov/query.asp?' + params.toString();
+}
+
+function statusLabel(code: string | null): string | null {
+  if (!code) return null;
+  return code === 'A' ? 'Active (A)' : code;
+}
+
 function metric(label: string, value: string, detail: string): HTMLElement {
   return el(
     'div',
@@ -24,10 +40,158 @@ function carrierCell(record: CommercialInspection): HTMLElement {
   );
   if (record.carrierStatusCode) {
     parts.push(
-      el('span', { class: 'fmcsa-carrier__status' }, 'Current census code ' + record.carrierStatusCode),
+      el('span', { class: 'fmcsa-carrier__status' }, 'FMCSA census: ' + statusLabel(record.carrierStatusCode)),
+    );
+  }
+  const snapshotUrl = saferSnapshotUrl(record.carrierDotNumber);
+  if (snapshotUrl) {
+    parts.push(
+      el(
+        'a',
+        { class: 'fmcsa-link', href: snapshotUrl, target: '_blank', rel: 'noopener noreferrer' },
+        'SAFER snapshot',
+      ),
     );
   }
   return el('div', { class: 'fmcsa-carrier' }, ...parts);
+}
+
+function carrierFact(label: string, value: string): HTMLElement {
+  return el('div', {}, el('dt', {}, label), el('dd', {}, value));
+}
+
+function carrierProfiles(records: readonly CommercialInspection[]): HTMLElement | null {
+  const unique = new Map<string, CommercialInspection>();
+  for (const record of records) {
+    if (record.carrierDotNumber && !unique.has(record.carrierDotNumber)) {
+      unique.set(record.carrierDotNumber, record);
+    }
+  }
+  if (unique.size === 0) return null;
+
+  const cards = [...unique.values()].map((record) => {
+    const dot = record.carrierDotNumber;
+    const authority = [record.carrierDocketPrefix, record.carrierDocketNumber]
+      .filter((part): part is string => Boolean(part))
+      .join(' ');
+    const crashRate =
+      record.carrierRecordableCrashRate === null
+        ? null
+        : record.carrierRecordableCrashRate.toLocaleString('en-US', {
+            minimumFractionDigits: 3,
+            maximumFractionDigits: 3,
+          });
+    const facts: Array<[string, string | null]> = [
+      ['Census status', statusLabel(record.carrierStatusCode)],
+      ['Operation class', record.carrierOperationClass],
+      ['Reported truck units', record.carrierTruckUnits === null ? null : formatNumber(record.carrierTruckUnits)],
+      ['Reported power units', record.carrierPowerUnits === null ? null : formatNumber(record.carrierPowerUnits)],
+      ['Authority docket', authority || null],
+      ['Authority status', statusLabel(record.carrierAuthorityStatusCode)],
+      ['FMCSA safety rating', record.carrierSafetyRating],
+      ['Rating date', record.carrierSafetyRatingDate ? formatDate(record.carrierSafetyRatingDate) : null],
+      ['MCS-150 update', record.carrierMcs150Date ? formatDate(record.carrierMcs150Date) : null],
+      ['Reported crash-rate field', crashRate],
+    ];
+    const snapshotUrl = saferSnapshotUrl(dot);
+    return el(
+      'article',
+      { class: 'fmcsa-carrier-card' },
+      el(
+        'div',
+        { class: 'fmcsa-carrier-card__header' },
+        el('h4', {}, 'USDOT ' + dot),
+        el('span', { class: 'fmcsa-table__secondary' }, 'Carrier recorded on VIN-matched inspection(s)'),
+      ),
+      el(
+        'dl',
+        { class: 'fmcsa-carrier-facts' },
+        ...facts
+          .filter((fact): fact is [string, string] => fact[1] !== null)
+          .map(([label, value]) => carrierFact(label, value)),
+      ),
+      snapshotUrl
+        ? el(
+            'a',
+            { class: 'fmcsa-link', href: snapshotUrl, target: '_blank', rel: 'noopener noreferrer' },
+            'Open official SAFER Company Snapshot',
+          )
+        : null,
+    );
+  });
+
+  return el(
+    'section',
+    { class: 'fmcsa-carrier-section' },
+    el('h3', {}, 'Carrier cross-reference'),
+    el(
+      'p',
+      { class: 'fmcsa-section-note' },
+      'FMCSA census fields describe the carrier, not this individual truck. Open the official Snapshot to review its business identity; High View does not copy names, contact details, addresses, or person records into this report.',
+    ),
+    el('div', { class: 'fmcsa-carrier-grid' }, ...cards),
+    el(
+      'p',
+      { class: 'fmcsa-section-note' },
+      'A carrier seen on a past inspection may not own or currently operate the vehicle. Fleet counts and crash-rate fields are carrier-level census data, not a live fleet inventory or a truck-specific score.',
+    ),
+  );
+}
+
+function plateObservations(records: readonly CommercialInspection[]): HTMLElement | null {
+  const observations = new Map<
+    string,
+    { plate: string; state: string | null; count: number; latest: CommercialInspection | null }
+  >();
+  for (const record of records) {
+    if (!record.plate && !record.plateState) continue;
+    const key = (record.plate ?? '') + '|' + (record.plateState ?? '');
+    const item = observations.get(key) ?? {
+      plate: record.plate ?? 'Plate not returned',
+      state: record.plateState,
+      count: 0,
+      latest: null,
+    };
+    item.count += 1;
+    if (!item.latest || (record.date && (!item.latest.date || record.date > item.latest.date))) {
+      item.latest = record;
+    }
+    observations.set(key, item);
+  }
+  if (observations.size === 0) return null;
+
+  const cards = [...observations.values()]
+    .sort((a, b) => (b.latest?.date ?? '').localeCompare(a.latest?.date ?? ''))
+    .map((item) =>
+      el(
+        'article',
+        { class: 'fmcsa-plate-card' },
+        el('strong', {}, item.plate),
+        el('span', { class: 'fmcsa-plate-card__state' }, item.state ?? 'Issuing state not reported'),
+        el(
+          'span',
+          { class: 'fmcsa-table__secondary' },
+          'Last observed ' + (item.latest?.date ? formatDate(item.latest.date) : 'date unavailable'),
+        ),
+        el(
+          'span',
+          { class: 'fmcsa-table__secondary' },
+          formatNumber(item.count) + ' matched inspection' + (item.count === 1 ? '' : 's'),
+        ),
+      ),
+    );
+
+  return el(
+    'section',
+    { class: 'fmcsa-plate-section' },
+    el('h3', {}, 'Plate observations'),
+    el(
+      'p',
+      { class: 'fmcsa-section-note' },
+      'These plate and state pairs were recorded during historical roadside inspections. They are search leads, not confirmation of current registration or ownership.',
+    ),
+    el('div', { class: 'fmcsa-plate-grid' }, ...cards),
+  );
 }
 
 function vehicleFindingsCell(record: CommercialInspection): HTMLElement {
@@ -217,6 +381,8 @@ export function renderCommercialInspections(
     'div',
     { class: 'fmcsa-history' },
     metrics,
+    plateObservations(records),
+    carrierProfiles(records),
     result.status === 'unavailable'
       ? el('p', { class: 'fmcsa-partial-warning' }, result.note ?? 'Some FMCSA details are unavailable.')
       : null,
@@ -228,14 +394,16 @@ export function renderCommercialInspections(
     el(
       'p',
       { class: 'fmcsa-footnote' },
-      'Inspection sites are historical observations, not a current GPS location. FMCSA data may lag reporting and older inspections can fall outside the published history window. Data files: ',
+      'Inspection sites and plates are historical observations, not live tracking or proof of current registration. FMCSA data may lag reporting and older inspections can fall outside the published history window. Company Census fleet and safety fields describe the carrier. Data files: ',
       el('a', { href: 'https://data.transportation.gov/d/wt8s-2hbx', target: '_blank', rel: 'noopener noreferrer' }, 'Inspections per Unit'),
       ' · ',
       el('a', { href: 'https://data.transportation.gov/d/fx4q-ay7w', target: '_blank', rel: 'noopener noreferrer' }, 'Vehicle Inspection File'),
       ' · ',
       el('a', { href: 'https://data.transportation.gov/d/876r-jsdb', target: '_blank', rel: 'noopener noreferrer' }, 'Vehicle Inspections and Violations'),
       ' · ',
-      el('a', { href: 'https://data.transportation.gov/d/az4n-8mr2', target: '_blank', rel: 'noopener noreferrer' }, 'Company Census status'),
+      el('a', { href: 'https://data.transportation.gov/d/az4n-8mr2', target: '_blank', rel: 'noopener noreferrer' }, 'Company Census'),
+      ' · ',
+      el('a', { href: 'https://safer.fmcsa.dot.gov/CompanySnapShot.aspx', target: '_blank', rel: 'noopener noreferrer' }, 'SAFER Company Snapshot'),
       '.',
     ),
   );

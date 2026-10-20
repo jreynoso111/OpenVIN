@@ -1,6 +1,7 @@
 /**
  * Free FMCSA roadside-inspection history matched to an exact VIN.
- * Queries only public vehicle, inspection-count, violation and carrier fields.
+ * Queries public vehicle, inspection-count, violation and non-personal carrier fields.
+ * Excludes business/person names, contacts, addresses, officers and driver data.
  * The datasets are public and require no API key.
  */
 
@@ -36,6 +37,13 @@ function textField(value: unknown): string | null {
   if (typeof value === 'string') return stringOrNull(value);
   if (typeof value === 'number' && Number.isFinite(value)) return String(value);
   return null;
+}
+
+function numberField(value: unknown): number | null {
+  const raw = textField(value);
+  if (!raw) return null;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function socrataUrl(
@@ -200,7 +208,7 @@ export async function getCommercialInspections(
     const censusUrl = socrataUrl(
       CENSUS_DATASET,
       'dot_number in (' + carrierDots.join(',') + ')',
-      'dot_number,status_code',
+      'dot_number,status_code,classdef,truck_units,power_units,recordable_crash_rate,mcs150_date,docket1prefix,docket1,docket1_status_code,safety_rating,safety_rating_date',
       200,
     );
     const censusResponse = await fetchJson(censusUrl);
@@ -209,7 +217,22 @@ export async function getCommercialInspections(
     else if (!carrierRows) carrierFailure = 'FMCSA returned an unexpected carrier census response.';
   }
 
-  const carrierMap = new Map<string, { status: string | null }>();
+  const carrierMap = new Map<
+    string,
+    {
+      status: string | null;
+      operationClass: string | null;
+      truckUnits: number | null;
+      powerUnits: number | null;
+      recordableCrashRate: number | null;
+      mcs150Date: string | null;
+      docketPrefix: string | null;
+      docketNumber: string | null;
+      authorityStatusCode: string | null;
+      safetyRating: string | null;
+      safetyRatingDate: string | null;
+    }
+  >();
   for (const value of carrierRows ?? []) {
     const row = asRecord(value);
     if (!row) continue;
@@ -217,6 +240,16 @@ export async function getCommercialInspections(
     if (!dot) continue;
     carrierMap.set(dot, {
       status: textField(row['status_code']),
+      operationClass: textField(row['classdef']),
+      truckUnits: intOrNull(row['truck_units']),
+      powerUnits: intOrNull(row['power_units']),
+      recordableCrashRate: numberField(row['recordable_crash_rate']),
+      mcs150Date: isoDate(row['mcs150_date']),
+      docketPrefix: textField(row['docket1prefix']),
+      docketNumber: textField(row['docket1']),
+      authorityStatusCode: textField(row['docket1_status_code']),
+      safetyRating: textField(row['safety_rating']),
+      safetyRatingDate: isoDate(row['safety_rating_date']),
     });
   }
 
@@ -237,6 +270,16 @@ export async function getCommercialInspections(
       level: inspection ? textField(inspection['insp_level_id']) : null,
       carrierDotNumber: dot,
       carrierStatusCode: carrier?.status ?? null,
+      carrierOperationClass: carrier?.operationClass ?? null,
+      carrierTruckUnits: carrier?.truckUnits ?? null,
+      carrierPowerUnits: carrier?.powerUnits ?? null,
+      carrierRecordableCrashRate: carrier?.recordableCrashRate ?? null,
+      carrierMcs150Date: carrier?.mcs150Date ?? null,
+      carrierDocketPrefix: carrier?.docketPrefix ?? null,
+      carrierDocketNumber: carrier?.docketNumber ?? null,
+      carrierAuthorityStatusCode: carrier?.authorityStatusCode ?? null,
+      carrierSafetyRating: carrier?.safetyRating ?? null,
+      carrierSafetyRatingDate: carrier?.safetyRatingDate ?? null,
       plate: unit.plate,
       plateState: unit.plateState,
       vehicleMake: unit.make,
@@ -271,7 +314,7 @@ export async function getCommercialInspections(
   } else {
     notes.push('Violation descriptions are included only when FMCSA links them to this inspected vehicle unit.');
   }
-  if (carrierFailure) notes.push('Carrier status enrichment was unavailable; USDOT numbers remain: ' + carrierFailure);
+  if (carrierFailure) notes.push('Carrier census enrichment was unavailable; USDOT numbers remain: ' + carrierFailure);
 
   const partial =
     !inspectionRows ||

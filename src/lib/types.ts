@@ -117,6 +117,17 @@ export interface CommercialInspection {
   level: string | null;
   carrierDotNumber: string | null;
   carrierStatusCode: string | null;
+  /** Non-personal fields from the current FMCSA Company Census for this DOT. */
+  carrierOperationClass: string | null;
+  carrierTruckUnits: number | null;
+  carrierPowerUnits: number | null;
+  carrierRecordableCrashRate: number | null;
+  carrierMcs150Date: string | null;
+  carrierDocketPrefix: string | null;
+  carrierDocketNumber: string | null;
+  carrierAuthorityStatusCode: string | null;
+  carrierSafetyRating: string | null;
+  carrierSafetyRatingDate: string | null;
   plate: string | null;
   plateState: string | null;
   vehicleMake: string | null;
