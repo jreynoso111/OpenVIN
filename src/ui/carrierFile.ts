@@ -8,10 +8,11 @@ import { getCarrierFleet, getCarriersById, searchCarriersByName } from '../lib/a
 import type { CarrierFleet, CarrierProfile, FleetVehicle, SectionResult } from '../lib/types';
 import { ageLabel, el, formatDate, formatNumber } from './dom';
 import { caseHeader, caseLayout, limitsNote } from './case';
-import { carrierBase, carrierFacts, carrierLine, carrierName, docketLabel, operationText } from './carrier';
+import { carrierBase, carrierFacts, crashLine, insuranceLine, carrierLine, carrierName, docketLabel, operationText } from './carrier';
 import { createLedger, createPanel, emptyNote } from './panel';
 import { externalLink, platePivot, saferSnapshotUrl, vinPivot } from './pivot';
 import { frequencyList, lastSeen, placeText } from './sightings';
+import { renderStateMap } from './stateMap';
 
 function failure<T>(name: string): SectionResult<T> {
   return { status: 'unavailable', source: { name }, note: 'The lookup failed.' };
@@ -179,7 +180,7 @@ export function renderCarrierFile(
             'div',
             { class: 'where' },
             latest ? el('div', { class: 'where__lead' }, lastSeen(latest, 'Most recent stop of any unit')) : null,
-            el('div', { class: 'where__grid' }, frequencyList('States', data.states.map((s) => ({ label: s.state, count: s.count, lastDate: s.lastDate })), 8)),
+            el('div', { class: 'where__grid' }, renderStateMap(data.states, 'inspection') ?? frequencyList('States', data.states.map((s) => ({ label: s.state, count: s.count, lastDate: s.lastDate })), 8)),
           ),
         );
         fleet.fill(fleetTable(data));
@@ -222,7 +223,9 @@ export function renderCarrierFile(
             .join(' · '),
         ),
       );
-      profile.fill(carrierFacts(carrier) ?? emptyNote('No census details.'));
+      profile.fill(
+        el('div', {}, carrierFacts(carrier) ?? emptyNote('No census details.'), insuranceLine(carrier), crashLine(carrier.dotNumber)),
+      );
       const snapshot = saferSnapshotUrl(carrier.dotNumber);
       if (snapshot) {
         actions.replaceChildren(

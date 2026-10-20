@@ -4,6 +4,7 @@ import './styles/tokens.css';
 import './styles/base.css';
 import './styles/desk.css';
 import './styles/viz.css';
+import './styles/insight.css';
 
 import { startReport } from './lib/report';
 import { describeQuery, queryFromParams, queryHref, type SearchQuery } from './lib/query';

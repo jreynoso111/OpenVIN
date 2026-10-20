@@ -1,5 +1,7 @@
 /** Carrier (USDOT) profile block, shared by VIN, plate and carrier files. */
 
+import { CRASH_MONTHS, getCrashSummary } from '../lib/api/fmcsaCrashes';
+import { getInsurance } from '../lib/api/fmcsaInsurance';
 import type { CarrierProfile } from '../lib/types';
 import { el, formatDate, formatNumber } from './dom';
 import { factList } from './panel';
@@ -112,6 +114,82 @@ export function carrierFacts(carrier: CarrierProfile): HTMLElement | null {
   ]);
 }
 
+/** Two-year crash totals for a carrier, filled in when the Crash file answers. */
+export function crashLine(dotNumber: string): HTMLElement {
+  const line = el('p', { class: 'crashes crashes--pending' }, 'Checking crash history…');
+  void getCrashSummary(dotNumber)
+    .then((summary) => {
+      line.classList.remove('crashes--pending');
+      if (!summary) {
+        line.remove();
+        return;
+      }
+      if (summary.crashes === 0) {
+        line.textContent = 'No reported crashes in the last ' + CRASH_MONTHS / 12 + ' years (FMCSA Crash file).';
+        return;
+      }
+      const plus = summary.capped ? '+' : '';
+      line.dataset['tone'] = summary.fatalities > 0 ? 'danger' : 'warn';
+      line.replaceChildren(
+        el('strong', {}, formatNumber(summary.crashes) + plus + ' reported crash' + (summary.crashes === 1 ? '' : 'es')),
+        ' in the last ' + CRASH_MONTHS / 12 + ' years · ' +
+          formatNumber(summary.fatalities) + ' fatal · ' +
+          formatNumber(summary.injuries) + ' injured · ' +
+          formatNumber(summary.towAways) + ' towed away. ',
+        el('span', { class: 'muted' }, 'Fleet-wide, not specific to one truck.'),
+      );
+    })
+    .catch(() => line.remove());
+  return line;
+}
+
+function money(usd: number): string {
+  return '$' + usd.toLocaleString('en-US');
+}
+
+/** Insurance filings on record, filled in when the FMCSA insurance file answers. */
+export function insuranceLine(carrier: CarrierProfile): HTMLElement {
+  const block = el('div', { class: 'insurance insurance--pending' }, 'Checking insurance filings…');
+  void getInsurance(carrier.dotNumber)
+    .then((summary) => {
+      block.classList.remove('insurance--pending');
+      if (!summary) {
+        block.remove();
+        return;
+      }
+      if (summary.policies.length === 0) {
+        const forHire = carrier.docketPrefix === 'MC' && carrier.status === 'A';
+        block.textContent = forHire
+          ? 'No active insurance filing is on record for this for-hire carrier (FMCSA).'
+          : 'No insurance filing on record. Private and some exempt carriers are not required to file.';
+        if (forHire) block.dataset['tone'] = 'warn';
+        return;
+      }
+      block.replaceChildren(
+        el('h4', { class: 'insurance__title' }, 'Insurance on file'),
+        el(
+          'ul',
+          { class: 'insurance__list' },
+          ...summary.policies.slice(0, 5).map((policy) =>
+            el(
+              'li',
+              {},
+              el('span', { class: 'insurance__kind' }, policy.kind),
+              el('span', { class: 'insurance__limit' }, policy.limitUsd ? money(policy.limitUsd) : '—'),
+              el(
+                'span',
+                { class: 'insurance__who' },
+                [policy.insurer, policy.effectiveDate ? 'since ' + formatDate(policy.effectiveDate) : null].filter(Boolean).join(' · '),
+              ),
+            ),
+          ),
+        ),
+      );
+    })
+    .catch(() => block.remove());
+  return block;
+}
+
 /** Carrier card used inside VIN and plate files. */
 export function carrierCard(
   carrier: CarrierProfile,
@@ -124,6 +202,8 @@ export function carrierCard(
     carrierLine(carrier),
     evidence ? el('p', { class: 'carrier-card__evidence' }, evidence) : null,
     carrierFacts(carrier),
+    insuranceLine(carrier),
+    crashLine(carrier.dotNumber),
     el(
       'p',
       { class: 'carrier-card__actions' },

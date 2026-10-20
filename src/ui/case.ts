@@ -10,6 +10,37 @@ export interface CaseHeader {
   setIdentifiers(content: Node | null): void;
 }
 
+/** Copy-link and save-as-PDF (the browser's print dialog) for the open file. */
+function caseActions(): HTMLElement {
+  const copy = el(
+    'button',
+    {
+      class: 'copy',
+      type: 'button',
+      title: 'Copy a link to this file',
+      onclick: (event: Event) => {
+        const button = event.currentTarget as HTMLButtonElement;
+        void navigator.clipboard?.writeText(window.location.href).then(() => {
+          button.textContent = 'Link copied';
+          setTimeout(() => (button.textContent = 'Copy link'), 1400);
+        });
+      },
+    },
+    'Copy link',
+  );
+  const print = el(
+    'button',
+    {
+      class: 'copy',
+      type: 'button',
+      title: 'Open the print dialog and choose “Save as PDF”',
+      onclick: () => window.print(),
+    },
+    'Save PDF',
+  );
+  return el('span', { class: 'case__actions' }, copy, print);
+}
+
 export function caseHeader(kind: string, identifier: string, title = 'Searching…'): CaseHeader {
   const heading = el('h1', { class: 'case__title', tabindex: '-1' }, title);
   const body = el('div', { class: 'case__body' });
@@ -43,6 +74,7 @@ export function caseHeader(kind: string, identifier: string, title = 'Searching�
     body,
     ids,
   );
+  root.querySelector('.case__kind')?.append(caseActions());
   return {
     root,
     setTitle(text: string): void {

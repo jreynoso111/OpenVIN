@@ -4,6 +4,7 @@
  * with a rail listing every source checked and the official follow-ups.
  */
 
+import { linkedVins } from '../lib/analysis';
 import type { PlateLink } from '../lib/report';
 import type {
   CommercialInspection,
@@ -26,6 +27,8 @@ import { findLinks } from './links';
 import { renderOdometer } from './odometer';
 import { createLedger, createPanel } from './panel';
 import { dotPivot, platePivot } from './pivot';
+import { renderSummary } from './summary';
+import { renderTimeline } from './timeline';
 
 /** Mirror of the data layer's startReport() return shape (src/lib/report). */
 export interface ReportHandles {
@@ -76,8 +79,10 @@ export function renderReport(
   vin: string,
 ): void {
   const header = caseHeader('VIN file', vin);
+  const summary = createPanel({ id: 'summary', title: 'Summary', hint: 'What the public roadside records show at a glance.', lines: 3 });
   const where = createPanel({ id: 'where', title: 'Where it has been seen', hint: 'Historical roadside stops — not live tracking.', lines: 4 });
   const links = createPanel({ id: 'connections', title: 'Connections', hint: 'Plates, carriers and units recorded with this VIN. Every identifier opens its own file.', lines: 4 });
+  const timeline = createPanel({ id: 'timeline', title: 'Timeline', hint: 'Inspections, plate changes and carrier changes in order.', lines: 4 });
   const log = createPanel({ id: 'roadside', title: 'Roadside log', lines: 5 });
   const carriers = createPanel({ id: 'carriers', title: 'Carriers', lines: 3 });
   const odometer = createPanel({ id: 'ny', title: 'New York inspections', lines: 3 });
@@ -92,7 +97,7 @@ export function renderReport(
   main.replaceChildren(
     caseLayout(
       header.root,
-      [where.root, links.root, log.root, carriers.root, odometer.root],
+      [summary.root, where.root, links.root, timeline.root, log.root, carriers.root, odometer.root],
       [
         ledger.root,
         checks,
@@ -133,12 +138,16 @@ export function renderReport(
         where.root.append(el('p', { class: 'warn' }, result.note));
       }
       if (records.length === 0) {
+        summary.drop();
+        timeline.drop();
         links.drop();
         log.drop();
         carriers.drop();
         ledger.set('plates', 'miss', null, 'No plates to check');
         return;
       }
+      summary.fill(renderSummary(vin, records, null));
+      timeline.fill(renderTimeline(records));
       log.fill(renderRoadsideLog(records));
       const carrierBlock = renderCarriers(records);
       if (carrierBlock) carriers.fill(carrierBlock);
@@ -151,7 +160,8 @@ export function renderReport(
       const records = result.data ?? [];
       if (records.length === 0) return;
       links.fill(renderConnections(records, plateLinks));
-      const shared = plateLinks.reduce((n, link) => n + new Set(link.sightings.map((s) => s.vin)).size, 0);
+      summary.fill(renderSummary(vin, records, plateLinks));
+      const shared = linkedVins(vin, plateLinks).length;
       ledger.set('plates', plateLinks.length > 0 ? 'hit' : 'miss', null, shared > 0 ? formatNumber(shared) + ' other VIN' + (shared === 1 ? '' : 's') : 'No other VINs');
     }),
   );

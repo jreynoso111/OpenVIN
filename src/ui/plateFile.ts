@@ -11,6 +11,7 @@ import { carrierCard, carrierName } from './carrier';
 import { createLedger, createPanel, emptyNote } from './panel';
 import { dotPivot, vinPivot } from './pivot';
 import { countPlaces, frequencyList, lastSeen, placeText, sightingTable } from './sightings';
+import { renderStateMap, stateCounts } from './stateMap';
 
 interface VehicleUse {
   vin: string;
@@ -131,7 +132,7 @@ export function renderPlateFile(
           el(
             'div',
             { class: 'where__grid' },
-            frequencyList('States', countPlaces(sightings, 'state')),
+            renderStateMap(stateCounts(sightings)) ?? frequencyList('States', countPlaces(sightings, 'state')),
             frequencyList('Inspection sites', countPlaces(sightings, 'site'), 5),
           ),
         ),

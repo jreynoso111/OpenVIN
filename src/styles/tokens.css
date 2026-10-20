@@ -46,6 +46,8 @@
   --color-link: oklch(46% 0.14 252);
 
   --color-accent: var(--color-signal-strong);
+  --color-warn: oklch(60% 0.15 70);
+  --tint-warn: oklch(75% 0.15 80 / 0.16);
   --color-ok: oklch(52% 0.11 155);
   --color-danger: oklch(52% 0.18 28);
   --tint-danger: oklch(52% 0.18 28 / 0.1);

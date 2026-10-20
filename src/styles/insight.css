@@ -1,0 +1,529 @@
+/**
+ * Summary, review flags, timeline, state map, crash line and print layout.
+ * Everything uses tokens.css; the only fixed colors are the map shades,
+ * which are mixes of the signal color.
+ */
+
+/* ---------- Header actions ---------- */
+
+.case__actions {
+  display: inline-flex;
+  gap: 0.35rem;
+  margin-left: auto;
+}
+
+.case__actions .copy {
+  border: var(--rule);
+  border-radius: var(--radius);
+  background: var(--color-card);
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+  padding: 0.25rem 0.6rem;
+}
+
+.case__actions .copy:hover {
+  border-color: var(--color-hairline-strong);
+  background: var(--color-inset);
+}
+
+/* ---------- Summary ---------- */
+
+.summary {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+  border: var(--rule);
+  border-radius: var(--radius);
+  background: var(--color-inset);
+}
+
+.stat {
+  display: grid;
+  align-content: start;
+  gap: 0.15rem;
+  padding: 0.7rem 0.85rem;
+  border-left: var(--rule);
+  border-top: var(--rule);
+  margin: -1px 0 0 -1px;
+}
+
+.stat dt {
+  font-size: var(--text-label);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.stat dd {
+  margin: 0;
+}
+
+.stat__value {
+  font-family: var(--font-mono);
+  font-size: 1.35rem;
+  font-weight: 650;
+  color: var(--color-text);
+  line-height: 1.2;
+}
+
+.stat__sub {
+  font-size: var(--text-micro);
+  color: var(--color-text-secondary);
+}
+
+.stat[data-tone='danger'] .stat__value {
+  color: var(--color-danger);
+}
+
+.stat[data-tone='warn'] .stat__value {
+  color: var(--color-warn);
+}
+
+.flags__title {
+  margin: 0 0 0.5rem;
+  font-size: var(--text-label);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.flags__list {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.flag {
+  display: grid;
+  grid-template-columns: 4.5rem 1fr;
+  gap: 0.75rem;
+  align-items: start;
+  padding: 0.6rem 0.75rem;
+  border: var(--rule);
+  border-left-width: 3px;
+  border-radius: var(--radius);
+  background: var(--color-card);
+}
+
+.flag[data-tone='danger'] {
+  border-left-color: var(--color-danger);
+  background: var(--tint-danger);
+}
+
+.flag[data-tone='warn'] {
+  border-left-color: var(--color-warn);
+  background: var(--tint-warn);
+}
+
+.flag[data-tone='info'] {
+  border-left-color: var(--color-hairline-strong);
+}
+
+.flag__tone {
+  font-size: var(--text-label);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  padding-top: 0.1rem;
+}
+
+.flag[data-tone='danger'] .flag__tone {
+  color: var(--color-danger);
+}
+
+.flag[data-tone='warn'] .flag__tone {
+  color: var(--color-warn);
+}
+
+.flag__text {
+  display: grid;
+  gap: 0.15rem;
+  font-size: var(--text-small);
+}
+
+.flag__text span {
+  color: var(--color-text-secondary);
+}
+
+.flags__foot,
+.flags__clear {
+  margin: 0;
+  font-size: var(--text-micro);
+  color: var(--color-text-secondary);
+}
+
+.flags__foot {
+  margin-top: 0.5rem;
+}
+
+/* ---------- Timeline ---------- */
+
+.tl {
+  --tl-date: 6.2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tl__year {
+  margin: 0.8rem 0 0.2rem;
+  padding-left: var(--tl-date);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--color-text-tertiary);
+}
+
+.tl__year:first-child {
+  margin-top: 0;
+}
+
+.tl__item {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--tl-date) 1fr;
+  gap: 0 1rem;
+  padding: 0.35rem 0 0.35rem 0;
+}
+
+.tl__item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--tl-date) - 0.5rem);
+  width: 1px;
+  background: var(--color-hairline-strong);
+}
+
+.tl__date {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  color: var(--color-text-secondary);
+  text-align: right;
+  padding-right: 1rem;
+  padding-top: 0.15rem;
+}
+
+.tl__dot {
+  position: absolute;
+  top: 0.62rem;
+  left: calc(var(--tl-date) - 0.5rem - 4px);
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--color-card);
+  border: 2px solid var(--color-hairline-strong);
+}
+
+.tl__item[data-kind='inspection'] .tl__dot {
+  border-color: var(--color-signal);
+}
+
+.tl__item[data-kind='carrier'] .tl__dot {
+  background: var(--color-signal-strong);
+  border-color: var(--color-signal-strong);
+}
+
+.tl__item[data-kind='plate'] .tl__dot {
+  background: var(--color-ink-bar);
+  border-color: var(--color-ink-bar);
+}
+
+.tl__item[data-kind='oos'] .tl__dot {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.tl__body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.15rem 0.6rem;
+  padding-left: 0.5rem;
+  font-size: var(--text-small);
+}
+
+.tl__kind {
+  font-size: var(--text-label);
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.tl__item[data-kind='oos'] .tl__kind {
+  color: var(--color-danger);
+}
+
+.tl__detail {
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 34rem) {
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .flag {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+}
+
+@media (max-width: 34rem) {
+  .tl {
+    --tl-date: 4.6rem;
+  }
+
+  .tl__date {
+    padding-right: 0.7rem;
+  }
+}
+
+/* ---------- State tile map ---------- */
+
+.usmap {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.usmap__grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 3px;
+  max-width: 34rem;
+}
+
+.usmap__gap {
+  aspect-ratio: 1;
+}
+
+.usmap__tile {
+  --shade: transparent;
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border: 1px solid var(--color-hairline);
+  border-radius: 2px;
+  background: color-mix(in oklab, var(--color-signal) var(--shade), var(--color-card));
+  font-size: 0.625rem;
+  line-height: 1;
+  color: var(--color-text-tertiary);
+}
+
+.usmap__tile[data-level='1'] { --shade: 16%; color: var(--color-text-secondary); }
+.usmap__tile[data-level='2'] { --shade: 34%; color: var(--color-text); }
+.usmap__tile[data-level='3'] { --shade: 58%; color: var(--color-text); }
+.usmap__tile[data-level='4'] { --shade: 82%; color: oklch(98% 0 0); border-color: var(--color-signal-strong); }
+
+.usmap__code {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.usmap__n {
+  position: absolute;
+  right: 2px;
+  bottom: 1px;
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+}
+
+.usmap__outside {
+  margin-top: 0.5rem;
+  font-size: var(--text-micro);
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 34rem) {
+  .usmap__code {
+    font-size: 0.5625rem;
+  }
+
+  .usmap__n {
+    display: none;
+  }
+}
+
+/* ---------- Carrier crash line ---------- */
+
+.crashes {
+  margin: 0.7rem 0 0;
+  padding: 0.5rem 0.7rem;
+  border: var(--rule);
+  border-left-width: 3px;
+  border-radius: var(--radius);
+  background: var(--color-inset);
+  font-size: var(--text-small);
+  color: var(--color-text-secondary);
+}
+
+.crashes--pending {
+  color: var(--color-text-tertiary);
+}
+
+.crashes[data-tone='warn'] {
+  border-left-color: var(--color-warn);
+}
+
+.crashes[data-tone='danger'] {
+  border-left-color: var(--color-danger);
+}
+
+.crashes strong {
+  color: var(--color-text);
+}
+
+/* ---------- Carrier insurance ---------- */
+
+.insurance {
+  margin: 0.7rem 0 0;
+  padding: 0.5rem 0.7rem;
+  border: var(--rule);
+  border-radius: var(--radius);
+  background: var(--color-inset);
+  font-size: var(--text-small);
+  color: var(--color-text-secondary);
+}
+
+.insurance--pending {
+  color: var(--color-text-tertiary);
+}
+
+.insurance[data-tone='warn'] {
+  border-left: 3px solid var(--color-warn);
+}
+
+.insurance__title {
+  margin: 0 0 0.3rem;
+  font-size: var(--text-label);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.insurance__list {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.insurance__list li {
+  display: grid;
+  grid-template-columns: 8.5rem 6rem 1fr;
+  gap: 0.2rem 0.6rem;
+  align-items: baseline;
+}
+
+.insurance__kind {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.insurance__limit {
+  font-family: var(--font-mono);
+}
+
+.insurance__who {
+  font-size: var(--text-micro);
+}
+
+@media (max-width: 34rem) {
+  .insurance__list li {
+    grid-template-columns: 1fr auto;
+  }
+
+  .insurance__who {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ---------- Print / Save as PDF ---------- */
+
+@media print {
+  :root {
+    --text-body: 0.8125rem;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .topbar,
+  .case__actions,
+  .copy,
+  .desk__rail .rail-block:not(:first-child),
+  .filter,
+  #top-search {
+    display: none !important;
+  }
+
+  .desk__grid {
+    display: block;
+  }
+
+  .desk__rail {
+    margin-top: 1rem;
+  }
+
+  .panel,
+  .carrier-card,
+  .flag,
+  .tl__item {
+    break-inside: avoid;
+  }
+
+  .panel {
+    box-shadow: none;
+  }
+
+  .reveal {
+    animation: none !important;
+  }
+
+  .log-wrap {
+    overflow: visible;
+  }
+
+  a.pivot,
+  .pivot__value {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .case::before {
+    content: 'High View · A service for Truckline Capital LLC';
+    display: block;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 2px solid var(--color-ink-bar);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .footer {
+    border-top: var(--rule);
+    margin-top: 1rem;
+    font-size: 0.65rem;
+  }
+}

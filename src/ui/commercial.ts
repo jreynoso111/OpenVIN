@@ -3,6 +3,7 @@
  * connects to plates, carriers and coupled units, and the roadside log.
  */
 
+import { isGenericPlate } from '../lib/analysis';
 import type { PlateLink } from '../lib/report';
 import type { CarrierProfile, CommercialInspection, UnitSighting } from '../lib/types';
 import { el, formatDate, formatNumber } from './dom';
@@ -10,6 +11,7 @@ import { carrierBase, carrierCard, carrierName } from './carrier';
 import { emptyNote, factList } from './panel';
 import { dotPivot, platePivot, vinPivot } from './pivot';
 import { countPlaces, frequencyList, lastSeen, placeText } from './sightings';
+import { renderStateMap, stateCounts } from './stateMap';
 
 /** Rebuild the census profile flattened onto an inspection record. */
 export function carrierFromRecord(record: CommercialInspection): CarrierProfile | null {
@@ -102,7 +104,8 @@ export function renderWhereSeen(records: readonly CommercialInspection[]): HTMLE
     el(
       'div',
       { class: 'where__grid' },
-      frequencyList('States', countPlaces(records.map((r) => ({ date: r.date, state: r.state, site: r.location })), 'state')),
+      renderStateMap(stateCounts(records)) ??
+        frequencyList('States', countPlaces(records.map((r) => ({ date: r.date, state: r.state, site: r.location })), 'state')),
       frequencyList('Inspection sites', countPlaces(records.map((r) => ({ date: r.date, state: r.state, site: r.location })), 'site'), 5),
     ),
     bases.length > 1
@@ -175,7 +178,9 @@ export function renderConnections(
       relation(
         'Plate',
         platePivot(entry.plate, entry.state),
-        otherVins.length > 0
+        isGenericPlate(entry.plate)
+          ? 'Temporary or paper plate — shared by many vehicles'
+          : otherVins.length > 0
           ? el('span', {}, 'Also recorded on ', ...otherVins.slice(0, 3).flatMap((v, i) => [i > 0 ? ', ' : '', vinPivot(v)]), otherVins.length > 3 ? ' +' + (otherVins.length - 3) : '')
           : 'Only this VIN in FMCSA files',
         formatNumber(entry.count) + '× · ' + span(entry.first, entry.last),
