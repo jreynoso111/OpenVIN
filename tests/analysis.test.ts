@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { buildFlags, buildTimeline, isGenericPlate, placeLabel, summarize } from '../src/lib/analysis';
+import { buildFlags, buildTimeline, isGenericPlate, placeLabel, standingFlags, summarize } from '../src/lib/analysis';
+import { parseAuthoritySince, parseOosOrders, parseRevocations, parseSms } from '../src/lib/api/fmcsaStanding';
+import { stopsByDay } from '../src/ui/timeline';
 import { summarizeCrashes } from '../src/lib/api/fmcsaCrashes';
 import { parsePolicies } from '../src/lib/api/fmcsaInsurance';
 import { stateCounts } from '../src/ui/stateMap';
@@ -147,6 +149,45 @@ describe('insurance filings', () => {
     expect(policies.map((p) => p.kind)).toEqual(['BIPD/Primary', 'SURETY']);
     expect(policies[0]).toMatchObject({ insurer: 'ACE', limitUsd: 1_000_000, effectiveDate: '2025-08-01' });
     expect(policies[1]?.limitUsd).toBeNull();
+  });
+});
+
+describe('carrier standing', () => {
+  it('parses OOS orders, revocations, authority and SMS measures', () => {
+    const oos = parseOosOrders([{ status: 'ACTIVE', oos_date: '2022-07-09', oos_reason: 'Unsatisfactory = Unfit' }]);
+    expect(oos[0]).toMatchObject({ active: true, date: '2022-07-09' });
+    const revs = parseRevocations([{ order2_type_desc: 'INVOLUNTARY REVOCATION', order2_effective_date: '05/13/2026' }]);
+    expect(revs[0]).toEqual({ kind: 'INVOLUNTARY REVOCATION', effectiveDate: '2026-05-13' });
+    expect(parseAuthoritySince([
+      { original_action_desc: 'DENIED', orig_served_date: '01/25/1978' },
+      { original_action_desc: 'GRANTED', orig_served_date: '01/09/1977' },
+    ])).toBe('1977-01-09');
+    const sms = parseSms([{ vehicle_insp_total: '6250', vehicle_oos_insp_total: '1243', driver_insp_total: '11641', driver_oos_insp_total: '113', veh_maint_ac: 'Y', unsafe_driv_ac: 'N' }]);
+    expect(sms?.vehicleOosRate).toBeCloseTo(0.1989, 3);
+    expect(sms?.alerts).toEqual(['Vehicle maintenance']);
+  });
+
+  it('turns standing into flags, most serious first', () => {
+    const flags = standingFlags('ACME LLC', {
+      dotNumber: '1',
+      oosOrders: [{ active: true, date: '2026-01-01', reason: 'Unsatisfactory = Unfit' }],
+      revocations: [{ kind: 'INVOLUNTARY REVOCATION', effectiveDate: '2026-05-13' }],
+      authoritySince: null,
+      sms: { inspections: 100, vehicleInspections: 50, vehicleOosInspections: 25, vehicleOosRate: 0.5, driverInspections: 50, driverOosInspections: 1, driverOosRate: 0.02, alerts: [] },
+    }, NOW);
+    expect(flags.map((f) => f.tone)).toEqual(['danger', 'warn', 'warn']);
+  });
+});
+
+describe('timeline stops', () => {
+  it('groups same-day events and orders stops oldest first', () => {
+    const records = [
+      inspection({ inspectionId: '1', date: '2025-03-01' }),
+      inspection({ inspectionId: '2', date: '2026-02-01', plate: 'NEW777', carrierDotNumber: '222' }),
+    ];
+    const stops = stopsByDay(buildTimeline(records));
+    expect(stops.map((s) => s.date)).toEqual(['2025-03-01', '2026-02-01']);
+    expect(stops[1]?.events.map((e) => e.kind)).toEqual(['carrier', 'plate', 'inspection']);
   });
 });
 

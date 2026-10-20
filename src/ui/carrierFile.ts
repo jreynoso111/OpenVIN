@@ -8,7 +8,7 @@ import { getCarrierFleet, getCarriersById, searchCarriersByName } from '../lib/a
 import type { CarrierFleet, CarrierProfile, FleetVehicle, SectionResult } from '../lib/types';
 import { ageLabel, el, formatDate, formatNumber } from './dom';
 import { caseHeader, caseLayout, limitsNote } from './case';
-import { carrierBase, carrierFacts, crashLine, insuranceLine, carrierLine, carrierName, docketLabel, operationText } from './carrier';
+import { carrierBase, carrierFacts, crashLine, insuranceLine, standingBlock, carrierLine, carrierName, docketLabel, operationText } from './carrier';
 import { createLedger, createPanel, emptyNote } from './panel';
 import { externalLink, platePivot, saferSnapshotUrl, vinPivot } from './pivot';
 import { frequencyList, lastSeen, placeText } from './sightings';
@@ -224,7 +224,7 @@ export function renderCarrierFile(
         ),
       );
       profile.fill(
-        el('div', {}, carrierFacts(carrier) ?? emptyNote('No census details.'), insuranceLine(carrier), crashLine(carrier.dotNumber)),
+        el('div', {}, carrierFacts(carrier) ?? emptyNote('No census details.'), standingBlock(carrier), insuranceLine(carrier), crashLine(carrier.dotNumber)),
       );
       const snapshot = saferSnapshotUrl(carrier.dotNumber);
       if (snapshot) {

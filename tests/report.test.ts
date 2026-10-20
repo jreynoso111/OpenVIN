@@ -43,6 +43,10 @@ describe('startReport with an unreachable network', () => {
       expect(section.note).toBeTruthy();
       expect(section.data).toBeUndefined();
     }
+    for (const section of [await handle.recalls, await handle.complaints]) {
+      expect(section.status).toBe('unavailable');
+      expect(section.note).toBeTruthy();
+    }
     // Guided links never depend on the network.
     expect(guidedLinks.length).toBeGreaterThan(0);
     expect(guidedLinks[0]?.kind).toBe('nmvtis');

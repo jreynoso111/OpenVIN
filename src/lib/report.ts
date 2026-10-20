@@ -7,8 +7,10 @@
 
 import type {
   CommercialInspection,
+  ComplaintsSummary,
   GuidedLink,
   OdometerReading,
+  RecallCampaign,
   SectionResult,
   UnitSighting,
   VehicleIdentity,
@@ -17,6 +19,8 @@ import { normalizeVin } from './vin';
 import { decodeVin } from './api/vpic';
 import { getNyInspections } from './api/ny';
 import { getCommercialInspections } from './api/fmcsa';
+import { getRecalls } from './api/recalls';
+import { getComplaints } from './api/complaints';
 import { otherVinsForPlates } from './api/fmcsaLookup';
 import { buildGuidedLinks } from './links';
 
@@ -31,6 +35,9 @@ export interface ReportHandle {
   identity: Promise<SectionResult<VehicleIdentity>>;
   nyInspections: Promise<SectionResult<OdometerReading[]>>;
   commercialInspections: Promise<SectionResult<CommercialInspection[]>>;
+  /** NHTSA campaigns and complaints for the decoded year/make/model line. */
+  recalls: Promise<SectionResult<RecallCampaign[]>>;
+  complaints: Promise<SectionResult<ComplaintsSummary>>;
   /** Second hop: other vehicles recorded under this vehicle's plates. */
   plateLinks: Promise<PlateLink[]>;
   guidedLinks: Promise<GuidedLink[]>;
@@ -77,6 +84,22 @@ export function startReport(vin: string): ReportHandle {
     ),
   );
 
+  const recalls = identity
+    .then((decoded) =>
+      decoded.data
+        ? getRecalls(decoded.data)
+        : unavailable<RecallCampaign[]>('NHTSA Recalls', 'Recalls need the decoded make, model and year.'),
+    )
+    .catch(() => unavailable<RecallCampaign[]>('NHTSA Recalls', 'The recall lookup failed unexpectedly.'));
+
+  const complaints = identity
+    .then((decoded) =>
+      decoded.data
+        ? getComplaints(decoded.data, normalized)
+        : unavailable<ComplaintsSummary>('NHTSA Complaints (ODI)', 'Complaints need the decoded make, model and year.'),
+    )
+    .catch(() => unavailable<ComplaintsSummary>('NHTSA Complaints (ODI)', 'The complaint lookup failed unexpectedly.'));
+
   const plateLinks = commercialInspections
     .then((result) => otherVinsForPlates(normalized, distinctPlates(result.data ?? [])))
     .catch(() => []);
@@ -89,6 +112,8 @@ export function startReport(vin: string): ReportHandle {
     identity,
     nyInspections,
     commercialInspections,
+    recalls,
+    complaints,
     plateLinks,
     guidedLinks,
   };

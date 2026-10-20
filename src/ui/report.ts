@@ -4,12 +4,15 @@
  * with a rail listing every source checked and the official follow-ups.
  */
 
-import { linkedVins } from '../lib/analysis';
+import { linkedVins, standingFlags, type Flag } from '../lib/analysis';
+import { getCarrierStanding } from '../lib/api/fmcsaStanding';
 import type { PlateLink } from '../lib/report';
 import type {
   CommercialInspection,
+  ComplaintsSummary,
   GuidedLink,
   OdometerReading,
+  RecallCampaign,
   SectionResult,
   VehicleIdentity,
 } from '../lib/types';
@@ -27,6 +30,7 @@ import { findLinks } from './links';
 import { renderOdometer } from './odometer';
 import { createLedger, createPanel } from './panel';
 import { dotPivot, platePivot } from './pivot';
+import { renderComplaints, renderRecalls } from './modelLine';
 import { renderSummary } from './summary';
 import { renderTimeline } from './timeline';
 
@@ -35,6 +39,8 @@ export interface ReportHandles {
   readonly identity: Promise<SectionResult<VehicleIdentity>>;
   readonly nyInspections: Promise<SectionResult<OdometerReading[]>>;
   readonly commercialInspections: Promise<SectionResult<CommercialInspection[]>>;
+  readonly recalls: Promise<SectionResult<RecallCampaign[]>>;
+  readonly complaints: Promise<SectionResult<ComplaintsSummary>>;
   readonly plateLinks: Promise<PlateLink[]>;
   readonly guidedLinks: Promise<GuidedLink[]>;
 }
@@ -85,19 +91,23 @@ export function renderReport(
   const timeline = createPanel({ id: 'timeline', title: 'Timeline', hint: 'Inspections, plate changes and carrier changes in order.', lines: 4 });
   const log = createPanel({ id: 'roadside', title: 'Roadside log', lines: 5 });
   const carriers = createPanel({ id: 'carriers', title: 'Carriers', lines: 3 });
+  const recallPanel = createPanel({ id: 'recalls', title: 'Recalls', hint: 'NHTSA campaigns for this year, make and model.', lines: 3 });
+  const complaintPanel = createPanel({ id: 'complaints', title: 'Owner complaints', hint: 'NHTSA complaint reports for this model line.', lines: 3 });
   const odometer = createPanel({ id: 'ny', title: 'New York inspections', lines: 3 });
 
   const ledger = createLedger();
   ledger.add('vpic', 'VIN decode · NHTSA vPIC');
   ledger.add('fmcsa', 'Roadside inspections · FMCSA');
   ledger.add('plates', 'Plate cross-check · FMCSA');
+  ledger.add('recalls', 'Recalls · NHTSA');
+  ledger.add('complaints', 'Complaints · NHTSA ODI');
   ledger.add('ny', 'NY inspections · data.ny.gov');
   const checks = el('div');
 
   main.replaceChildren(
     caseLayout(
       header.root,
-      [summary.root, where.root, links.root, timeline.root, log.root, carriers.root, odometer.root],
+      [summary.root, where.root, links.root, timeline.root, log.root, carriers.root, recallPanel.root, complaintPanel.root, odometer.root],
       [
         ledger.root,
         checks,
@@ -121,6 +131,22 @@ export function renderReport(
       callbacks.onVehicleName(rendered.vehicleName ?? '');
     }),
   );
+
+  // The summary is built once and re-rendered in place as the plate check and
+  // the carrier-standing lookup arrive, so it does not flicker.
+  let summaryShown = false;
+  let summaryRecords: readonly CommercialInspection[] = [];
+  let summaryPlates: readonly PlateLink[] | null = null;
+  let summaryExtra: readonly Flag[] = [];
+  const refreshSummary = (): void => {
+    const node = renderSummary(vin, summaryRecords, summaryPlates, summaryExtra);
+    if (!summaryShown) {
+      summaryShown = true;
+      summary.fill(node);
+    } else {
+      summary.root.querySelector('.panel__body')?.replaceChildren(node);
+    }
+  };
 
   const commercial = settle(handles.commercialInspections, 'FMCSA roadside inspections');
   void commercial.then(
@@ -146,7 +172,8 @@ export function renderReport(
         ledger.set('plates', 'miss', null, 'No plates to check');
         return;
       }
-      summary.fill(renderSummary(vin, records, null));
+      summaryRecords = records;
+      refreshSummary();
       timeline.fill(renderTimeline(records));
       log.fill(renderRoadsideLog(records));
       const carrierBlock = renderCarriers(records);
@@ -160,14 +187,49 @@ export function renderReport(
       const records = result.data ?? [];
       if (records.length === 0) return;
       links.fill(renderConnections(records, plateLinks));
-      summary.fill(renderSummary(vin, records, plateLinks));
+      summaryPlates = plateLinks;
+      refreshSummary();
       const shared = linkedVins(vin, plateLinks).length;
       ledger.set('plates', plateLinks.length > 0 ? 'hit' : 'miss', null, shared > 0 ? formatNumber(shared) + ' other VIN' + (shared === 1 ? '' : 's') : 'No other VINs');
     }),
   );
 
+  // Standing of the latest carrier feeds the summary flags.
+  void commercial.then(
+    live((result) => {
+      const latest = (result.data ?? []).find((record) => record.carrierDotNumber);
+      if (!latest?.carrierDotNumber) return;
+      const name = latest.carrierLegalName ?? latest.carrierDbaName ?? 'USDOT ' + latest.carrierDotNumber;
+      const docket =
+        latest.carrierDocketPrefix && latest.carrierDocketNumber
+          ? latest.carrierDocketPrefix + latest.carrierDocketNumber.padStart(6, '0')
+          : null;
+      void getCarrierStanding(latest.carrierDotNumber, docket).then(
+        live((standing) => {
+          if (!standing) return;
+          summaryExtra = standingFlags(name, standing);
+          if (summaryShown) refreshSummary();
+        }),
+      );
+    }),
+  );
+
   const guided = handles.guidedLinks.catch((): GuidedLink[] => []);
   void guided.then(live((guidedLinks) => checks.replaceChildren(officialChecks(guidedLinks))));
+
+  void Promise.all([settle(handles.recalls, 'NHTSA Recalls'), guided]).then(
+    live(([result, guidedLinks]) => {
+      ledger.set('recalls', result.status, result.source, result.status === 'hit' ? formatNumber(result.data?.length ?? 0) + ' campaigns' : undefined);
+      recallPanel.fill(renderRecalls(result, findLinks(guidedLinks, 'oem-recall')[0]));
+    }),
+  );
+
+  void settle(handles.complaints, 'NHTSA Complaints').then(
+    live((result) => {
+      ledger.set('complaints', result.status, result.source, result.status === 'hit' ? formatNumber(result.data?.totalForVehicleLine ?? 0) + ' on model line' : undefined);
+      complaintPanel.fill(renderComplaints(result));
+    }),
+  );
 
   void Promise.all([settle(handles.nyInspections, 'NY State inspections'), guided]).then(
     live(([result, guidedLinks]) => {

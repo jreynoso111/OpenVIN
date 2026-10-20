@@ -2,6 +2,7 @@
 
 import { CRASH_MONTHS, getCrashSummary } from '../lib/api/fmcsaCrashes';
 import { getInsurance } from '../lib/api/fmcsaInsurance';
+import { NATIONAL_VEHICLE_OOS_RATE, getCarrierStanding } from '../lib/api/fmcsaStanding';
 import type { CarrierProfile } from '../lib/types';
 import { el, formatDate, formatNumber } from './dom';
 import { factList } from './panel';
@@ -190,6 +191,82 @@ export function insuranceLine(carrier: CarrierProfile): HTMLElement {
   return block;
 }
 
+function pct(rate: number): string {
+  return (rate * 100).toFixed(rate < 0.1 ? 1 : 0) + '%';
+}
+
+/** Docket as FMCSA's authority files write it: prefix plus a number of at least six digits. */
+export function docketKey(carrier: CarrierProfile): string | null {
+  if (!carrier.docketNumber || !carrier.docketPrefix) return null;
+  return carrier.docketPrefix + carrier.docketNumber.padStart(6, '0');
+}
+
+/** Out-of-service orders, revocations, authority age and SMS measures for a carrier. */
+export function standingBlock(carrier: CarrierProfile): HTMLElement {
+  const block = el('div', { class: 'standing standing--pending' }, 'Checking regulatory standing…');
+  void getCarrierStanding(carrier.dotNumber, docketKey(carrier))
+    .then((standing) => {
+      block.classList.remove('standing--pending');
+      if (!standing) {
+        block.remove();
+        return;
+      }
+      const rows: Array<[string, Node | string, string?]> = [];
+      const active = standing.oosOrders.find((order) => order.active);
+      if (active) {
+        rows.push([
+          'Out-of-service order',
+          'ACTIVE' + (active.date ? ' since ' + formatDate(active.date) : '') + (active.reason ? ' · ' + active.reason : ''),
+          'danger',
+        ]);
+      } else if (standing.oosOrders.length > 0) {
+        const last = standing.oosOrders[0];
+        rows.push(['Out-of-service order', 'None active · past order' + (last?.date ? ' ' + formatDate(last.date) : '') + (last?.reason ? ' (' + last.reason + ')' : '')]);
+      } else {
+        rows.push(['Out-of-service order', 'None on record']);
+      }
+      if (standing.revocations.length > 0) {
+        const latest = standing.revocations[0];
+        rows.push([
+          'Authority revoked',
+          standing.revocations.length + '× · latest ' + (latest?.kind.toLowerCase() ?? '') + (latest?.effectiveDate ? ' ' + formatDate(latest.effectiveDate) : ''),
+          standing.revocations.some((r) => /involuntary/i.test(r.kind)) ? 'warn' : undefined,
+        ]);
+      }
+      if (standing.authoritySince) rows.push(['Authority since', formatDate(standing.authoritySince)]);
+      const sms = standing.sms;
+      if (sms && sms.vehicleInspections > 0 && sms.vehicleOosRate !== null) {
+        rows.push([
+          'Vehicle out-of-service rate',
+          pct(sms.vehicleOosRate) + ' (' + formatNumber(sms.vehicleOosInspections) + ' of ' + formatNumber(sms.vehicleInspections) + ' inspections) · national ≈ ' + pct(NATIONAL_VEHICLE_OOS_RATE),
+          sms.vehicleOosRate >= NATIONAL_VEHICLE_OOS_RATE * 1.5 ? 'warn' : undefined,
+        ]);
+        if (sms.driverOosRate !== null) {
+          rows.push(['Driver out-of-service rate', pct(sms.driverOosRate) + ' (' + formatNumber(sms.driverOosInspections) + ' of ' + formatNumber(sms.driverInspections) + ')']);
+        }
+        rows.push([
+          'FMCSA alerts',
+          sms.alerts.length > 0 ? sms.alerts.join(', ') : 'None over threshold',
+          sms.alerts.length > 0 ? 'warn' : undefined,
+        ]);
+      }
+      block.replaceChildren(
+        el('h4', { class: 'standing__title' }, 'Regulatory standing'),
+        el(
+          'dl',
+          { class: 'standing__list' },
+          ...rows.map(([label, value, tone]) =>
+            el('div', { 'data-tone': tone }, el('dt', {}, label), el('dd', {}, value)),
+          ),
+        ),
+      );
+      if (rows.some(([, , tone]) => tone === 'danger')) block.dataset['tone'] = 'danger';
+      else if (rows.some(([, , tone]) => tone === 'warn')) block.dataset['tone'] = 'warn';
+    })
+    .catch(() => block.remove());
+  return block;
+}
+
 /** Carrier card used inside VIN and plate files. */
 export function carrierCard(
   carrier: CarrierProfile,
@@ -202,6 +279,7 @@ export function carrierCard(
     carrierLine(carrier),
     evidence ? el('p', { class: 'carrier-card__evidence' }, evidence) : null,
     carrierFacts(carrier),
+    standingBlock(carrier),
     insuranceLine(carrier),
     crashLine(carrier.dotNumber),
     el(

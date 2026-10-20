@@ -42,10 +42,12 @@ export function renderSummary(
   vin: string,
   records: readonly CommercialInspection[],
   plateLinks: readonly PlateLink[] | null,
+  extraFlags: readonly Flag[] = [],
 ): HTMLElement {
   const links = plateLinks ?? [];
   const summary = summarize(vin, records, links);
-  const flags = buildFlags(vin, records, links);
+  const order: Record<Flag['tone'], number> = { danger: 0, warn: 1, info: 2 };
+  const flags = [...buildFlags(vin, records, links), ...extraFlags].sort((a, b) => order[a.tone] - order[b.tone]);
   const age = ageLabel(summary.lastDate);
 
   const stats: Stat[] = [

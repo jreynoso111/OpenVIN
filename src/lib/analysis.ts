@@ -5,6 +5,7 @@
  * a person. Exported for tests.
  */
 
+import { NATIONAL_VEHICLE_OOS_RATE, type CarrierStanding } from './api/fmcsaStanding';
 import type { PlateLink } from './report';
 import type { CommercialInspection } from './types';
 
@@ -257,4 +258,61 @@ export function buildTimeline(records: readonly CommercialInspection[]): Timelin
 
   const weight: Record<TimelineKind, number> = { oos: 0, inspection: 1, plate: 2, carrier: 3 };
   return events.sort((a, b) => b.date.localeCompare(a.date) || weight[a.kind] - weight[b.kind]);
+}
+
+/* ---------- Carrier standing flags ---------- */
+
+function percent(rate: number): string {
+  return (rate * 100).toFixed(rate < 0.1 ? 1 : 0) + '%';
+}
+
+/** Flags about the latest carrier's regulatory standing. */
+export function standingFlags(
+  carrierName: string,
+  standing: CarrierStanding,
+  now: Date = new Date(),
+): Flag[] {
+  const flags: Flag[] = [];
+  const active = standing.oosOrders.find((order) => order.active);
+  if (active) {
+    flags.push({
+      tone: 'danger',
+      title: carrierName + ' has an active FMCSA out-of-service order',
+      detail:
+        'FMCSA has ordered this carrier to stop operating' +
+        (active.reason ? ' (' + active.reason + ')' : '') +
+        (active.date ? ' since ' + active.date + '' : '') +
+        '. A unit still running under it is operating against that order.',
+    });
+  }
+
+  const cutoff = new Date(now);
+  cutoff.setMonth(cutoff.getMonth() - 24);
+  const recent = standing.revocations.find(
+    (r) => /involuntary/i.test(r.kind) && r.effectiveDate && r.effectiveDate >= cutoff.toISOString().slice(0, 10),
+  );
+  if (recent) {
+    flags.push({
+      tone: 'warn',
+      title: carrierName + ' had its operating authority revoked',
+      detail: 'FMCSA records an involuntary revocation effective ' + recent.effectiveDate + '. Check whether the carrier has since regained authority.',
+    });
+  }
+
+  const sms = standing.sms;
+  if (sms && sms.alerts.length > 0) {
+    flags.push({
+      tone: 'warn',
+      title: carrierName + ' is over the FMCSA alert threshold',
+      detail: 'Safety-measurement alerts: ' + sms.alerts.join(', ') + '. These compare the carrier’s inspections with its peers.',
+    });
+  }
+  if (sms && sms.vehicleInspections >= 20 && sms.vehicleOosRate !== null && sms.vehicleOosRate >= NATIONAL_VEHICLE_OOS_RATE * 1.5) {
+    flags.push({
+      tone: 'warn',
+      title: 'Carrier vehicle out-of-service rate is ' + percent(sms.vehicleOosRate),
+      detail: 'That is well above the national average of about ' + percent(NATIONAL_VEHICLE_OOS_RATE) + ', across ' + sms.vehicleInspections + ' vehicle inspections.',
+    });
+  }
+  return flags;
 }
