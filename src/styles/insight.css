@@ -720,66 +720,166 @@
 
 /* ---------- Print / Save as PDF ---------- */
 
+@page {
+  size: A4;
+  margin: 12mm 11mm;
+}
+
 @media print {
   :root {
     --text-body: 0.8125rem;
+    --text-small: 0.75rem;
+    --text-micro: 0.6875rem;
   }
 
+  html,
   body {
     background: #fff;
+    min-height: 0;
+    display: block;
   }
 
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Interface that means nothing on paper */
   .topbar,
   .case__actions,
   .copy,
-  .desk__rail .rail-block:not(:first-child),
   .filter,
+  .htl__hint,
+  .rail-block--checks,
   #top-search {
     display: none !important;
   }
 
-  .desk__grid {
+  .container,
+  .desk {
+    max-width: none;
+    width: 100%;
+    padding-inline: 0;
+  }
+
+  /* One column, natural flow */
+  .desk__grid,
+  .desk__main,
+  .desk__rail {
     display: block;
   }
 
-  .desk__rail {
-    margin-top: 1rem;
+  .desk__main > *,
+  .desk__rail > * {
+    margin-bottom: 0.8rem;
   }
 
-  .panel,
-  .carrier-card,
+  /* Long sections may break across pages; small units may not */
+  .panel {
+    box-shadow: none;
+    overflow: visible;
+    break-inside: auto;
+  }
+
+  .panel__head,
+  .case,
+  .stat,
   .flag,
-  .htl__event {
+  .standing,
+  .insurance,
+  .crashes,
+  .htl__stop,
+  .htl__event,
+  .mrow,
+  .log tr {
     break-inside: avoid;
   }
 
-  .panel {
-    box-shadow: none;
+  .panel__head {
+    break-after: avoid;
+  }
+
+  /* Short sections stay whole so a heading is never stranded at a page foot */
+  #summary,
+  #where,
+  #recalls,
+  #complaints {
+    break-inside: avoid;
   }
 
   .reveal {
     animation: none !important;
   }
 
+  /* Tables: never clip, repeat the header on each page */
   .log-wrap,
-  .htl {
-    overflow: visible;
+  .htl,
+  .htl-wrap {
+    overflow: visible !important;
+    max-width: none;
   }
 
+  .log {
+    width: 100%;
+    table-layout: auto;
+  }
+
+  .log thead {
+    display: table-header-group;
+  }
+
+  /* Timeline: wrap into rows instead of scrolling sideways */
   .htl__track {
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     width: auto;
-    row-gap: 1.6rem;
+    min-width: 0;
+    row-gap: 0.9rem;
+    padding-top: 0.3rem;
   }
 
-  .htl__hint {
-    display: none;
+  .htl__stop {
+    flex: none;
+    max-width: none;
+  }
+
+  /* Year label rides inside its stop, so a page break cannot strand it */
+  .htl__year {
+    position: static;
+    margin-bottom: 0.1rem;
+  }
+
+  /* Map: smaller, details beside it dropped to one column */
+  .where__grid:has(> .usmap) {
+    display: block;
+  }
+
+  .usmap__svg {
+    max-width: 120mm;
+    margin-inline: auto;
+  }
+
+  .usmap__caption .chips__list {
+    display: flex;
+  }
+
+  .chips {
+    margin-top: 0.5rem;
+  }
+
+  /* Open every collapsible so paper shows what the screen can hide */
+  details > *:not(summary) {
+    display: revert;
   }
 
   a.pivot,
   .pivot__value {
     color: inherit;
     text-decoration: none;
+  }
+
+  .pivot::after {
+    content: none;
   }
 
   .case::before {

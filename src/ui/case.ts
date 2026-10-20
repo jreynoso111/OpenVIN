@@ -118,7 +118,7 @@ const CHECK_GROUPS: ReadonlyArray<{ kinds: readonly GuidedLinkKind[]; title: str
 export function officialChecks(links: readonly GuidedLink[]): HTMLElement {
   const block = el(
     'section',
-    { class: 'rail-block', 'aria-labelledby': 'checks-title' },
+    { class: 'rail-block rail-block--checks', 'aria-labelledby': 'checks-title' },
     el('h2', { class: 'rail-block__title', id: 'checks-title' }, 'Run these yourself'),
     el('p', { class: 'rail-block__note' }, 'Official per-VIN lookups. Results stay on their sites.'),
   );
