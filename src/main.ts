@@ -9,13 +9,14 @@ import './styles/tabs.css';
 import './styles/workspace.css';
 import './styles/viz.css';
 import './styles/sections.css';
+import './styles/operations.css';
 
 import { normalizeVin, validateVin } from './lib/vin';
 import { startReport } from './lib/report';
 import { renderReport, type ReportHandles } from './ui/report';
 import { mountShell, renderHero } from './ui/shell';
 
-const BASE_TITLE = 'High View — Vehicle Record Search';
+const BASE_TITLE = 'High View — Vehicle Recovery Desk';
 const GENERIC_VIN_ERROR =
   'That doesn’t look like a valid 17-character VIN. Check for typos — ' +
   'VINs never contain the letters I, O, or Q.';

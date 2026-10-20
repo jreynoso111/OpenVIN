@@ -4,8 +4,6 @@ import { clear, el, svgEl } from './dom';
 
 export const SAMPLE_VIN = '1HGCM82633A004352';
 
-const GITHUB_URL = 'https://github.com/jreynoso111/OpenVIN';
-
 const DISCLAIMER =
   'High View aggregates publicly available vehicle data. It is not affiliated ' +
   'with CARFAX, Inc. or any data provider. No vehicle history source — free ' +
@@ -24,17 +22,8 @@ function brandMark(): SVGElement {
   mark.append(
     svgEl('rect', { width: 64, height: 64, rx: 18, fill: 'var(--color-accent)' }),
     svgEl('path', {
-      d: 'M27 46 L37 18 L45 18 L35 46 Z',
+      d: 'M15 17 H23 V28 H41 V17 H49 V47 H41 V35 H23 V47 H15 Z',
       fill: 'var(--color-on-accent)',
-      opacity: 0.45,
-    }),
-    svgEl('path', {
-      d: 'M17 33 L28 44 L47 17',
-      fill: 'none',
-      stroke: 'var(--color-on-accent)',
-      'stroke-width': 7,
-      'stroke-linecap': 'round',
-      'stroke-linejoin': 'round',
     }),
   );
   return mark;
@@ -84,17 +73,7 @@ export function mountShell(app: HTMLElement, callbacks: ShellCallbacks): Shell {
       clear(headerInner);
       headerInner.append(
         brand(),
-        el('div', { style: 'margin-left:auto' }),
-        el(
-          'a',
-          {
-            class: 'btn btn--ghost',
-            href: GITHUB_URL,
-            target: '_blank',
-            rel: 'noopener noreferrer',
-          },
-          'GitHub',
-        ),
+        el('span', { class: 'header-product-tag' }, 'FLEET INTELLIGENCE'),
       );
     },
     showReportHeader(vin: string): void {
@@ -115,7 +94,7 @@ export function mountShell(app: HTMLElement, callbacks: ShellCallbacks): Shell {
             type: 'button',
             onclick: () => callbacks.onNewSearch(),
           },
-          'New search',
+          'Search another VIN',
         ),
       );
     },
@@ -180,24 +159,24 @@ export function renderHero(onSubmit: (rawVin: string) => void): Hero {
 
   const sourceCards = [
     {
-      eyebrow: 'FEDERAL',
-      title: 'Safety & defect records',
-      detail: 'NHTSA recalls, complaints and crash-test ratings.',
+      eyebrow: '01 · FEDERAL',
+      title: 'Safety & recall signals',
+      detail: 'NHTSA campaigns, ODI complaints and crash-test data, with VIN-match limits called out.',
     },
     {
-      eyebrow: 'STATE',
-      title: 'Inspection history',
-      detail: 'Public odometer and inspection data where a state publishes it.',
+      eyebrow: '02 · STATE',
+      title: 'Inspection & mileage',
+      detail: 'New York’s public inspection dataset is connected. Other state checks remain official link-outs.',
     },
     {
-      eyebrow: 'VEHICLE',
-      title: 'Specifications',
-      detail: 'VIN decode, fuel economy and a labeled warranty estimate.',
+      eyebrow: '03 · FLEET',
+      title: 'Vektor TMS status',
+      detail: 'Not connected yet. Dispatch status and last-known fleet location are not available in High View.',
     },
     {
-      eyebrow: 'OFFICIAL CHECKS',
-      title: 'Title & theft sources',
-      detail: 'Guided links to official lookups that must be completed on their sites.',
+      eyebrow: '04 · VERIFICATION',
+      title: 'Title & theft checks',
+      detail: 'Open official or authorized portals. Their results stay on those sites and are not imported.',
     },
   ];
 
@@ -207,11 +186,11 @@ export function renderHero(onSubmit: (rawVin: string) => void): Hero {
     el(
       'div',
       { class: 'hero__search' },
-      el('p', { class: 'hero__eyebrow' }, 'HIGH VIEW · VEHICLE RECORDS'),
+      el('p', { class: 'hero__eyebrow' }, 'HIGH VIEW · VEHICLE RECOVERY DESK'),
       el('h1', { class: 'hero__title', id: 'hero-heading' },
-        'Search a VIN. Review the evidence.'),
+        'One VIN. The latest activity, at a glance.'),
       el('p', { class: 'hero__tagline' },
-        'Build a vehicle-focused file from federal safety sources, available state data and guided official lookups.'),
+        'A vehicle file organized for fleet and recovery work: identity first, newest dated records next, and every source labeled.'),
       form,
       el(
         'p',
@@ -232,15 +211,15 @@ export function renderHero(onSubmit: (rawVin: string) => void): Hero {
       el(
         'p',
         { class: 'hero__honesty' },
-        'A missing record means that source returned no match; it does not prove an event never happened. High View does not provide owner profiles or live vehicle location.',
+        'A missing record in one feed does not rule out records elsewhere. Public VIN data does not reveal an owner or a vehicle’s live location; Vektor TMS is not connected yet.',
       ),
     ),
     el(
       'section',
       { class: 'hero__sources', 'aria-labelledby': 'sources-heading' },
-      el('p', { class: 'hero__sources-kicker' }, 'SEARCH SCOPE'),
+      el('p', { class: 'hero__sources-kicker' }, 'HOW THE FILE IS BUILT'),
       el('h2', { class: 'hero__sources-heading', id: 'sources-heading' },
-        'One vehicle file, organized by source'),
+        'One vehicle file, organized for action'),
       el(
         'div',
         { class: 'hero__source-grid' },
@@ -283,12 +262,8 @@ function buildFooter(): HTMLElement {
         'div',
         { class: 'site-footer__row' },
         el('span', { class: 'brand' }, brandMark(), 'High View'),
-        el(
-          'a',
-          { href: GITHUB_URL, target: '_blank', rel: 'noopener noreferrer' },
-          'GitHub',
-        ),
-        el('span', {}, 'MIT License'),
+        el('span', { class: 'footer-workspace-tag' }, 'Fleet & recovery workspace'),
+        el('span', {}, 'Public records · Federal + available state data'),
       ),
       el('p', { class: 'site-footer__disclaimer' }, DISCLAIMER),
     ),

@@ -1,7 +1,7 @@
 /** Shared section chrome: title, status pill, source footer, reveal motion. */
 
 import type { SectionStatus, SourceMeta } from '../lib/types';
-import { clear, el, revealOnce } from './dom';
+import { clear, el, formatDateTime, revealOnce } from './dom';
 
 export interface SectionMeta {
   readonly status: SectionStatus;
@@ -51,6 +51,7 @@ function sourceFooter(meta: SectionMeta): HTMLElement {
     { class: 'section__source' },
     'Source: ',
     sourceName,
+    source.fetchedAt ? ` · Queried ${formatDateTime(source.fetchedAt)}` : null,
     note ? ` · ${note}` : null,
   );
 }

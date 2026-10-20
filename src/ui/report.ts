@@ -1,7 +1,6 @@
 /**
- * Report orchestrator: persistent identity + summary band, tabbed detail
- * panels. Every section stays mounted and hydrates as promises resolve,
- * regardless of which tab is visible.
+ * Report orchestrator: one operational vehicle file with visible activity,
+ * source freshness, and all detailed records grouped on a single page.
  */
 
 import type {
@@ -23,7 +22,7 @@ import { renderFuel } from './fuel';
 import { renderIdentity } from './identity';
 import { findLink, findLinks, renderOfficialRecords, renderRecordsElsewhere } from './links';
 import { renderOdometer } from './odometer';
-import { createOverview } from './overview';
+import { createOperationsSnapshot } from './operations';
 import { renderRecalls } from './recalls';
 import { renderSafety } from './safety';
 import {
@@ -43,7 +42,6 @@ import {
   safetyTileState,
   warrantyTileState,
 } from './summary';
-import { createTabs } from './tabs';
 import { renderWarranty } from './warranty';
 
 /** Mirror of the data layer's startReport() return shape (src/lib/report). */
@@ -66,18 +64,46 @@ export interface ReportCallbacks {
 
 const STAGGER_MS = 55;
 
-/** Which tab owns each detail section (tile clicks switch tab, then scroll). */
-const TAB_FOR_SECTION: Readonly<Record<string, string>> = {
-  recalls: 'federal',
-  complaints: 'federal',
-  safety: 'federal',
-  odometer: 'records',
-  warranty: 'records',
-  'fuel-economy': 'records',
-  'official-records': 'official',
-  'records-elsewhere': 'records',
-  coverage: 'official',
-};
+function recordGroup(
+  id: string,
+  number: string,
+  title: string,
+  description: string,
+  content: HTMLElement,
+): HTMLElement {
+  const headingId = `${id}-heading`;
+  return el(
+    'section',
+    { class: 'record-group', id, 'aria-labelledby': headingId },
+    el(
+      'div',
+      { class: 'record-group__head' },
+      el('p', { class: 'record-group__number' }, number),
+      el(
+        'div',
+        {},
+        el('h2', { class: 'record-group__title', id: headingId, tabindex: '-1' }, title),
+        el('p', { class: 'record-group__description' }, description),
+      ),
+    ),
+    content,
+  );
+}
+
+function navigationLink(label: string, target: string): HTMLAnchorElement {
+  return el(
+    'a',
+    {
+      class: 'ops-nav__link',
+      href: `#${target}`,
+      onclick: (event: Event) => {
+        event.preventDefault();
+        jumpToSection(target);
+      },
+    },
+    label,
+  );
+}
 
 function unavailableMeta(sourceName: string): SectionMeta {
   return {
@@ -158,57 +184,67 @@ export function renderReport(
     { id: 'records-elsewhere', name: 'State, auction & service records' },
   ]);
 
-  const tabs = createTabs(
-    [
-      { id: 'overview', label: 'Overview' },
-      { id: 'federal', label: 'Federal records' },
-      { id: 'records', label: 'State & history' },
-      { id: 'official', label: 'Official checks' },
-    ],
-    'overview',
-    'vertical',
-  );
-
-  const navigate = (sectionId: string): void => {
-    tabs.activate(TAB_FOR_SECTION[sectionId] ?? 'overview');
-    jumpToSection(sectionId);
-  };
-
-  const summary = createSummaryBand(navigate);
-  const overview = createOverview(() => navigate('recalls'));
+  const operations = createOperationsSnapshot();
+  const summary = createSummaryBand((sectionId) => jumpToSection(sectionId));
   identity.root.classList.add('section--identity');
 
-  tabs.panel('overview').append(overview.root);
-  const safetyPanel = tabs.panel('federal');
-  safetyPanel.classList.add('report-grid');
-  safetyPanel.append(recalls.root, complaints.root, safety.root);
-  const recordsPanel = tabs.panel('records');
-  recordsPanel.classList.add('report-grid');
+  recalls.root.classList.add('section--half');
+  complaints.root.classList.add('section--half');
+  safety.root.classList.add('section--half');
+  odometer.root.classList.add('section--full');
   warranty.root.classList.add('section--half');
   fuel.root.classList.add('section--half');
-  recordsPanel.append(odometer.root, warranty.root, fuel.root, elsewhere.root);
-  const officialPanel = tabs.panel('official');
-  officialPanel.classList.add('report-grid');
-  officialPanel.append(official.root, coverage.root);
+  elsewhere.root.classList.add('section--full');
+  official.root.classList.add('section--half');
+  coverage.root.classList.add('section--half');
+
+  const federalGroup = recordGroup(
+    'federal-records',
+    '01 / FEDERAL',
+    'Safety & federal records',
+    'NHTSA results may describe the model line. Complaint matches use an 11-character VIN prefix.',
+    el('div', { class: 'report-grid' }, recalls.root, complaints.root, safety.root),
+  );
+  const stateGroup = recordGroup(
+    'state-records',
+    '02 / STATE + VEHICLE',
+    'Mileage, specifications & other sources',
+    'New York is the only state inspection dataset connected today. Other state portals are listed for manual review.',
+    el('div', { class: 'report-grid' }, odometer.root, warranty.root, fuel.root, elsewhere.root),
+  );
+  const officialGroup = recordGroup(
+    'official-checks',
+    '03 / VERIFICATION',
+    'Title, brand & theft checks',
+    'These official or authorized lookups open on their own sites; their results are not imported into High View.',
+    el('div', { class: 'report-grid' }, official.root, coverage.root),
+  );
 
   const container = el('div', { class: 'report container' });
   const navigation = el(
-    'aside',
-    { class: 'report-nav', 'aria-label': 'Vehicle report navigation' },
-    el('p', { class: 'report-nav__eyebrow' }, 'FILE SECTIONS'),
-    tabs.control,
+    'nav',
+    { class: 'ops-navigation', 'aria-label': 'Vehicle file sections' },
+    el('p', { class: 'ops-navigation__label' }, 'JUMP TO'),
+    navigationLink('Latest activity', 'latest-activity'),
+    navigationLink('Source checks', 'source-status'),
+    navigationLink('Federal', 'federal-records'),
+    navigationLink('State & history', 'state-records'),
+    navigationLink('Official checks', 'official-records'),
+    navigationLink('Coverage limits', 'coverage'),
   );
-  const workspace = el(
-    'div',
-    { class: 'report-workbench' },
-    navigation,
-    tabs.panels,
-  );
-  [identity.root, summary.root, workspace].forEach((target, index) => {
+  [identity.root, summary.root, operations.root].forEach((target, index) => {
     revealOnce(target);
     target.style.animationDelay = `${index * STAGGER_MS}ms`;
   });
-  container.append(identity.root, summary.root, workspace);
+  container.append(
+    identity.root,
+    summary.root,
+    operations.root,
+    navigation,
+    federalGroup,
+    stateGroup,
+    officialGroup,
+  );
   main.replaceChildren(container);
 
   const hydrate = <T>(
@@ -228,6 +264,7 @@ export function renderReport(
     if (!callbacks.isCurrent()) return;
     const rendered = renderIdentity(result);
     hydrate(identity, 'identity', result, rendered.content);
+    operations.setIdentity(result);
     callbacks.onVehicleName(rendered.vehicleName ?? '');
   });
 
@@ -240,7 +277,7 @@ export function renderReport(
     official.hydrate(meta, renderOfficialRecords(links));
     coverage.setRow('official-records', 'guided', meta.source.name);
     summary.set('official-records', officialTileState(links));
-    overview.setOfficial(links);
+    operations.setGuided(links);
 
     const elsewhereMeta: SectionMeta = {
       status: 'guided',
@@ -255,20 +292,22 @@ export function renderReport(
       if (!callbacks.isCurrent()) return;
       const content = renderRecalls(result, findLink(links, 'oem-recall'));
       hydrate(recalls, 'recalls', result, content);
+      operations.setRecalls(result);
       summary.set('recalls', recallsTileState(result));
-      overview.setRecalls(result);
     },
   );
 
   void settle(handles.complaints, 'NHTSA Complaints').then((result) => {
     if (!callbacks.isCurrent()) return;
     hydrate(complaints, 'complaints', result, renderComplaints(result));
+    operations.setComplaints(result);
     summary.set('complaints', complaintsTileState(result));
   });
 
   void settle(handles.safety, 'NHTSA NCAP').then((result) => {
     if (!callbacks.isCurrent()) return;
     hydrate(safety, 'safety', result, renderSafety(result));
+    operations.setSafety(result);
     summary.set('safety', safetyTileState(result));
   });
 
@@ -279,12 +318,14 @@ export function renderReport(
     if (!callbacks.isCurrent()) return;
     const content = renderOdometer(result, findLinks(links, 'state-emissions'));
     hydrate(odometer, 'odometer', result, content);
+    operations.setOdometer(result);
     summary.set('odometer', odometerTileState(result));
-    overview.setOdometer(result);
   });
 
   void settle(handles.fuelEconomy, 'fueleconomy.gov').then((result) => {
+    if (!callbacks.isCurrent()) return;
     hydrate(fuel, 'fuel-economy', result, renderFuel(result));
+    operations.setFuelEconomy(result);
   });
 
   void settle(handles.warranty, 'High View estimate').then((result) => {

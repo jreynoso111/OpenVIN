@@ -87,3 +87,18 @@ export function formatDate(iso: string | null | undefined): string {
     day: 'numeric',
   });
 }
+
+/** Format an ISO timestamp for source-query freshness labels. */
+export function formatDateTime(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return date.toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+  });
+}
