@@ -1,271 +1,172 @@
-/** Page shell: sticky header, hero/landing, footer. */
+/** Page shell: header with the search box, landing page, footer. */
 
-import { clear, el, svgEl } from './dom';
-
-export const SAMPLE_VIN = '1HGCM82633A004352';
+import { describeQuery, queryHref, type SearchQuery } from '../lib/query';
+import { clear, el } from './dom';
+import { createSearchForm, type SearchForm } from './searchForm';
 
 const DISCLAIMER =
-  'High View aggregates publicly available vehicle data. It is not affiliated ' +
-  'with CARFAX, Inc. or any data provider. No vehicle history source — free ' +
-  'or paid — is complete: events never reported to any public system will ' +
-  'not appear here or anywhere else. Estimates are labeled as estimates. ' +
-  'Always inspect a used vehicle independently before purchase.';
+  'High View assembles public U.S. DOT, NHTSA and New York State records in your browser. ' +
+  'It is not affiliated with any data provider, holds no DMV registration or owner data, and ' +
+  'shows historical inspection sites only — never live vehicle location.';
 
-function brandMark(): SVGElement {
-  const mark = svgEl('svg', {
-    class: 'brand__mark',
-    viewBox: '0 0 64 64',
-    'aria-hidden': 'true',
-    width: 22,
-    height: 22,
-  });
-  mark.append(
-    svgEl('rect', { width: 64, height: 64, rx: 18, fill: 'var(--color-accent)' }),
-    svgEl('path', {
-      d: 'M15 17 H23 V28 H41 V17 H49 V47 H41 V35 H23 V47 H15 Z',
-      fill: 'var(--color-on-accent)',
-    }),
+const RECENT_KEY = 'highview.recent';
+
+export const EXAMPLES: ReadonlyArray<{ query: SearchQuery; note: string }> = [
+  { query: { kind: 'vin', value: '3AKJHHDR7KSJX1198', state: null }, note: 'Tractor with plate history' },
+  { query: { kind: 'plate', value: '80764A', state: 'NV' }, note: 'One plate, three VINs' },
+  { query: { kind: 'name', value: 'Werner Enterprises', state: null }, note: 'Company name' },
+  { query: { kind: 'dot', value: '53467', state: null }, note: 'Carrier fleet' },
+];
+
+function wordmark(onHome: () => void): HTMLElement {
+  return el(
+    'a',
+    {
+      class: 'wordmark',
+      href: './',
+      onclick: (event: Event) => {
+        event.preventDefault();
+        onHome();
+      },
+    },
+    el('span', { class: 'wordmark__glyph', 'aria-hidden': 'true' }, 'HV'),
+    el('span', { class: 'wordmark__text' }, 'High View'),
   );
-  return mark;
 }
 
-export interface ShellCallbacks {
-  readonly onHome: () => void;
-  readonly onNewSearch: () => void;
+export function readRecent(): SearchQuery[] {
+  try {
+    const raw = localStorage.getItem(RECENT_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (item): item is SearchQuery =>
+        typeof item === 'object' && item !== null && typeof (item as SearchQuery).value === 'string' &&
+        ['vin', 'plate', 'dot', 'mc', 'name'].includes((item as SearchQuery).kind),
+    );
+  } catch {
+    return [];
+  }
+}
+
+export function rememberSearch(query: SearchQuery): void {
+  try {
+    const key = queryHref(query);
+    const next = [query, ...readRecent().filter((item) => queryHref(item) !== key)].slice(0, 8);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+  } catch {
+    /* storage unavailable — recent list is a convenience only */
+  }
 }
 
 export interface Shell {
   readonly main: HTMLElement;
-  showLandingHeader(): void;
-  showReportHeader(vin: string): void;
-  setHeaderVehicle(name: string): void;
+  showLanding(): void;
+  showFile(query: SearchQuery): void;
 }
 
-export function mountShell(app: HTMLElement, callbacks: ShellCallbacks): Shell {
-  const headerInner = el('div', { class: 'site-header__inner container' });
-  const header = el('header', { class: 'site-header' }, headerInner);
-  const main = el('main', {});
-  const footer = buildFooter();
+export function mountShell(
+  app: HTMLElement,
+  callbacks: { readonly onHome: () => void; readonly onSearch: (query: SearchQuery) => void },
+): Shell {
+  const search: SearchForm = createSearchForm(callbacks.onSearch, { compact: true, id: 'top-search' });
+  const headerInner = el('div', { class: 'topbar__inner container' }, wordmark(callbacks.onHome), search.root);
+  const header = el('header', { class: 'topbar' }, headerInner);
+  const main = el('main', { id: 'main' });
   clear(app);
-  app.append(header, main, footer);
-
-  const brand = (): HTMLElement =>
-    el(
-      'a',
-      {
-        class: 'brand',
-        href: './',
-        onclick: (event: Event) => {
-          event.preventDefault();
-          callbacks.onHome();
-        },
-      },
-      brandMark(),
-      'High View',
-    );
-
-  let vehicleName: HTMLElement | null = null;
+  app.append(header, main, footer());
 
   return {
     main,
-    showLandingHeader(): void {
-      vehicleName = null;
-      clear(headerInner);
-      headerInner.append(
-        brand(),
-        el('span', { class: 'header-product-tag' }, 'FLEET INTELLIGENCE'),
-      );
+    showLanding(): void {
+      header.dataset['mode'] = 'landing';
+      search.setValue(null);
+      main.replaceChildren(landing(callbacks.onSearch));
     },
-    showReportHeader(vin: string): void {
-      clear(headerInner);
-      vehicleName = el('span', { class: 'header-vehicle__name' }, 'Decoding…');
-      headerInner.append(
-        brand(),
-        el(
-          'div',
-          { class: 'header-vehicle' },
-          vehicleName,
-          el('span', { class: 'header-vehicle__vin' }, vin),
-        ),
-        el(
-          'button',
-          {
-            class: 'btn btn--ghost',
-            type: 'button',
-            onclick: () => callbacks.onNewSearch(),
-          },
-          'Search another VIN',
-        ),
-      );
-    },
-    setHeaderVehicle(name: string): void {
-      if (vehicleName) vehicleName.textContent = name || 'Unknown vehicle';
+    showFile(query: SearchQuery): void {
+      header.dataset['mode'] = 'file';
+      search.setValue(query);
     },
   };
 }
 
-/* ---------- Hero ---------- */
-
-export interface Hero {
-  readonly root: HTMLElement;
-  showError(message: string): void;
-  focus(): void;
-}
-
-export function renderHero(onSubmit: (rawVin: string) => void): Hero {
-  const input = el('input', {
-    class: 'vin-input',
-    id: 'vin-input',
-    type: 'text',
-    inputmode: 'text',
-    autocomplete: 'off',
-    autocapitalize: 'characters',
-    spellcheck: 'false',
-    placeholder: '17-character VIN',
-    'aria-describedby': 'vin-error',
-  });
-  const error = el('p', {
-    class: 'vin-error',
-    id: 'vin-error',
-    'aria-live': 'polite',
-  });
-
-  const submit = (raw: string): void => {
-    error.textContent = '';
-    input.removeAttribute('aria-invalid');
-    onSubmit(raw);
-  };
-
-  const form = el(
-    'form',
-    {
-      class: 'vin-form',
-      novalidate: true,
-      onsubmit: (event: Event) => {
-        event.preventDefault();
-        submit(input.value);
-      },
-    },
-    el('label', { class: 'visually-hidden', for: 'vin-input' },
-      'Vehicle Identification Number'),
+function landing(onSearch: (query: SearchQuery) => void): HTMLElement {
+  const form = createSearchForm(onSearch, { id: 'home-search' });
+  const recent = readRecent();
+  const exampleLink = (query: SearchQuery, note: string): HTMLElement =>
     el(
-      'div',
-      { class: 'vin-form__row' },
-      input,
-      el('button', { class: 'btn btn--primary', type: 'submit' }, 'Search vehicle'),
-    ),
-    error,
-  );
-
-  const sourceCards = [
-    {
-      eyebrow: '01 · FEDERAL',
-      title: 'Safety & recall signals',
-      detail: 'NHTSA campaigns, ODI complaints and crash-test data, with VIN-match limits called out.',
-    },
-    {
-      eyebrow: '02 · STATE',
-      title: 'Inspection & mileage',
-      detail: 'New York’s public inspection dataset is connected. Other state checks remain official link-outs.',
-    },
-    {
-      eyebrow: '03 · FLEET',
-      title: 'Vektor TMS status',
-      detail: 'Not connected yet. Dispatch status and last-known fleet location are not available in High View.',
-    },
-    {
-      eyebrow: '04 · VERIFICATION',
-      title: 'Title & theft checks',
-      detail: 'Open official or authorized portals. Their results stay on those sites and are not imported.',
-    },
-  ];
+      'li',
+      {},
+      el('a', { href: queryHref(query), 'data-pivot': '' }, describeQuery(query)),
+      el('span', { class: 'muted' }, ' — ' + note),
+    );
 
   const root = el(
-    'section',
-    { class: 'hero vehicle-search-home container', 'aria-labelledby': 'hero-heading' },
-    el(
-      'div',
-      { class: 'hero__search' },
-      el('p', { class: 'hero__eyebrow' }, 'HIGH VIEW · VEHICLE RECOVERY DESK'),
-      el('h1', { class: 'hero__title', id: 'hero-heading' },
-        'One VIN. The latest activity, at a glance.'),
-      el('p', { class: 'hero__tagline' },
-        'A vehicle file organized for fleet and recovery work: identity first, newest dated records next, and every source labeled.'),
-      form,
-      el(
-        'p',
-        { class: 'vin-sample' },
-        'Preview an example: ',
-        el(
-          'button',
-          {
-            type: 'button',
-            onclick: () => {
-              input.value = SAMPLE_VIN;
-              submit(SAMPLE_VIN);
-            },
-          },
-          `2003 Honda Accord · ${SAMPLE_VIN}`,
-        ),
-      ),
-      el(
-        'p',
-        { class: 'hero__honesty' },
-        'A missing record in one feed does not rule out records elsewhere. Public VIN data does not reveal an owner or a vehicle’s live location; Vektor TMS is not connected yet.',
-      ),
-    ),
+    'div',
+    { class: 'home container' },
     el(
       'section',
-      { class: 'hero__sources', 'aria-labelledby': 'sources-heading' },
-      el('p', { class: 'hero__sources-kicker' }, 'HOW THE FILE IS BUILT'),
-      el('h2', { class: 'hero__sources-heading', id: 'sources-heading' },
-        'One vehicle file, organized for action'),
+      { class: 'home__search', 'aria-labelledby': 'home-title' },
+      el('h1', { class: 'home__title', id: 'home-title' }, 'Find the truck. Follow every record it touches.'),
       el(
-        'div',
-        { class: 'hero__source-grid' },
-        ...sourceCards.map((card) =>
+        'p',
+        { class: 'home__lede' },
+        'Start from a VIN, a plate, a company or DBA name, a USDOT or an MC number. High View pulls the roadside inspections behind it and links each plate, carrier and coupled trailer to its own file.',
+      ),
+      form.root,
+    ),
+    el(
+      'div',
+      { class: 'home__cols' },
+      el(
+        'section',
+        { 'aria-labelledby': 'home-leads' },
+        el('h2', { class: 'home__h2', id: 'home-leads' }, 'What each search leads to'),
+        el(
+          'table',
+          { class: 'leads' },
           el(
-            'article',
-            { class: 'hero-source card' },
-            el('p', { class: 'hero-source__eyebrow' }, card.eyebrow),
-            el('h3', { class: 'hero-source__title' }, card.title),
-            el('p', { class: 'hero-source__detail' }, card.detail),
+            'tbody',
+            {},
+            ...[
+              ['VIN', 'Last roadside stops, plates carried, carriers, coupled trailers, NY inspections'],
+              ['Plate', 'Every VIN that carried it, carriers behind it, where it was stopped'],
+              ['Company / DBA', 'Matching business carriers with base city, fleet size and authority'],
+              ['USDOT / MC', 'Census profile, operating states, and the fleet seen at roadside'],
+            ].map(([kind, leads]) => el('tr', {}, el('th', { scope: 'row' }, kind ?? ''), el('td', {}, leads ?? ''))),
           ),
         ),
       ),
+      el(
+        'section',
+        { 'aria-labelledby': 'home-try' },
+        el('h2', { class: 'home__h2', id: 'home-try' }, recent.length > 0 ? 'Recent' : 'Try one'),
+        el(
+          'ul',
+          { class: 'home__list' },
+          ...(recent.length > 0
+            ? recent.map((query) => el('li', {}, el('a', { href: queryHref(query), 'data-pivot': '' }, describeQuery(query))))
+            : EXAMPLES.map((example) => exampleLink(example.query, example.note))),
+        ),
+        recent.length > 0
+          ? el('p', { class: 'home__more' }, 'Examples: ', ...EXAMPLES.flatMap((example, i) => [i > 0 ? ' · ' : '', el('a', { href: queryHref(example.query), 'data-pivot': '' }, describeQuery(example.query))]))
+          : null,
+      ),
+    ),
+    el(
+      'p',
+      { class: 'home__limits' },
+      'Coverage: FMCSA roadside inspections reach back about three years and only include commercial vehicles that were stopped. Individual owner-operators are never shown by name. Title, lien and theft status come from the official checks linked in each VIN file.',
     ),
   );
-
-  return {
-    root,
-    showError(message: string): void {
-      error.textContent = message;
-      input.setAttribute('aria-invalid', 'true');
-      input.focus();
-    },
-    focus(): void {
-      input.focus();
-    },
-  };
+  queueMicrotask(() => form.focus());
+  return root;
 }
 
-/* ---------- Footer ---------- */
-
-function buildFooter(): HTMLElement {
+function footer(): HTMLElement {
   return el(
     'footer',
-    { class: 'site-footer' },
-    el(
-      'div',
-      { class: 'container' },
-      el(
-        'div',
-        { class: 'site-footer__row' },
-        el('span', { class: 'brand' }, brandMark(), 'High View'),
-        el('span', { class: 'footer-workspace-tag' }, 'Fleet & recovery workspace'),
-        el('span', {}, 'Public records · Federal + available state data'),
-      ),
-      el('p', { class: 'site-footer__disclaimer' }, DISCLAIMER),
-    ),
+    { class: 'footer' },
+    el('div', { class: 'container' }, el('p', {}, DISCLAIMER)),
   );
 }

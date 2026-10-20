@@ -9,17 +9,16 @@ High View now queries the public FMCSA datasets directly from the browser, witho
 an API key or a Vektor subscription. `src/lib/api/fmcsa.ts` joins Inspections Per
 Unit to the Vehicle Inspection File by `inspection_id`, then joins violation
 descriptions by both `inspection_id` and the exact `insp_unit_id` matched to the
-VIN. It reads non-personal carrier fields from Company Census: status, operation
-class, reported truck/power-unit counts, the crash-rate field, MCS-150 date,
-authority docket/status, and safety rating/date. It does not request names, contacts,
-addresses, officers, drivers, or other person records.
+VIN. It reads carrier company and DBA names for identified business entities, plus
+status, operation class, reported truck/power-unit counts, the crash-rate field,
+MCS-150 date, authority docket/status, and safety rating/date. Individual names,
+contacts, addresses, officers, drivers, and other person records are omitted.
 
 The report shows historical inspection date, state and site, observed plate, USDOT
-carrier ID, vehicle-level violation counts, unit-linked violation descriptions,
-out-of-service results, and inspection IDs. A plate-observation summary groups the
+carrier company name and ID, vehicle-level violation counts, unit-linked violation
+descriptions, out-of-service results, and inspection IDs. A plate-observation summary groups the
 VIN-matched plate/state pairs by latest sighting and count. An official SAFER Company
-Snapshot link opens the USDOT record externally; High View does not copy business
-names or other identifying details into the report. A carrier listed on an old
+Snapshot link opens the USDOT record externally. A carrier listed on an old
 inspection is not proof of the current operator or owner. An inspection site is not a
 live vehicle location. FMCSA says its inspection files are updated daily from a
 24-hour-old database and include three years of history; older reports may be

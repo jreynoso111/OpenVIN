@@ -1,7 +1,8 @@
-/** Section 1 — compact identity header: name + one wrapping spec meta line. */
+/** VIN file header body: decoded specs as one compact fact row. */
 
 import type { SectionResult, VehicleIdentity } from '../lib/types';
 import { el, formatNumber } from './dom';
+import { factList } from './panel';
 
 export function vehicleDisplayName(identity: VehicleIdentity): string {
   const parts = [
@@ -13,16 +14,11 @@ export function vehicleDisplayName(identity: VehicleIdentity): string {
   return parts.join(' ');
 }
 
-/** Space-joined so it reads as one item inside the dot-separated meta line. */
 function engineSummary(identity: VehicleIdentity): string | null {
   const { engine } = identity;
   const parts = [
     engine.displacementL !== null ? `${engine.displacementL.toFixed(1)}L` : null,
-    engine.configuration && engine.cylinders !== null
-      ? `${engine.configuration.charAt(0).toUpperCase()}${engine.cylinders}`
-      : engine.cylinders !== null
-        ? `${engine.cylinders}-cyl`
-        : null,
+    engine.cylinders !== null ? `${engine.cylinders}-cyl` : null,
     engine.horsepower !== null ? `${formatNumber(engine.horsepower)} hp` : null,
     engine.fuelType,
   ].filter((part): part is string => Boolean(part));
@@ -30,11 +26,8 @@ function engineSummary(identity: VehicleIdentity): string | null {
 }
 
 function plantSummary(identity: VehicleIdentity): string | null {
-  const parts = [
-    identity.plant.city,
-    identity.plant.state,
-    identity.plant.country,
-  ].filter((part): part is string => Boolean(part && part.trim()));
+  const parts = [identity.plant.city, identity.plant.state, identity.plant.country]
+    .filter((part): part is string => Boolean(part && part.trim()));
   return parts.length > 0 ? parts.join(', ') : null;
 }
 
@@ -44,16 +37,9 @@ export function renderIdentity(
   if (result.status !== 'hit' || !result.data) {
     return {
       content: el(
-        'div',
-        { class: 'identity-compact' },
-        el('p', { class: 'identity__name' }, 'This VIN could not be decoded'),
-        el(
-          'p',
-          { class: 'note', style: 'margin-top:0.4rem' },
-          result.note ??
-            'The federal VIN decoder did not return a usable result. ' +
-            'The rest of the report may still find records.',
-        ),
+        'p',
+        { class: 'case__note' },
+        result.note ?? 'The federal decoder returned nothing usable. Roadside records below still match the exact VIN.',
       ),
       vehicleName: null,
     };
@@ -61,51 +47,22 @@ export function renderIdentity(
 
   const identity = result.data;
   const name = vehicleDisplayName(identity);
-  const subParts = [identity.series, identity.vehicleType].filter(
-    (part): part is string => Boolean(part && part.trim()),
-  );
-  const metaParts = [
-    engineSummary(identity),
-    identity.transmission,
-    identity.driveType,
-    identity.bodyClass,
-    plantSummary(identity),
-    identity.gvwr,
-  ].filter((part): part is string => Boolean(part && part.trim()));
-
   const content = el(
     'div',
-    { class: 'identity-compact' },
-    el(
-      'div',
-      { class: 'identity__header' },
-      el(
-        'div',
-        {},
-        el('p', { class: 'identity__eyebrow' }, 'VEHICLE IDENTIFIED BY VIN'),
-        el('p', { class: 'identity__name' }, name || identity.vin),
-      ),
-      el(
-        'div',
-        { class: 'identity__vin' },
-        el('span', { class: 'identity__vin-label' }, 'VIN'),
-        el('code', {}, identity.vin),
-      ),
+    {},
+    factList(
+      [
+        ['Type', [identity.bodyClass ?? identity.vehicleType, identity.series].filter(Boolean).join(' · ') || null],
+        ['Engine', engineSummary(identity)],
+        ['Drive', [identity.driveType, identity.transmission].filter(Boolean).join(' · ') || null],
+        ['GVWR', identity.gvwr],
+        ['Built', plantSummary(identity)],
+      ],
+      'facts facts--row',
     ),
-    subParts.length > 0
-      ? el('p', { class: 'identity__sub' }, subParts.join(' · '))
-      : null,
-    metaParts.length > 0
-      ? el('p', { class: 'identity__meta' }, metaParts.join(' · '))
-      : null,
     identity.decodeWarning
-      ? el(
-          'p',
-          { class: 'decode-warning' },
-          `Decoder note: ${identity.decodeWarning}`,
-        )
+      ? el('p', { class: 'case__note' }, 'Decoder note: ' + identity.decodeWarning)
       : null,
   );
-
   return { content, vehicleName: name || null };
 }

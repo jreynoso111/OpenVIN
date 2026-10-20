@@ -25,3 +25,6 @@ Thumbs.db
 *.log
 .idea/
 .vscode/
+
+# Vercel CLI link
+.vercel

@@ -116,6 +116,8 @@ export interface CommercialInspection {
   location: string | null;
   level: string | null;
   carrierDotNumber: string | null;
+  carrierLegalName: string | null;
+  carrierDbaName: string | null;
   carrierStatusCode: string | null;
   /** Non-personal fields from the current FMCSA Company Census for this DOT. */
   carrierOperationClass: string | null;
@@ -128,10 +130,17 @@ export interface CommercialInspection {
   carrierAuthorityStatusCode: string | null;
   carrierSafetyRating: string | null;
   carrierSafetyRatingDate: string | null;
+  /** Carrier base city/state from the census — business entities only. */
+  carrierBaseCity: string | null;
+  carrierBaseState: string | null;
   plate: string | null;
   plateState: string | null;
   vehicleMake: string | null;
   vehicleTypeCode: string | null;
+  /** Carrier's fleet/unit marking as recorded by the inspector. */
+  companyUnit: string | null;
+  /** Other units inspected together with this vehicle (tractor, trailer, chassis). */
+  companions: UnitSighting[];
   /** Whole inspection totals can include the driver as well as the vehicle. */
   inspectionViolations: number | null;
   inspectionOutOfService: number | null;
@@ -187,4 +196,72 @@ export interface GuidedLink {
   description: string;
   /** Optional badge, e.g. "Free" | "Free · 5/day" */
   badge?: string;
+}
+
+/**
+ * FMCSA Company Census profile. `legalName`, `dbaName`, `baseCity` and
+ * `baseState` are populated only for identified business entities.
+ */
+export interface CarrierProfile {
+  dotNumber: string;
+  legalName: string | null;
+  dbaName: string | null;
+  isBusiness: boolean;
+  status: string | null;
+  operationClass: string | null;
+  truckUnits: number | null;
+  powerUnits: number | null;
+  drivers: number | null;
+  recordableCrashRate: number | null;
+  mcs150Date: string | null;
+  addedDate: string | null;
+  docketPrefix: string | null;
+  docketNumber: string | null;
+  authorityStatus: string | null;
+  safetyRating: string | null;
+  safetyRatingDate: string | null;
+  baseCity: string | null;
+  baseState: string | null;
+}
+
+/** One inspected unit at one roadside inspection (any search entry point). */
+export interface UnitSighting {
+  inspectionId: string;
+  date: string | null;
+  state: string | null;
+  site: string | null;
+  carrierDotNumber: string | null;
+  vin: string | null;
+  plate: string | null;
+  plateState: string | null;
+  make: string | null;
+  unitType: string | null;
+  /** Carrier's own fleet/unit marking recorded by the inspector (e.g. "2104"). */
+  companyUnit: string | null;
+  /** 1 = power unit, 2+ = towed units in the same inspection. */
+  position: number | null;
+  vehicleOutOfService: number | null;
+}
+
+/** Vehicles seen in a carrier's recent inspections, grouped by VIN. */
+export interface FleetVehicle {
+  vin: string;
+  make: string | null;
+  unitType: string | null;
+  plates: string[];
+  companyUnits: string[];
+  sightings: number;
+  lastSeen: UnitSighting;
+  firstSeenDate: string | null;
+}
+
+export interface CarrierFleet {
+  vehicles: FleetVehicle[];
+  /** Inspection counts by reporting state, most frequent first. */
+  states: Array<{ state: string; count: number; lastDate: string | null }>;
+  inspectionsScanned: number;
+  /** True when the scan hit its row cap; older inspections were not read. */
+  truncated: boolean;
+  newestDate: string | null;
+  oldestDate: string | null;
 }

@@ -12,31 +12,29 @@
 - **Stack**: Vite + vanilla TypeScript (strict), **zero runtime dependencies**,
   PostgreSQL-free — fully static; all data is fetched in the visitor's browser.
 - **Size**: ~22.6 kB gzipped JS + ~6.2 kB CSS (budget: 80 kB).
-- **Tests**: 105 vitest unit tests (`npm test`). `npm run build` runs `tsc --noEmit` first.
+- **Tests**: 117 vitest unit tests (`npm test`). `npm run build` runs `tsc --noEmit` first.
 - **Scope**: the static MVP ("OpenVIN Lite") — see [STATIC_MVP.md](./STATIC_MVP.md) for
   what is deliberately excluded until a backend exists.
 
-## 2. What a report contains (as shipped)
+## 2. What the app does (as shipped)
 
-Persistent on every tab: compact **identity header** (vehicle title + dot-separated
-spec line from the vPIC decode) and the **at-a-glance summary band** — six live stat
-tiles (Recalls · Complaints · Safety · Odometer · Warranty · Official checks), each a
-button that switches to the owning tab and focuses the section. Tiles hydrate
-independently with skeletons and show honest failure states.
+One search box accepts a **VIN, plate (optional state), company or DBA name, USDOT
+or MC number** (auto-detected, or forced with the Any/VIN/Plate/Company switch).
+Every identifier on screen is a pivot link (`?vin=`, `?plate=&state=`, `?dot=`,
+`?mc=`, `?name=`) that opens its own file, so an investigation can move
+VIN → plate → other VINs → carrier → fleet without retyping.
 
-Below: a **vehicle-file workspace** with a vertical section rail on desktop and a
-horizontal scrollable rail on smaller screens (ARIA tabs pattern, arrow-key
-navigation, reduced-motion-safe):
-
-| Tab | Contents |
+| File | Contents |
 |---|---|
-| Overview | Vehicle identity · at-a-glance source results · recall hazard card · compact odometer trend · official-check actions |
-| Federal records | NHTSA recalls · complaint reports (11-character VIN-prefix matches are labeled as such) · NCAP ratings |
-| State & history | State inspection/odometer records · warranty estimate · fuel economy · state and supplemental source links |
-| Official checks | NMVTIS/NICB guided lookups · per-source coverage and structural-gap disclosures |
+| VIN | Decoded specs · **where it has been seen** (last roadside stop, states and sites by frequency, carrier base, fleet markings) · **connections** (plates carried and other VINs on those plates, carriers, trailers/chassis inspected together) · roadside log · carrier profiles · NY inspections when they exist |
+| Plate | Every VIN recorded with the plate, carriers on those stops, where it was stopped, roadside log |
+| Company / DBA | Business carriers whose legal or DBA name contains every word (individuals are never listed by name) |
+| USDOT / MC | Census profile, the fleet seen on its 400 most recent inspections (filterable by VIN, plate, cab/unit number), operating states |
 
-All charts are hand-rolled inline SVG, theme-token colored, `viewBox`-sized (safe
-inside hidden tab panels), `aria-hidden` with text/table fallbacks.
+A right-hand rail lists every source checked with its status and query time, the
+official follow-ups (NICB, NMVTIS, state title, auction), and one limits note. NHTSA
+recalls, complaints and NCAP ratings are no longer shown: they describe the model
+line, not the unit being located. Their data modules remain in `src/lib/api/`.
 
 ## 3. Codebase map
 
@@ -44,33 +42,29 @@ inside hidden tab panels), `aria-hidden` with text/table fallbacks.
 src/lib/            DATA LAYER (pure + fetchers; UI never parses raw API JSON)
   types.ts          THE CONTRACT: SectionResult<T>, statuses, all data shapes. No person fields, ever.
   vin.ts            normalize/squish + ISO 3779 check digit (see invariant #5)
+  query.ts          search parsing (VIN / plate / USDOT / MC / name) and URL mapping
   api/http.ts       fetchJson: 12s timeout, retry×2 on 429/5xx/timeout/network,
                     per-host pacing for api.nhtsa.gov (see invariant #4); httpTuning test seam
   api/vpic.ts       decode (154 fields) — vpic.nhtsa.dot.gov, CORS *, reliable
-  api/recalls.ts    recallsByVehicle — api.nhtsa.gov (rate-limited! see #4)
-  api/complaints.ts complaintsByVehicle + 11-char squish-VIN matching
-  api/safety.ts     NCAP two-step (variants → VehicleId)
   api/ny.ts         data.ny.gov Socrata vezn-fmmk — full-VIN odometer history (NY vehicles)
-  api/fueleconomy.ts menu-match decode→EPA vehicle id (Accept: application/json)
-  warranty.ts       estimate from data/warrantyTerms.ts (28 brands); injectable `now` for tests
-  links.ts          guided link-outs: NMVTIS, NICB, 26-make OEM recall map, GM/Stellantis
-                    sticker URLs, state portals, service portals
-  report.ts         startReport(vin) → 8 promises that ALWAYS resolve (never reject)
-src/ui/             UI LAYER (renders SectionResult; one module per concern)
-  report.ts         orchestrator: layout, tabs, hydration wiring (all isCurrent-guarded)
-  workspace.css     search-first landing page + responsive report section rail
-  summary.ts        tile band + per-section tile-state mappers + jumpToSection
-  tabs.ts           segmented control + panels (panels stay mounted; display:none)
-  overview.ts       Overview tab composition
-  viz.ts            SVG charts (bars, timeline, segments)
-  frame.ts          section chrome (title/status pill/source line, focusable headings)
-  expander.ts       collapsedList (first 3 + "Show all N", aria-expanded)
-  identity/recalls/complaints/safety/odometer/fuel/warranty/links/coverage.ts  section renderers
-  shell.ts          sticky header, hero/landing, footer disclaimer
-  dom.ts, skeleton.ts helpers
-src/styles/         tokens.css (ALL colors/type/spacing — both themes) + per-area sheets
-tests/              105 unit tests; API modules tested via exported mappers on real-response
-                    fixtures; report.test zeroes httpTuning delays
+  api/fmcsaShared.ts dataset IDs, SoQL helpers, business-only carrier parsing, unit/inspection parsers
+  api/fmcsa.ts      VIN → inspections, violations, coupled units, carrier census
+  api/fmcsaLookup.ts plate search, carrier search by name/USDOT/MC, carrier fleet, plate second hop
+  api/recalls.ts, complaints.ts, safety.ts, fueleconomy.ts, warranty.ts — kept, not called by the UI
+  links.ts          guided link-outs: NMVTIS, NICB, state portals, auctions
+  report.ts         startReport(vin) → VIN-file promises that always resolve
+src/ui/             UI LAYER
+  shell.ts          top bar with the search box, landing page, footer, recent searches (localStorage)
+  searchForm.ts     mode switch + input + plate state
+  case.ts, panel.ts case header, two-column layout, panels, sources ledger, rail blocks
+  pivot.ts          identifier links (intercepted in main.ts for in-app navigation)
+  report.ts         VIN file; commercial.ts = its FMCSA sections
+  plateFile.ts, carrierFile.ts  plate, carrier and name-search files
+  carrier.ts, sightings.ts      carrier profile and location/frequency/log building blocks
+  identity.ts, odometer.ts, links.ts, viz.ts, dom.ts  shared renderers and helpers
+src/styles/         tokens.css (ALL colors/type — both themes), base.css (shell/search), desk.css, viz.css
+tests/              unit tests; API modules tested via exported mappers; search.test covers parsing,
+                    census privacy filtering and fleet grouping
 ```
 
 ## 4. Invariants — do not break these
@@ -97,8 +91,9 @@ tests/              105 unit tests; API modules tested via exported mappers on r
    on components was silently defeating the `hidden` attribute before this fix.
 8. **Colors only via tokens.css custom properties.** Zero hardcoded colors in component
    CSS is what keeps both themes correct without per-theme audits.
-9. Report content stays vehicle-data-only, estimates labeled as estimates, and the
-   coverage strip + footer disclaimer never get removed — honesty is the product.
+9. Report content stays vehicle-data-only, estimates labeled as estimates, and source
+   status remains visible in each section with the footer disclaimer. The standalone
+   Coverage panel is not part of the current report.
 
 ## 5. Data-source quirks (operational notes)
 
@@ -116,7 +111,7 @@ tests/              105 unit tests; API modules tested via exported mappers on r
 ```bash
 npm install
 npm run dev        # local dev server
-npm test           # 105 unit tests
+npm test           # 117 unit tests
 npm run build      # tsc --noEmit + vite build → dist/
 npm run preview    # serve dist at :4173 (path /OpenVIN/)
 git push           # → auto test + build + deploy to Pages
@@ -126,8 +121,8 @@ git push           # → auto test + build + deploy to Pages
   24 complaints sharing its 11-character VIN prefix; NCAP "Not rated" is correct for its era).
 - **Adding a data source**: check LEGAL.md tier first → new module in `src/lib/api/`
   returning `SectionResult` via `fetchJson` → export a pure mapper and test it on a
-  real-response fixture → wire into `src/lib/report.ts` → render in a section module →
-  add a coverage row + (if headline-worthy) a summary-tile state.
+  real-response fixture → wire into `src/lib/report.ts` → render it in the relevant
+  detailed section with its source and status.
 - **Adding a chart**: build in `src/ui/viz.ts` (SVG, tokens, viewBox, aria-hidden +
   text fallback), styles in `viz.css`.
 - Conventional commits (`feat:`/`fix:`/`docs:`…); files < 400 lines; strict TS, no `any`

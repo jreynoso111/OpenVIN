@@ -1,62 +1,38 @@
 /**
- * Report orchestrator: one operational vehicle file with visible activity,
- * source freshness, and all detailed records grouped on a single page.
+ * VIN file: identity header, where the unit has been seen, its connections
+ * (plates, carriers, coupled units), roadside log, carriers and NY records,
+ * with a rail listing every source checked and the official follow-ups.
  */
 
+import type { PlateLink } from '../lib/report';
 import type {
   CommercialInspection,
-  ComplaintsSummary,
-  FuelEconomy,
   GuidedLink,
   OdometerReading,
-  RecallCampaign,
-  SafetyRating,
   SectionResult,
   VehicleIdentity,
-  WarrantyEstimate,
 } from '../lib/types';
-import { renderComplaints } from './complaints';
-import { renderCommercialInspections } from './commercial';
-import { createCoveragePanel } from './coverage';
-import { el, revealOnce } from './dom';
-import { createSection, type SectionFrame, type SectionMeta } from './frame';
-import { renderFuel } from './fuel';
+import {
+  carrierUses,
+  renderCarriers,
+  renderConnections,
+  renderRoadsideLog,
+  renderWhereSeen,
+} from './commercial';
+import { el, formatNumber } from './dom';
+import { caseHeader, caseLayout, limitsNote, officialChecks } from './case';
 import { renderIdentity } from './identity';
-import { findLink, findLinks, renderOfficialRecords, renderRecordsElsewhere } from './links';
+import { findLinks } from './links';
 import { renderOdometer } from './odometer';
-import { createOperationsSnapshot } from './operations';
-import { renderRecalls } from './recalls';
-import { renderSafety } from './safety';
-import {
-  cardsSkeleton,
-  chartSkeleton,
-  identitySkeleton,
-  linesSkeleton,
-  rowsSkeleton,
-} from './skeleton';
-import {
-  complaintsTileState,
-  commercialInspectionsTileState,
-  createSummaryBand,
-  jumpToSection,
-  odometerTileState,
-  officialTileState,
-  recallsTileState,
-  safetyTileState,
-  warrantyTileState,
-} from './summary';
-import { renderWarranty } from './warranty';
+import { createLedger, createPanel } from './panel';
+import { dotPivot, platePivot } from './pivot';
 
 /** Mirror of the data layer's startReport() return shape (src/lib/report). */
 export interface ReportHandles {
   readonly identity: Promise<SectionResult<VehicleIdentity>>;
-  readonly recalls: Promise<SectionResult<RecallCampaign[]>>;
-  readonly complaints: Promise<SectionResult<ComplaintsSummary>>;
-  readonly safety: Promise<SectionResult<SafetyRating>>;
   readonly nyInspections: Promise<SectionResult<OdometerReading[]>>;
   readonly commercialInspections: Promise<SectionResult<CommercialInspection[]>>;
-  readonly fuelEconomy: Promise<SectionResult<FuelEconomy>>;
-  readonly warranty: Promise<SectionResult<WarrantyEstimate>>;
+  readonly plateLinks: Promise<PlateLink[]>;
   readonly guidedLinks: Promise<GuidedLink[]>;
 }
 
@@ -66,303 +42,131 @@ export interface ReportCallbacks {
   readonly isCurrent: () => boolean;
 }
 
-const STAGGER_MS = 55;
+function unavailable<T>(name: string): SectionResult<T> {
+  return { status: 'unavailable', source: { name }, note: 'Something went wrong loading this source.' };
+}
 
-function recordGroup(
-  id: string,
-  number: string,
-  title: string,
-  description: string,
-  content: HTMLElement,
-): HTMLElement {
-  const headingId = `${id}-heading`;
-  return el(
-    'section',
-    { class: 'record-group', id, 'aria-labelledby': headingId },
-    el(
-      'div',
-      { class: 'record-group__head' },
-      el('p', { class: 'record-group__number' }, number),
-      el(
-        'div',
-        {},
-        el('h2', { class: 'record-group__title', id: headingId, tabindex: '-1' }, title),
-        el('p', { class: 'record-group__description' }, description),
-      ),
-    ),
-    content,
+function settle<T>(promise: Promise<SectionResult<T>>, name: string): Promise<SectionResult<T>> {
+  return promise.catch(() => unavailable<T>(name));
+}
+
+function keyIdentifiers(records: readonly CommercialInspection[]): HTMLElement | null {
+  const plates = new Map<string, HTMLElement>();
+  for (const record of records) {
+    if (!record.plate) continue;
+    const key = record.plate + '|' + (record.plateState ?? '');
+    if (!plates.has(key)) plates.set(key, platePivot(record.plate, record.plateState));
+  }
+  const carriers = carrierUses(records).map((use) =>
+    dotPivot(use.carrier.dotNumber, use.carrier.legalName ?? use.carrier.dbaName ?? undefined),
   );
-}
-
-function navigationLink(label: string, target: string): HTMLAnchorElement {
+  if (plates.size === 0 && carriers.length === 0) return null;
   return el(
-    'a',
-    {
-      class: 'ops-nav__link',
-      href: `#${target}`,
-      onclick: (event: Event) => {
-        event.preventDefault();
-        jumpToSection(target);
-      },
-    },
-    label,
+    'div',
+    { class: 'ids' },
+    plates.size > 0 ? el('div', { class: 'ids__group' }, el('span', { class: 'ids__label' }, 'Plates'), ...plates.values()) : null,
+    carriers.length > 0 ? el('div', { class: 'ids__group' }, el('span', { class: 'ids__label' }, 'Carriers'), ...carriers) : null,
   );
-}
-
-function unavailableMeta(sourceName: string): SectionMeta {
-  return {
-    status: 'unavailable',
-    source: { name: sourceName },
-    note: 'Something went wrong loading this section.',
-  };
-}
-
-/** Contract says section promises always resolve; belt-and-braces anyway. */
-function settle<T>(
-  promise: Promise<SectionResult<T>>,
-  sourceName: string,
-): Promise<SectionResult<T>> {
-  return promise.catch(() => unavailableMeta(sourceName) as SectionResult<T>);
 }
 
 export function renderReport(
   main: HTMLElement,
   handles: ReportHandles,
   callbacks: ReportCallbacks,
+  vin: string,
 ): void {
-  const identity = createSection({
-    id: 'identity',
-    title: 'Vehicle identity',
-    hideTitle: true,
-    skeleton: identitySkeleton(),
-  });
-  const official = createSection({
-    id: 'official-records',
-    title: 'Check the official records',
-    skeleton: cardsSkeleton(2),
-  });
-  const recalls = createSection({
-    id: 'recalls',
-    title: 'Recalls',
-    skeleton: rowsSkeleton(3),
-  });
-  const complaints = createSection({
-    id: 'complaints',
-    title: 'NHTSA complaint records',
-    skeleton: rowsSkeleton(2),
-  });
-  const safety = createSection({
-    id: 'safety',
-    title: 'Crash-test ratings',
-    skeleton: linesSkeleton(4),
-  });
-  const odometer = createSection({
-    id: 'odometer',
-    title: 'Odometer history',
-    skeleton: chartSkeleton(),
-  });
-  const commercial = createSection({
-    id: 'commercial-inspections',
-    title: 'FMCSA commercial roadside inspections',
-    skeleton: rowsSkeleton(3),
-  });
-  const fuel = createSection({
-    id: 'fuel-economy',
-    title: 'Fuel economy',
-    skeleton: linesSkeleton(2),
-  });
-  const warranty = createSection({
-    id: 'warranty',
-    title: 'Factory warranty',
-    skeleton: linesSkeleton(3),
-  });
-  const elsewhere = createSection({
-    id: 'records-elsewhere',
-    title: 'Records elsewhere',
-    skeleton: linesSkeleton(5),
-  });
-  const coverage = createCoveragePanel([
-    { id: 'identity', name: 'Vehicle identity' },
-    { id: 'official-records', name: 'Title, salvage & theft' },
-    { id: 'recalls', name: 'Recall campaigns' },
-    { id: 'complaints', name: 'NHTSA complaint reports' },
-    { id: 'commercial-inspections', name: 'Commercial roadside history' },
-    { id: 'safety', name: 'Crash-test ratings' },
-    { id: 'odometer', name: 'Odometer history' },
-    { id: 'fuel-economy', name: 'Fuel economy' },
-    { id: 'warranty', name: 'Warranty estimate' },
-    { id: 'records-elsewhere', name: 'State, auction & service records' },
-  ]);
+  const header = caseHeader('VIN file', vin);
+  const where = createPanel({ id: 'where', title: 'Where it has been seen', hint: 'Historical roadside stops — not live tracking.', lines: 4 });
+  const links = createPanel({ id: 'connections', title: 'Connections', hint: 'Plates, carriers and units recorded with this VIN. Every identifier opens its own file.', lines: 4 });
+  const log = createPanel({ id: 'roadside', title: 'Roadside log', lines: 5 });
+  const carriers = createPanel({ id: 'carriers', title: 'Carriers', lines: 3 });
+  const odometer = createPanel({ id: 'ny', title: 'New York inspections', lines: 3 });
 
-  const operations = createOperationsSnapshot();
-  const summary = createSummaryBand((sectionId) => jumpToSection(sectionId));
-  identity.root.classList.add('section--identity');
+  const ledger = createLedger();
+  ledger.add('vpic', 'VIN decode · NHTSA vPIC');
+  ledger.add('fmcsa', 'Roadside inspections · FMCSA');
+  ledger.add('plates', 'Plate cross-check · FMCSA');
+  ledger.add('ny', 'NY inspections · data.ny.gov');
+  const checks = el('div');
 
-  recalls.root.classList.add('section--half');
-  complaints.root.classList.add('section--half');
-  safety.root.classList.add('section--half');
-  odometer.root.classList.add('section--full');
-  commercial.root.classList.add('section--full');
-  warranty.root.classList.add('section--half');
-  fuel.root.classList.add('section--half');
-  elsewhere.root.classList.add('section--full');
-  official.root.classList.add('section--half');
-  coverage.root.classList.add('section--half');
-
-  const commercialGroup = recordGroup(
-    'commercial-records',
-    '01 / COMMERCIAL FLEET',
-    'Commercial roadside history',
-    'FMCSA joins the exact VIN to historical inspection and plate observations, then adds non-personal carrier fleet, authority and safety fields by USDOT. Open SAFER for the carrier identity; High View does not import contact or person data. Inspection sites are historical, not live tracking.',
-    el('div', { class: 'report-grid' }, commercial.root),
-  );
-  const federalGroup = recordGroup(
-    'federal-records',
-    '02 / FEDERAL',
-    'Safety & federal records',
-    'NHTSA results may describe the model line. Complaint matches use an 11-character VIN prefix.',
-    el('div', { class: 'report-grid' }, recalls.root, complaints.root, safety.root),
-  );
-  const stateGroup = recordGroup(
-    'state-records',
-    '03 / STATE + VEHICLE',
-    'Mileage, specifications & other sources',
-    'New York is the only state vehicle-safety and emissions dataset connected today. FMCSA also includes reported commercial roadside inspections across states; other state VIN portals remain manual.',
-    el('div', { class: 'report-grid' }, odometer.root, warranty.root, fuel.root, elsewhere.root),
-  );
-  const officialGroup = recordGroup(
-    'official-checks',
-    '04 / VERIFICATION',
-    'Title, brand & theft checks',
-    'These official or authorized lookups open on their own sites; their results are not imported into High View.',
-    el('div', { class: 'report-grid' }, official.root, coverage.root),
+  main.replaceChildren(
+    caseLayout(
+      header.root,
+      [where.root, links.root, log.root, carriers.root, odometer.root],
+      [
+        ledger.root,
+        checks,
+        limitsNote(
+          'Roadside records show where a unit was stopped and under which carrier, up to about three years back. They are not a live position, and a carrier on an inspection is not proof of current owner or operator.',
+        ),
+      ],
+    ),
   );
 
-  const container = el('div', { class: 'report container' });
-  const navigation = el(
-    'nav',
-    { class: 'ops-navigation', 'aria-label': 'Vehicle file sections' },
-    el('p', { class: 'ops-navigation__label' }, 'JUMP TO'),
-    navigationLink('Latest activity', 'latest-activity'),
-    navigationLink('Source checks', 'source-status'),
-    navigationLink('Roadside history', 'commercial-records'),
-    navigationLink('Federal', 'federal-records'),
-    navigationLink('State & history', 'state-records'),
-    navigationLink('Official checks', 'official-records'),
-    navigationLink('Coverage limits', 'coverage'),
-  );
-  [identity.root, summary.root, operations.root].forEach((target, index) => {
-    revealOnce(target);
-    target.style.animationDelay = `${index * STAGGER_MS}ms`;
-  });
-  container.append(
-    identity.root,
-    summary.root,
-    operations.root,
-    navigation,
-    commercialGroup,
-    federalGroup,
-    stateGroup,
-    officialGroup,
-  );
-  main.replaceChildren(container);
-
-  const hydrate = <T>(
-    frame: SectionFrame,
-    coverageId: string,
-    result: SectionResult<T>,
-    content: Node | null,
-  ): void => {
-    if (!callbacks.isCurrent()) return;
-    frame.hydrate(result, content);
-    coverage.setRow(coverageId, result.status, result.source.name);
+  const live = <T>(run: (value: T) => void) => (value: T): void => {
+    if (callbacks.isCurrent()) run(value);
   };
 
-  const guidedLinks: Promise<GuidedLink[]> = handles.guidedLinks.catch(() => []);
-
-  void settle(handles.identity, 'NHTSA vPIC').then((result) => {
-    if (!callbacks.isCurrent()) return;
-    const rendered = renderIdentity(result);
-    hydrate(identity, 'identity', result, rendered.content);
-    operations.setIdentity(result);
-    callbacks.onVehicleName(rendered.vehicleName ?? '');
-  });
-
-  void guidedLinks.then((links) => {
-    if (!callbacks.isCurrent()) return;
-    const meta: SectionMeta = {
-      status: 'guided',
-      source: { name: 'NMVTIS (vehiclehistory.gov) & NICB VINCheck' },
-    };
-    official.hydrate(meta, renderOfficialRecords(links));
-    coverage.setRow('official-records', 'guided', meta.source.name);
-    summary.set('official-records', officialTileState(links));
-    operations.setGuided(links);
-
-    const elsewhereMeta: SectionMeta = {
-      status: 'guided',
-      source: { name: 'Official portals — lookups run on their sites' },
-    };
-    elsewhere.hydrate(elsewhereMeta, renderRecordsElsewhere(links));
-    coverage.setRow('records-elsewhere', 'guided', elsewhereMeta.source.name);
-  });
-
-  void Promise.all([settle(handles.recalls, 'NHTSA Recalls'), guidedLinks]).then(
-    ([result, links]) => {
-      if (!callbacks.isCurrent()) return;
-      const content = renderRecalls(result, findLink(links, 'oem-recall'));
-      hydrate(recalls, 'recalls', result, content);
-      operations.setRecalls(result);
-      summary.set('recalls', recallsTileState(result));
-    },
+  void settle(handles.identity, 'NHTSA vPIC').then(
+    live((result) => {
+      const rendered = renderIdentity(result);
+      header.setTitle(rendered.vehicleName ?? 'Unidentified vehicle');
+      header.setBody(rendered.content);
+      ledger.set('vpic', result.status, result.source, result.status === 'hit' ? 'Decoded' : undefined);
+      callbacks.onVehicleName(rendered.vehicleName ?? '');
+    }),
   );
 
-  void settle(handles.complaints, 'NHTSA Complaints').then((result) => {
-    if (!callbacks.isCurrent()) return;
-    hydrate(complaints, 'complaints', result, renderComplaints(result));
-    operations.setComplaints(result);
-    summary.set('complaints', complaintsTileState(result));
-  });
+  const commercial = settle(handles.commercialInspections, 'FMCSA roadside inspections');
+  void commercial.then(
+    live((result) => {
+      const records = result.data ?? [];
+      ledger.set(
+        'fmcsa',
+        result.status,
+        result.source,
+        records.length > 0 ? formatNumber(records.length) + ' inspection' + (records.length === 1 ? '' : 's') : undefined,
+      );
+      header.setIdentifiers(keyIdentifiers(records));
+      where.fill(renderWhereSeen(records));
+      if (result.status === 'unavailable' && result.note) {
+        where.root.append(el('p', { class: 'warn' }, result.note));
+      }
+      if (records.length === 0) {
+        links.drop();
+        log.drop();
+        carriers.drop();
+        ledger.set('plates', 'miss', null, 'No plates to check');
+        return;
+      }
+      log.fill(renderRoadsideLog(records));
+      const carrierBlock = renderCarriers(records);
+      if (carrierBlock) carriers.fill(carrierBlock);
+      else carriers.drop();
+    }),
+  );
 
-  void settle(handles.safety, 'NHTSA NCAP').then((result) => {
-    if (!callbacks.isCurrent()) return;
-    hydrate(safety, 'safety', result, renderSafety(result));
-    operations.setSafety(result);
-    summary.set('safety', safetyTileState(result));
-  });
+  void Promise.all([commercial, handles.plateLinks.catch(() => [])]).then(
+    live(([result, plateLinks]) => {
+      const records = result.data ?? [];
+      if (records.length === 0) return;
+      links.fill(renderConnections(records, plateLinks));
+      const shared = plateLinks.reduce((n, link) => n + new Set(link.sightings.map((s) => s.vin)).size, 0);
+      ledger.set('plates', plateLinks.length > 0 ? 'hit' : 'miss', null, shared > 0 ? formatNumber(shared) + ' other VIN' + (shared === 1 ? '' : 's') : 'No other VINs');
+    }),
+  );
 
-  void Promise.all([
-    settle(handles.nyInspections, 'NY State inspections'),
-    guidedLinks,
-  ]).then(([result, links]) => {
-    if (!callbacks.isCurrent()) return;
-    const content = renderOdometer(result, findLinks(links, 'state-emissions'));
-    hydrate(odometer, 'odometer', result, content);
-    operations.setOdometer(result);
-    summary.set('odometer', odometerTileState(result));
-  });
+  const guided = handles.guidedLinks.catch((): GuidedLink[] => []);
+  void guided.then(live((guidedLinks) => checks.replaceChildren(officialChecks(guidedLinks))));
 
-  void settle(handles.commercialInspections, 'FMCSA roadside inspections').then((result) => {
-    if (!callbacks.isCurrent()) return;
-    hydrate(
-      commercial,
-      'commercial-inspections',
-      result,
-      renderCommercialInspections(result),
-    );
-    operations.setCommercialInspections(result);
-    summary.set('commercial-inspections', commercialInspectionsTileState(result));
-  });
-
-  void settle(handles.fuelEconomy, 'fueleconomy.gov').then((result) => {
-    if (!callbacks.isCurrent()) return;
-    hydrate(fuel, 'fuel-economy', result, renderFuel(result));
-    operations.setFuelEconomy(result);
-  });
-
-  void settle(handles.warranty, 'High View estimate').then((result) => {
-    if (!callbacks.isCurrent()) return;
-    hydrate(warranty, 'warranty', result, renderWarranty(result));
-    summary.set('warranty', warrantyTileState(result));
-  });
+  void Promise.all([settle(handles.nyInspections, 'NY State inspections'), guided]).then(
+    live(([result, guidedLinks]) => {
+      ledger.set('ny', result.status, result.source, result.status === 'hit' ? formatNumber(result.data?.length ?? 0) + ' readings' : undefined);
+      if (result.status === 'hit' && (result.data?.length ?? 0) > 0) {
+        odometer.fill(renderOdometer(result, findLinks(guidedLinks, 'state-emissions')));
+      } else {
+        odometer.drop();
+      }
+    }),
+  );
 }

@@ -79,7 +79,8 @@ export function formatNumber(value: number | null | undefined): string {
 /** Format an ISO-ish date string as "Mar 2019" style; raw string on failure. */
 export function formatDate(iso: string | null | undefined): string {
   if (!iso) return '—';
-  const date = new Date(iso);
+  // Date-only strings parse as UTC midnight; read them as local calendar dates.
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(iso) ? new Date(iso + 'T12:00:00') : new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
   return date.toLocaleDateString('en-US', {
     year: 'numeric',
@@ -101,4 +102,17 @@ export function formatDateTime(iso: string | null | undefined): string {
     minute: '2-digit',
     timeZoneName: 'short',
   });
+}
+
+/** "today", "3 days ago", "5 months ago", "2 years ago" from an ISO date. */
+export function ageLabel(iso: string | null | undefined, now: Date = new Date()): string | null {
+  if (!iso) return null;
+  const date = new Date(iso.length === 10 ? iso + 'T12:00:00' : iso);
+  if (Number.isNaN(date.getTime())) return null;
+  const days = Math.floor((now.getTime() - date.getTime()) / 86_400_000);
+  if (days < 1) return 'today';
+  if (days < 45) return `${days} day${days === 1 ? '' : 's'} ago`;
+  const months = Math.round(days / 30.44);
+  if (months < 24) return `${months} months ago`;
+  return `${Math.floor(days / 365.25)} years ago`;
 }

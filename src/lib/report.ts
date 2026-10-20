@@ -1,56 +1,59 @@
 /**
- * Report orchestration: decode first, fan out dependent lookups.
+ * VIN file orchestration: decode, FMCSA roadside history, NY inspections,
+ * then a second hop through every plate the vehicle carried.
  * Every promise here ALWAYS resolves — failures become SectionResults with
  * status 'unavailable' and a human note, never rejections.
  */
 
 import type {
   CommercialInspection,
-  ComplaintsSummary,
-  FuelEconomy,
   GuidedLink,
   OdometerReading,
-  RecallCampaign,
-  SafetyRating,
   SectionResult,
+  UnitSighting,
   VehicleIdentity,
-  WarrantyEstimate,
 } from './types';
 import { normalizeVin } from './vin';
 import { decodeVin } from './api/vpic';
-import { getRecalls } from './api/recalls';
-import { getComplaints } from './api/complaints';
-import { getSafetyRating } from './api/safety';
 import { getNyInspections } from './api/ny';
 import { getCommercialInspections } from './api/fmcsa';
-import { getFuelEconomy } from './api/fueleconomy';
-import { estimateWarranty } from './warranty';
+import { otherVinsForPlates } from './api/fmcsaLookup';
 import { buildGuidedLinks } from './links';
+
+/** Another VIN that carried a plate this vehicle was also seen with. */
+export interface PlateLink {
+  plate: string;
+  state: string | null;
+  sightings: UnitSighting[];
+}
 
 export interface ReportHandle {
   identity: Promise<SectionResult<VehicleIdentity>>;
-  recalls: Promise<SectionResult<RecallCampaign[]>>;
-  complaints: Promise<SectionResult<ComplaintsSummary>>;
-  safety: Promise<SectionResult<SafetyRating>>;
   nyInspections: Promise<SectionResult<OdometerReading[]>>;
   commercialInspections: Promise<SectionResult<CommercialInspection[]>>;
-  fuelEconomy: Promise<SectionResult<FuelEconomy>>;
-  warranty: Promise<SectionResult<WarrantyEstimate>>;
+  /** Second hop: other vehicles recorded under this vehicle's plates. */
+  plateLinks: Promise<PlateLink[]>;
   guidedLinks: Promise<GuidedLink[]>;
 }
 
-const DECODE_FAILED_NOTE =
-  'The VIN could not be decoded into a vehicle identity, so this lookup could not run.';
+/** Distinct plate/state pairs, most recently observed first. Pure; exported for tests. */
+export function distinctPlates(
+  records: readonly CommercialInspection[],
+): Array<{ plate: string; state: string | null }> {
+  const seen = new Set<string>();
+  const plates: Array<{ plate: string; state: string | null }> = [];
+  for (const record of records) {
+    if (!record.plate) continue;
+    const key = record.plate + '|' + (record.plateState ?? '');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    plates.push({ plate: record.plate, state: record.plateState });
+  }
+  return plates;
+}
 
 function unavailable<T>(sourceName: string, note: string): SectionResult<T> {
   return { status: 'unavailable', source: { name: sourceName }, note };
-}
-
-/** Latest odometer reading from an ascending-sorted NY result, else null. */
-function latestMiles(ny: SectionResult<OdometerReading[]>): number | null {
-  const readings = ny.data;
-  if (!readings || readings.length === 0) return null;
-  return readings[readings.length - 1]?.miles ?? null;
 }
 
 export function startReport(vin: string): ReportHandle {
@@ -59,18 +62,6 @@ export function startReport(vin: string): ReportHandle {
   const identity = decodeVin(normalized).catch(() =>
     unavailable<VehicleIdentity>('NHTSA vPIC', 'The VIN decode failed unexpectedly.'),
   );
-
-  const withIdentity = <T>(
-    sourceName: string,
-    run: (decoded: VehicleIdentity) => Promise<SectionResult<T>>,
-  ): Promise<SectionResult<T>> =>
-    identity.then((result) =>
-      result.data
-        ? run(result.data).catch(() =>
-            unavailable<T>(sourceName, 'This lookup failed unexpectedly.'),
-          )
-        : unavailable<T>(sourceName, DECODE_FAILED_NOTE),
-    );
 
   const nyInspections = getNyInspections(normalized).catch(() =>
     unavailable<OdometerReading[]>(
@@ -86,21 +77,9 @@ export function startReport(vin: string): ReportHandle {
     ),
   );
 
-  const warranty = Promise.all([identity, nyInspections]).then(
-    ([decoded, ny]): SectionResult<WarrantyEstimate> => {
-      if (!decoded.data) {
-        return unavailable<WarrantyEstimate>('High View estimate', DECODE_FAILED_NOTE);
-      }
-      try {
-        return estimateWarranty(decoded.data, latestMiles(ny));
-      } catch {
-        return unavailable<WarrantyEstimate>(
-          'High View estimate',
-          'The warranty estimate failed unexpectedly.',
-        );
-      }
-    },
-  );
+  const plateLinks = commercialInspections
+    .then((result) => otherVinsForPlates(normalized, distinctPlates(result.data ?? [])))
+    .catch(() => []);
 
   const guidedLinks = identity
     .then((result) => buildGuidedLinks(normalized, result.data ?? null))
@@ -108,15 +87,9 @@ export function startReport(vin: string): ReportHandle {
 
   return {
     identity,
-    recalls: withIdentity('NHTSA Recalls', (decoded) => getRecalls(decoded)),
-    complaints: withIdentity('NHTSA Complaints (ODI)', (decoded) =>
-      getComplaints(decoded, normalized),
-    ),
-    safety: withIdentity('NHTSA Safety Ratings (NCAP)', (decoded) => getSafetyRating(decoded)),
     nyInspections,
     commercialInspections,
-    fuelEconomy: withIdentity('EPA fueleconomy.gov', (decoded) => getFuelEconomy(decoded)),
-    warranty,
+    plateLinks,
     guidedLinks,
   };
 }

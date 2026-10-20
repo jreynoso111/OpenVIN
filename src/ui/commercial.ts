@@ -1,410 +1,299 @@
-/** FMCSA roadside history, joined by exact VIN and inspected unit ID. */
+/**
+ * VIN file — FMCSA-derived sections: where the unit has been seen, how it
+ * connects to plates, carriers and coupled units, and the roadside log.
+ */
 
-import type { CommercialInspection, SectionResult } from '../lib/types';
+import type { PlateLink } from '../lib/report';
+import type { CarrierProfile, CommercialInspection, UnitSighting } from '../lib/types';
 import { el, formatDate, formatNumber } from './dom';
+import { carrierBase, carrierCard, carrierName } from './carrier';
+import { emptyNote, factList } from './panel';
+import { dotPivot, platePivot, vinPivot } from './pivot';
+import { countPlaces, frequencyList, lastSeen, placeText } from './sightings';
 
-function saferSnapshotUrl(dot: string | null): string | null {
-  if (!dot || !/^\d+$/.test(dot)) return null;
-  const params = new URLSearchParams({
-    query_param: 'USDOT',
-    query_string: dot,
-    query_type: 'queryCarrierSnapshot',
-    searchtype: 'ANY',
-  });
-  return 'https://safer.fmcsa.dot.gov/query.asp?' + params.toString();
+/** Rebuild the census profile flattened onto an inspection record. */
+export function carrierFromRecord(record: CommercialInspection): CarrierProfile | null {
+  if (!record.carrierDotNumber) return null;
+  return {
+    dotNumber: record.carrierDotNumber,
+    legalName: record.carrierLegalName,
+    dbaName: record.carrierDbaName,
+    isBusiness: Boolean(record.carrierLegalName ?? record.carrierDbaName),
+    status: record.carrierStatusCode,
+    operationClass: record.carrierOperationClass,
+    truckUnits: record.carrierTruckUnits,
+    powerUnits: record.carrierPowerUnits,
+    drivers: null,
+    recordableCrashRate: record.carrierRecordableCrashRate,
+    mcs150Date: record.carrierMcs150Date,
+    addedDate: null,
+    docketPrefix: record.carrierDocketPrefix,
+    docketNumber: record.carrierDocketNumber,
+    authorityStatus: record.carrierAuthorityStatusCode,
+    safetyRating: record.carrierSafetyRating,
+    safetyRatingDate: record.carrierSafetyRatingDate,
+    baseCity: record.carrierBaseCity,
+    baseState: record.carrierBaseState,
+  };
 }
 
-function statusLabel(code: string | null): string | null {
-  if (!code) return null;
-  return code === 'A' ? 'Active (A)' : code;
+interface CarrierUse {
+  carrier: CarrierProfile;
+  count: number;
+  first: string | null;
+  last: string | null;
 }
 
-function metric(label: string, value: string, detail: string): HTMLElement {
+/** Carriers on this VIN's inspections, most recent first. */
+export function carrierUses(records: readonly CommercialInspection[]): CarrierUse[] {
+  const map = new Map<string, CarrierUse>();
+  for (const record of records) {
+    const carrier = carrierFromRecord(record);
+    if (!carrier) continue;
+    const use = map.get(carrier.dotNumber) ?? { carrier, count: 0, first: null, last: null };
+    use.count += 1;
+    if (record.date) {
+      if (!use.last || record.date > use.last) use.last = record.date;
+      if (!use.first || record.date < use.first) use.first = record.date;
+    }
+    map.set(carrier.dotNumber, use);
+  }
+  return [...map.values()].sort((a, b) => (b.last ?? '').localeCompare(a.last ?? ''));
+}
+
+function span(first: string | null, last: string | null): string {
+  if (!last) return 'dates not reported';
+  if (!first || first === last) return formatDate(last);
+  return formatDate(first) + ' – ' + formatDate(last);
+}
+
+/* ---------- Where it has been seen ---------- */
+
+export function renderWhereSeen(records: readonly CommercialInspection[]): HTMLElement {
+  const latest = records[0];
+  if (!latest) return emptyNote('No roadside inspection has recorded this VIN in the current FMCSA files (about three years).');
+
+  const uses = carrierUses(records);
+  const bases = uses
+    .map((use) => ({ base: carrierBase(use.carrier), name: carrierName(use.carrier), dot: use.carrier.dotNumber }))
+    .filter((entry): entry is { base: string; name: string; dot: string } => entry.base !== null);
+  const markings = [...new Set(records.map((r) => r.companyUnit).filter((u): u is string => Boolean(u)))];
+
   return el(
     'div',
-    { class: 'fmcsa-metric' },
-    el('span', { class: 'fmcsa-metric__label' }, label),
-    el('strong', { class: 'fmcsa-metric__value' }, value),
-    el('span', { class: 'fmcsa-metric__detail' }, detail),
-  );
-}
-
-function carrierCell(record: CommercialInspection): HTMLElement {
-  const parts: Node[] = [];
-  parts.push(
+    { class: 'where' },
     el(
-      'span',
-      { class: 'fmcsa-carrier__name' },
-      record.carrierDotNumber ? 'USDOT ' + record.carrierDotNumber : 'USDOT not returned',
-    ),
-  );
-  if (record.carrierStatusCode) {
-    parts.push(
-      el('span', { class: 'fmcsa-carrier__status' }, 'FMCSA census: ' + statusLabel(record.carrierStatusCode)),
-    );
-  }
-  const snapshotUrl = saferSnapshotUrl(record.carrierDotNumber);
-  if (snapshotUrl) {
-    parts.push(
-      el(
-        'a',
-        { class: 'fmcsa-link', href: snapshotUrl, target: '_blank', rel: 'noopener noreferrer' },
-        'SAFER snapshot',
+      'div',
+      { class: 'where__lead' },
+      lastSeen({ date: latest.date, state: latest.state, site: latest.location }, 'Last roadside stop'),
+      factList(
+        [
+          ['Plate at that stop', latest.plate ? platePivot(latest.plate, latest.plateState) : null],
+          ['Operating carrier', latest.carrierDotNumber ? dotPivot(latest.carrierDotNumber, carrierFromRecord(latest)?.legalName ?? undefined) : null],
+          [
+            'Carrier base',
+            bases[0] ? bases[0].base : null,
+          ],
+          ['Fleet marking', markings.length > 0 ? markings.slice(0, 4).join(' · ') : null],
+        ],
+        'facts facts--tight',
       ),
-    );
-  }
-  return el('div', { class: 'fmcsa-carrier' }, ...parts);
+    ),
+    el(
+      'div',
+      { class: 'where__grid' },
+      frequencyList('States', countPlaces(records.map((r) => ({ date: r.date, state: r.state, site: r.location })), 'state')),
+      frequencyList('Inspection sites', countPlaces(records.map((r) => ({ date: r.date, state: r.state, site: r.location })), 'site'), 5),
+    ),
+    bases.length > 1
+      ? el(
+          'p',
+          { class: 'where__bases' },
+          'Other carrier bases: ',
+          ...bases.slice(1).flatMap((b, i) => [i > 0 ? ' · ' : '', b.base + ' (' + b.name + ')']),
+        )
+      : null,
+  );
 }
 
-function carrierFact(label: string, value: string): HTMLElement {
-  return el('div', {}, el('dt', {}, label), el('dd', {}, value));
+/* ---------- Connections ---------- */
+
+interface Companion {
+  sighting: UnitSighting;
+  count: number;
+  last: string | null;
 }
 
-function carrierProfiles(records: readonly CommercialInspection[]): HTMLElement | null {
-  const unique = new Map<string, CommercialInspection>();
+function companions(records: readonly CommercialInspection[]): Companion[] {
+  const map = new Map<string, Companion>();
   for (const record of records) {
-    if (record.carrierDotNumber && !unique.has(record.carrierDotNumber)) {
-      unique.set(record.carrierDotNumber, record);
+    for (const unit of record.companions) {
+      const key = unit.vin ?? (unit.plate ?? '') + '|' + (unit.plateState ?? '');
+      if (key === '|') continue;
+      const entry = map.get(key) ?? { sighting: unit, count: 0, last: null };
+      entry.count += 1;
+      if (unit.date && (!entry.last || unit.date > entry.last)) entry.last = unit.date;
+      map.set(key, entry);
     }
   }
-  if (unique.size === 0) return null;
+  return [...map.values()].sort((a, b) => b.count - a.count || (b.last ?? '').localeCompare(a.last ?? ''));
+}
 
-  const cards = [...unique.values()].map((record) => {
-    const dot = record.carrierDotNumber;
-    const authority = [record.carrierDocketPrefix, record.carrierDocketNumber]
-      .filter((part): part is string => Boolean(part))
-      .join(' ');
-    const crashRate =
-      record.carrierRecordableCrashRate === null
-        ? null
-        : record.carrierRecordableCrashRate.toLocaleString('en-US', {
-            minimumFractionDigits: 3,
-            maximumFractionDigits: 3,
-          });
-    const facts: Array<[string, string | null]> = [
-      ['Census status', statusLabel(record.carrierStatusCode)],
-      ['Operation class', record.carrierOperationClass],
-      ['Reported truck units', record.carrierTruckUnits === null ? null : formatNumber(record.carrierTruckUnits)],
-      ['Reported power units', record.carrierPowerUnits === null ? null : formatNumber(record.carrierPowerUnits)],
-      ['Authority docket', authority || null],
-      ['Authority status', statusLabel(record.carrierAuthorityStatusCode)],
-      ['FMCSA safety rating', record.carrierSafetyRating],
-      ['Rating date', record.carrierSafetyRatingDate ? formatDate(record.carrierSafetyRatingDate) : null],
-      ['MCS-150 update', record.carrierMcs150Date ? formatDate(record.carrierMcs150Date) : null],
-      ['Reported crash-rate field', crashRate],
-    ];
-    const snapshotUrl = saferSnapshotUrl(dot);
-    return el(
-      'article',
-      { class: 'fmcsa-carrier-card' },
-      el(
-        'div',
-        { class: 'fmcsa-carrier-card__header' },
-        el('h4', {}, 'USDOT ' + dot),
-        el('span', { class: 'fmcsa-table__secondary' }, 'Carrier recorded on VIN-matched inspection(s)'),
-      ),
-      el(
-        'dl',
-        { class: 'fmcsa-carrier-facts' },
-        ...facts
-          .filter((fact): fact is [string, string] => fact[1] !== null)
-          .map(([label, value]) => carrierFact(label, value)),
-      ),
-      snapshotUrl
-        ? el(
-            'a',
-            { class: 'fmcsa-link', href: snapshotUrl, target: '_blank', rel: 'noopener noreferrer' },
-            'Open official SAFER Company Snapshot',
-          )
-        : null,
-    );
-  });
-
+function relation(kind: string, subject: Node, detail: Node | string, evidence: string): HTMLElement {
   return el(
-    'section',
-    { class: 'fmcsa-carrier-section' },
-    el('h3', {}, 'Carrier cross-reference'),
-    el(
-      'p',
-      { class: 'fmcsa-section-note' },
-      'FMCSA census fields describe the carrier, not this individual truck. Open the official Snapshot to review its business identity; High View does not copy names, contact details, addresses, or person records into this report.',
-    ),
-    el('div', { class: 'fmcsa-carrier-grid' }, ...cards),
-    el(
-      'p',
-      { class: 'fmcsa-section-note' },
-      'A carrier seen on a past inspection may not own or currently operate the vehicle. Fleet counts and crash-rate fields are carrier-level census data, not a live fleet inventory or a truck-specific score.',
-    ),
+    'li',
+    { class: 'rel' },
+    el('span', { class: 'rel__kind' }, kind),
+    el('span', { class: 'rel__subject' }, subject),
+    el('span', { class: 'rel__detail' }, detail),
+    el('span', { class: 'rel__evidence' }, evidence),
   );
 }
 
-function plateObservations(records: readonly CommercialInspection[]): HTMLElement | null {
-  const observations = new Map<
-    string,
-    { plate: string; state: string | null; count: number; latest: CommercialInspection | null }
-  >();
+export function renderConnections(
+  records: readonly CommercialInspection[],
+  plateLinks: readonly PlateLink[],
+): HTMLElement {
+  const rows: HTMLElement[] = [];
+
+  const plates = new Map<string, { plate: string; state: string | null; count: number; first: string | null; last: string | null }>();
   for (const record of records) {
-    if (!record.plate && !record.plateState) continue;
-    const key = (record.plate ?? '') + '|' + (record.plateState ?? '');
-    const item = observations.get(key) ?? {
-      plate: record.plate ?? 'Plate not returned',
-      state: record.plateState,
-      count: 0,
-      latest: null,
-    };
-    item.count += 1;
-    if (!item.latest || (record.date && (!item.latest.date || record.date > item.latest.date))) {
-      item.latest = record;
+    if (!record.plate) continue;
+    const key = record.plate + '|' + (record.plateState ?? '');
+    const entry = plates.get(key) ?? { plate: record.plate, state: record.plateState, count: 0, first: null, last: null };
+    entry.count += 1;
+    if (record.date) {
+      if (!entry.last || record.date > entry.last) entry.last = record.date;
+      if (!entry.first || record.date < entry.first) entry.first = record.date;
     }
-    observations.set(key, item);
+    plates.set(key, entry);
   }
-  if (observations.size === 0) return null;
-
-  const cards = [...observations.values()]
-    .sort((a, b) => (b.latest?.date ?? '').localeCompare(a.latest?.date ?? ''))
-    .map((item) =>
-      el(
-        'article',
-        { class: 'fmcsa-plate-card' },
-        el('strong', {}, item.plate),
-        el('span', { class: 'fmcsa-plate-card__state' }, item.state ?? 'Issuing state not reported'),
-        el(
-          'span',
-          { class: 'fmcsa-table__secondary' },
-          'Last observed ' + (item.latest?.date ? formatDate(item.latest.date) : 'date unavailable'),
-        ),
-        el(
-          'span',
-          { class: 'fmcsa-table__secondary' },
-          formatNumber(item.count) + ' matched inspection' + (item.count === 1 ? '' : 's'),
-        ),
+  for (const entry of [...plates.values()].sort((a, b) => (b.last ?? '').localeCompare(a.last ?? ''))) {
+    const shared = plateLinks.find((link) => link.plate === entry.plate && link.state === entry.state);
+    const otherVins = [...new Set((shared?.sightings ?? []).map((s) => s.vin).filter((v): v is string => Boolean(v)))];
+    rows.push(
+      relation(
+        'Plate',
+        platePivot(entry.plate, entry.state),
+        otherVins.length > 0
+          ? el('span', {}, 'Also recorded on ', ...otherVins.slice(0, 3).flatMap((v, i) => [i > 0 ? ', ' : '', vinPivot(v)]), otherVins.length > 3 ? ' +' + (otherVins.length - 3) : '')
+          : 'Only this VIN in FMCSA files',
+        formatNumber(entry.count) + '× · ' + span(entry.first, entry.last),
       ),
     );
+  }
 
-  return el(
-    'section',
-    { class: 'fmcsa-plate-section' },
-    el('h3', {}, 'Plate observations'),
-    el(
-      'p',
-      { class: 'fmcsa-section-note' },
-      'These plate and state pairs were recorded during historical roadside inspections. They are search leads, not confirmation of current registration or ownership.',
-    ),
-    el('div', { class: 'fmcsa-plate-grid' }, ...cards),
-  );
-}
-
-function vehicleFindingsCell(record: CommercialInspection): HTMLElement {
-  const vehicleCount =
-    record.vehicleViolations === null
-      ? 'Vehicle violations: not reported'
-      : 'Vehicle violations: ' + formatNumber(record.vehicleViolations);
-  const vehicleOos =
-    record.vehicleOutOfService === null
-      ? 'vehicle OOS: not reported'
-      : record.vehicleOutOfService > 0
-        ? 'vehicle OOS: yes'
-        : 'vehicle OOS: no';
-
-  const content: Node[] = [
-    el('p', { class: 'fmcsa-findings__count' }, vehicleCount + ' · ' + vehicleOos),
-  ];
-
-  if (record.vehicleFindings.length > 0) {
-    const details = el(
-      'details',
-      { class: 'fmcsa-findings__details' },
-      el(
-        'summary',
-        {},
-        'View ' +
-          formatNumber(record.vehicleFindings.length) +
-          ' matched vehicle violation' +
-          (record.vehicleFindings.length === 1 ? '' : 's'),
+  for (const use of carrierUses(records)) {
+    rows.push(
+      relation(
+        'Carrier',
+        dotPivot(use.carrier.dotNumber, carrierName(use.carrier)),
+        [carrierBase(use.carrier), use.carrier.dbaName ? 'DBA ' + use.carrier.dbaName : null].filter(Boolean).join(' · ') || 'USDOT ' + use.carrier.dotNumber,
+        formatNumber(use.count) + '× · ' + span(use.first, use.last),
       ),
     );
-    const list = el('ul', { class: 'fmcsa-findings__list' });
-    for (const finding of record.vehicleFindings) {
-      const label = [finding.code, finding.description, finding.part ? 'Part ' + finding.part : null]
-        .filter((part): part is string => Boolean(part))
-        .join(' · ');
-      list.append(
+  }
+
+  for (const companion of companions(records).slice(0, 8)) {
+    const unit = companion.sighting;
+    rows.push(
+      relation(
+        unit.unitType ?? 'Coupled unit',
+        unit.vin ? vinPivot(unit.vin) : el('span', { class: 'muted' }, 'VIN not recorded'),
         el(
-          'li',
+          'span',
           {},
-          el('span', {}, label || 'FMCSA vehicle finding'),
-          finding.outOfService
-            ? el('span', { class: 'fmcsa-oos-badge' }, 'Vehicle OOS')
+          unit.plate ? platePivot(unit.plate, unit.plateState) : null,
+          [unit.make, unit.companyUnit ? '#' + unit.companyUnit : null].filter(Boolean).length > 0
+            ? ' ' + [unit.make, unit.companyUnit ? '#' + unit.companyUnit : null].filter(Boolean).join(' · ')
             : null,
         ),
-      );
-    }
-    details.append(list);
-    content.push(details);
-  } else if ((record.vehicleViolations ?? 0) > 0) {
-    content.push(
-      el(
-        'p',
-        { class: 'fmcsa-findings__note' },
-        'FMCSA reported vehicle violations, but did not return matching unit-level descriptions.',
+        'together ' + formatNumber(companion.count) + '× · last ' + (companion.last ? formatDate(companion.last) : '—'),
       ),
     );
   }
 
-  if (record.inspectionViolations !== null || record.inspectionOutOfService !== null) {
-    content.push(
-      el(
-        'p',
-        { class: 'fmcsa-findings__context' },
-        'Inspection total (all categories, not vehicle-only): ' +
-          formatNumber(record.inspectionViolations) +
-          ' violations · ' +
-          formatNumber(record.inspectionOutOfService) +
-          ' OOS across inspected units.',
-      ),
-    );
-  }
-
-  return el('div', { class: 'fmcsa-findings' }, ...content);
+  if (rows.length === 0) return emptyNote('No plates, carriers or coupled units are linked to this VIN yet.');
+  return el('ul', { class: 'rels' }, ...rows);
 }
 
-function row(record: CommercialInspection): HTMLTableRowElement {
-  const location = record.location
-    ? el('span', { class: 'fmcsa-table__secondary' }, record.location)
-    : null;
-  const jurisdiction = el(
-    'div',
-    { class: 'fmcsa-location' },
-    el('strong', {}, record.state ?? 'State not reported'),
-    location,
-    record.level ? el('span', { class: 'fmcsa-table__secondary' }, 'Inspection level ' + record.level) : null,
-  );
-  const plate = [record.plate, record.plateState ? '(' + record.plateState + ')' : null]
-    .filter((part): part is string => Boolean(part))
-    .join(' ');
-  const dateCell = el(
-    'div',
-    { class: 'fmcsa-date' },
-    record.date
-      ? el(
-          'time',
-          { datetime: record.date, class: 'fmcsa-table__date' },
-          formatDate(record.date),
-        )
-      : el('span', { class: 'fmcsa-table__secondary' }, 'Date not joined'),
-    el('span', { class: 'fmcsa-table__secondary' }, 'FMCSA ' + record.inspectionId),
-  );
+/* ---------- Carriers ---------- */
 
+export function renderCarriers(records: readonly CommercialInspection[]): HTMLElement | null {
+  const uses = carrierUses(records);
+  if (uses.length === 0) return null;
   return el(
-    'tr',
-    {},
-    el('td', {}, dateCell),
-    el('td', {}, jurisdiction),
-    el('td', {}, carrierCell(record)),
-    el('td', {}, plate || 'No plate returned'),
-    el('td', {}, vehicleFindingsCell(record)),
+    'div',
+    { class: 'carrier-stack' },
+    ...uses.map((use) =>
+      carrierCard(use.carrier, 'On ' + formatNumber(use.count) + ' inspection' + (use.count === 1 ? '' : 's') + ' of this VIN · ' + span(use.first, use.last)),
+    ),
   );
 }
 
-export function renderCommercialInspections(
-  result: SectionResult<CommercialInspection[]>,
-): HTMLElement {
-  const records = result.data ?? [];
-  if (records.length === 0) {
-    return el(
-      'div',
-      { class: 'fmcsa-empty card' },
-      el(
-        'p',
-        { class: 'note' },
-        result.status === 'miss'
-          ? 'FMCSA returned no exact-VIN roadside inspection match in its current files.'
-          : 'The FMCSA inspection data could not be loaded. Retry the VIN search later.',
+/* ---------- Roadside log ---------- */
+
+function findings(record: CommercialInspection): Node {
+  const oos = (record.vehicleOutOfService ?? 0) > 0;
+  const count = record.vehicleViolations ?? 0;
+  const summary = el(
+    'span',
+    {},
+    oos
+      ? el('span', { class: 'tag', 'data-tone': 'danger' }, 'Out of service')
+      : el('span', { class: count > 0 ? '' : 'muted' }, count > 0 ? formatNumber(count) + ' vehicle violation' + (count === 1 ? '' : 's') : 'Clean'),
+  );
+  if (record.vehicleFindings.length === 0) return summary;
+  const details = el('details', { class: 'findings' }, el('summary', {}, summary));
+  details.append(
+    el(
+      'ul',
+      {},
+      ...record.vehicleFindings.map((finding) =>
+        el(
+          'li',
+          { 'data-oos': finding.outOfService ? 'true' : 'false' },
+          [finding.code, finding.description].filter(Boolean).join(' — ') || 'Vehicle finding',
+        ),
       ),
-      el(
-        'p',
-        { class: 'note note--micro' },
-        'This source covers reported commercial roadside inspections, not every state record or the vehicle’s current location.',
-      ),
-    );
-  }
-
-  const carriers = new Set(
-    records.map((record) => record.carrierDotNumber).filter((dot): dot is string => Boolean(dot)),
+    ),
   );
-  const plates = new Set(
-    records
-      .map((record) => {
-        if (!record.plate && !record.plateState) return null;
-        return (record.plate ?? '') + '|' + (record.plateState ?? '');
-      })
-      .filter((plate): plate is string => plate !== null),
-  );
-  const vehicleOos = records.filter((record) => (record.vehicleOutOfService ?? 0) > 0).length;
+  return details;
+}
 
-  const metrics = el(
-    'div',
-    { class: 'fmcsa-summary' },
-    metric('VIN-matched inspections', formatNumber(records.length), 'in FMCSA’s current history window'),
-    metric('USDOT carriers', formatNumber(carriers.size), 'associated with this VIN in these records'),
-    metric('Plates observed', formatNumber(plates.size), 'plate and state combinations'),
-    metric('Vehicle OOS events', formatNumber(vehicleOos), 'historical inspection outcomes'),
-  );
-
+export function renderRoadsideLog(records: readonly CommercialInspection[]): HTMLElement {
   const table = el(
     'table',
-    { class: 'fmcsa-table' },
-    el(
-      'caption',
-      { class: 'visually-hidden' },
-      'FMCSA roadside inspection history matched to this vehicle identification number',
-    ),
+    { class: 'log' },
+    el('caption', { class: 'visually-hidden' }, 'Roadside inspections of this VIN'),
     el(
       'thead',
       {},
-      el(
-        'tr',
-        {},
-        el('th', { scope: 'col' }, 'Inspection date'),
-        el('th', { scope: 'col' }, 'State and site'),
-        el('th', { scope: 'col' }, 'Carrier'),
-        el('th', { scope: 'col' }, 'Plate observed'),
-        el('th', { scope: 'col' }, 'Vehicle findings'),
-      ),
+      el('tr', {}, ...['Date', 'Where', 'Plate', 'Carrier', 'Coupled with', 'Vehicle result'].map((h) => el('th', { scope: 'col' }, h))),
     ),
   );
   const body = el('tbody');
-  for (const record of records) body.append(row(record));
+  for (const record of records) {
+    const carrier = carrierFromRecord(record);
+    body.append(
+      el(
+        'tr',
+        {},
+        el('td', { 'data-label': 'Date' }, record.date ? el('time', { datetime: record.date }, formatDate(record.date)) : '—', el('span', { class: 'sub' }, 'Insp. ' + record.inspectionId)),
+        el('td', { 'data-label': 'Where' }, placeText({ date: record.date, state: record.state, site: record.location }), record.level ? el('span', { class: 'sub' }, 'Level ' + record.level) : null),
+        el('td', { 'data-label': 'Plate' }, record.plate ? platePivot(record.plate, record.plateState) : '—', record.companyUnit ? el('span', { class: 'sub' }, 'Unit #' + record.companyUnit) : null),
+        el('td', { 'data-label': 'Carrier' }, carrier ? dotPivot(carrier.dotNumber, carrier.legalName ?? carrier.dbaName ?? undefined) : '—'),
+        el(
+          'td',
+          { 'data-label': 'Coupled with' },
+          record.companions.length === 0
+            ? el('span', { class: 'muted' }, '—')
+            : el('span', { class: 'stack' }, ...record.companions.map((c) => (c.vin ? vinPivot(c.vin) : c.plate ? platePivot(c.plate, c.plateState) : el('span', { class: 'muted' }, c.unitType ?? 'Unit')))),
+        ),
+        el('td', { 'data-label': 'Vehicle result' }, findings(record)),
+      ),
+    );
+  }
   table.append(body);
-
-  return el(
-    'div',
-    { class: 'fmcsa-history' },
-    metrics,
-    plateObservations(records),
-    carrierProfiles(records),
-    result.status === 'unavailable'
-      ? el('p', { class: 'fmcsa-partial-warning' }, result.note ?? 'Some FMCSA details are unavailable.')
-      : null,
-    el(
-      'div',
-      { class: 'fmcsa-table-wrap', tabindex: '0', 'aria-label': 'Scrollable FMCSA inspection table' },
-      table,
-    ),
-    el(
-      'p',
-      { class: 'fmcsa-footnote' },
-      'Inspection sites and plates are historical observations, not live tracking or proof of current registration. FMCSA data may lag reporting and older inspections can fall outside the published history window. Company Census fleet and safety fields describe the carrier. Data files: ',
-      el('a', { href: 'https://data.transportation.gov/d/wt8s-2hbx', target: '_blank', rel: 'noopener noreferrer' }, 'Inspections per Unit'),
-      ' · ',
-      el('a', { href: 'https://data.transportation.gov/d/fx4q-ay7w', target: '_blank', rel: 'noopener noreferrer' }, 'Vehicle Inspection File'),
-      ' · ',
-      el('a', { href: 'https://data.transportation.gov/d/876r-jsdb', target: '_blank', rel: 'noopener noreferrer' }, 'Vehicle Inspections and Violations'),
-      ' · ',
-      el('a', { href: 'https://data.transportation.gov/d/az4n-8mr2', target: '_blank', rel: 'noopener noreferrer' }, 'Company Census'),
-      ' · ',
-      el('a', { href: 'https://safer.fmcsa.dot.gov/CompanySnapShot.aspx', target: '_blank', rel: 'noopener noreferrer' }, 'SAFER Company Snapshot'),
-      '.',
-    ),
-  );
+  return el('div', { class: 'log-wrap', tabindex: '0', 'aria-label': 'Roadside inspections of this VIN' }, table);
 }

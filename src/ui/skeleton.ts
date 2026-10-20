@@ -20,16 +20,6 @@ export function identitySkeleton(): HTMLElement {
   );
 }
 
-/** Label + value + detail shape (summary tiles). */
-export function tileSkeleton(): HTMLElement {
-  return el(
-    'div',
-    { class: 'skeleton-stack skeleton-stack--tile', 'aria-hidden': 'true' },
-    block(1.4, 55),
-    block(0.8, 82),
-  );
-}
-
 /** A pair of tall cards (guided links). */
 export function cardsSkeleton(count: number): HTMLElement {
   const wrap = el('div', { class: 'link-grid', 'aria-hidden': 'true' });

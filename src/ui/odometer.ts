@@ -16,7 +16,7 @@ interface Point {
   readonly reading: OdometerReading;
 }
 
-/** Chronological copy — shared with the summary tile. */
+/** Chronological copy for the detailed inspection history. */
 export function sortReadings(readings: readonly OdometerReading[]): OdometerReading[] {
   return [...readings].sort(
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),

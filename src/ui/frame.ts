@@ -72,7 +72,7 @@ export function createSection(options: SectionOptions): SectionFrame {
     {
       class: options.hideTitle ? 'visually-hidden' : 'section__title',
       id: headingId,
-      // Summary tiles move focus here after scrolling to the section.
+      // Keep the heading programmatically focusable for accessible section navigation.
       tabindex: '-1',
     },
     options.title,

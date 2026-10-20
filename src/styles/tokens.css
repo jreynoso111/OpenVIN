@@ -1,117 +1,85 @@
 /**
- * OpenVIN design tokens.
- * One accent (Apple-blue), used only semantically. Status colors muted,
- * reserved for dots and badges. Both themes are designed, not inverted.
+ * High View tokens — a dispatch-ledger look: warm paper, ink, hairline rules,
+ * monospace identifiers and one signal color (amber) for "latest" and
+ * pivots. Every component color comes from here; both themes are designed.
  */
 
 :root {
   color-scheme: light dark;
 
-  /* Typography */
-  --font-sans:
-    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto,
-    Inter, sans-serif;
-  --text-body: 1.0625rem; /* 17px */
-  --text-small: 0.875rem;
-  --text-micro: 0.8125rem;
-  --text-title: 1.2rem; /* ~19px section titles — dense report chrome */
-  --text-display: clamp(2.4rem, 1.35rem + 4.6vw, 4.5rem);
-  --tracking-display: -0.02em;
-  --tracking-title: -0.015em;
+  --font-sans: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'Segoe UI Variable Display', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Mono', 'SF Mono', Menlo, Consolas, monospace;
 
-  /* Rhythm */
-  --space-section: clamp(4rem, 2.75rem + 4.4vw, 7rem);
-  --space-card: clamp(1rem, 0.85rem + 0.8vw, 1.375rem);
-  --container: 58rem;
+  --text-body: 0.9375rem;
+  --text-small: 0.8125rem;
+  --text-micro: 0.75rem;
+  --text-label: 0.6875rem;
+  --text-title: 1.0625rem;
+  --text-display: clamp(1.75rem, 1.1rem + 2.4vw, 2.6rem);
 
-  /* Surfaces */
-  --radius-card: 18px;
-  --radius-card-small: 16px;
-  --radius-control: 12px;
-  --radius-pill: 999px;
+  --container: 76rem;
+  --radius: 3px;
+  --rule: 1px solid var(--color-hairline);
 
-  /* Motion */
-  --duration-fast: 160ms;
-  --duration-reveal: 450ms;
-  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 140ms;
+  --duration-reveal: 320ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 
-  /* Light theme */
-  --color-bg: oklch(98.4% 0.002 250);
-  --color-card: oklch(100% 0 0);
-  --color-inset: oklch(97% 0.003 250);
-  --color-text: oklch(21% 0.01 250);
-  --color-text-secondary: oklch(50% 0.012 250);
-  --color-text-tertiary: oklch(64% 0.01 250);
-  --color-accent: oklch(58% 0.17 255);
-  --color-accent-hover: oklch(52% 0.17 255);
-  --color-on-accent: oklch(99% 0 0);
+  /* Light: paper and ink */
+  --color-bg: oklch(96.6% 0.008 85);
+  --color-card: oklch(99.2% 0.004 85);
+  --color-inset: oklch(94% 0.01 85);
+  --color-text: oklch(23% 0.018 255);
+  --color-text-secondary: oklch(44% 0.016 255);
+  --color-text-tertiary: oklch(58% 0.012 255);
+  --color-hairline: oklch(86% 0.012 85);
+  --color-hairline-strong: oklch(74% 0.014 85);
 
-  --color-hairline: color-mix(in oklab, var(--color-text) 11%, transparent);
-  --color-hairline-strong: color-mix(in oklab, var(--color-text) 20%, transparent);
+  --color-ink-bar: oklch(23% 0.02 255);
+  --color-on-ink: oklch(95% 0.008 85);
+  --color-on-ink-muted: oklch(72% 0.012 255);
 
-  /* Status — muted, dots and badges only */
-  --color-ok: oklch(60% 0.13 152);
-  --color-warn: oklch(70% 0.13 70);
-  --color-danger: oklch(56% 0.18 26);
-  --color-neutral-dot: oklch(72% 0.01 250);
-  --color-star: oklch(70% 0.14 75);
+  --color-signal: oklch(72% 0.16 62);
+  --color-signal-strong: oklch(56% 0.15 55);
+  --tint-signal: oklch(72% 0.16 62 / 0.14);
+  --color-link: oklch(42% 0.11 250);
 
-  --tint-ok: color-mix(in oklab, var(--color-ok) 11%, transparent);
-  --tint-warn: color-mix(in oklab, var(--color-warn) 14%, transparent);
-  --tint-danger: color-mix(in oklab, var(--color-danger) 10%, transparent);
-  --tint-accent: color-mix(in oklab, var(--color-accent) 9%, transparent);
-
-  --shadow-card:
-    0 1px 2px oklch(25% 0.02 255 / 0.04),
-    0 10px 28px oklch(25% 0.02 255 / 0.05);
-  --shadow-card-hover:
-    0 2px 4px oklch(25% 0.02 255 / 0.05),
-    0 16px 36px oklch(25% 0.02 255 / 0.08);
-
-  --header-glass: color-mix(in oklab, var(--color-bg) 74%, transparent);
-  --hero-glow: oklch(58% 0.17 255 / 0.09);
-  --skeleton-base: color-mix(in oklab, var(--color-text) 6%, transparent);
-  --skeleton-sheen: color-mix(in oklab, var(--color-card) 65%, transparent);
-  --selection: color-mix(in oklab, var(--color-accent) 22%, transparent);
+  --color-accent: var(--color-signal-strong);
+  --color-ok: oklch(52% 0.11 155);
+  --color-danger: oklch(52% 0.18 28);
+  --tint-danger: oklch(52% 0.18 28 / 0.1);
+  --tint-ok: oklch(52% 0.11 155 / 0.11);
+  --color-star: var(--color-signal);
+  --skeleton-base: oklch(23% 0.018 255 / 0.07);
+  --selection: oklch(72% 0.16 62 / 0.3);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-bg: oklch(17% 0.005 250);
-    --color-card: oklch(22% 0.007 250);
-    --color-inset: oklch(19.5% 0.006 250);
-    --color-text: oklch(93% 0.004 250);
-    --color-text-secondary: oklch(68% 0.008 250);
-    --color-text-tertiary: oklch(54% 0.008 250);
-    --color-accent: oklch(66% 0.15 255);
-    --color-accent-hover: oklch(72% 0.14 255);
-    --color-on-accent: oklch(15% 0.02 255);
+    --color-bg: oklch(17.5% 0.01 255);
+    --color-card: oklch(21% 0.012 255);
+    --color-inset: oklch(24.5% 0.012 255);
+    --color-text: oklch(93% 0.008 85);
+    --color-text-secondary: oklch(74% 0.01 85);
+    --color-text-tertiary: oklch(60% 0.01 255);
+    --color-hairline: oklch(31% 0.012 255);
+    --color-hairline-strong: oklch(42% 0.012 255);
 
-    --color-hairline: color-mix(in oklab, var(--color-text) 13%, transparent);
-    --color-hairline-strong: color-mix(in oklab, var(--color-text) 24%, transparent);
+    --color-ink-bar: oklch(13.5% 0.01 255);
+    --color-on-ink: oklch(93% 0.008 85);
+    --color-on-ink-muted: oklch(66% 0.01 255);
 
-    --color-ok: oklch(72% 0.13 152);
-    --color-warn: oklch(76% 0.12 70);
-    --color-danger: oklch(68% 0.16 26);
-    --color-neutral-dot: oklch(48% 0.01 250);
-    --color-star: oklch(76% 0.13 75);
+    --color-signal: oklch(78% 0.15 68);
+    --color-signal-strong: oklch(80% 0.14 70);
+    --tint-signal: oklch(78% 0.15 68 / 0.14);
+    --color-link: oklch(78% 0.09 240);
 
-    --tint-ok: color-mix(in oklab, var(--color-ok) 13%, transparent);
-    --tint-warn: color-mix(in oklab, var(--color-warn) 15%, transparent);
-    --tint-danger: color-mix(in oklab, var(--color-danger) 14%, transparent);
-    --tint-accent: color-mix(in oklab, var(--color-accent) 12%, transparent);
-
-    --shadow-card:
-      0 1px 2px oklch(5% 0 0 / 0.3),
-      0 10px 28px oklch(5% 0 0 / 0.25);
-    --shadow-card-hover:
-      0 2px 4px oklch(5% 0 0 / 0.35),
-      0 16px 36px oklch(5% 0 0 / 0.32);
-
-    --header-glass: color-mix(in oklab, var(--color-bg) 70%, transparent);
-    --hero-glow: oklch(66% 0.15 255 / 0.1);
-    --skeleton-base: color-mix(in oklab, var(--color-text) 8%, transparent);
-    --skeleton-sheen: color-mix(in oklab, var(--color-text) 7%, transparent);
-    --selection: color-mix(in oklab, var(--color-accent) 34%, transparent);
+    --color-ok: oklch(74% 0.12 155);
+    --color-danger: oklch(70% 0.16 28);
+    --tint-danger: oklch(70% 0.16 28 / 0.14);
+    --tint-ok: oklch(74% 0.12 155 / 0.13);
+    --skeleton-base: oklch(93% 0.008 85 / 0.08);
+    --selection: oklch(78% 0.15 68 / 0.3);
   }
 }

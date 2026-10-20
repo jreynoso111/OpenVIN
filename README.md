@@ -11,8 +11,8 @@ source and coverage, including what *no* report (free or paid) can see.
 **Try it: <https://francoischastel.github.io/OpenVIN/>**
 
 > **Status: static MVP live** ([scope](./docs/STATIC_MVP.md)) — a fully client-side
-> report built on CORS-enabled public APIs, deployed on GitHub Pages: summary tiles,
-> tabbed report, SVG charts, guided official checks. The full backend architecture is
+> report built on CORS-enabled public APIs, deployed on GitHub Pages: single-page report,
+> SVG charts, guided official checks. The full backend architecture is
 > specced in [docs/](./docs/) and comes next. **Hands-on state of the project:
 > [docs/HANDBOOK.md](./docs/HANDBOOK.md).** To help, start with
 > [CONTRIBUTING.md](./CONTRIBUTING.md).
@@ -34,7 +34,7 @@ was checked, what was found, and what nobody can see.
 
 | Verdict | Categories |
 |---|---|
-| ✅ Full parity, free | VIN decode & specs (NHTSA vPIC, 154 fields) · recalls · complaints/TSBs/investigations (a section the incumbents don't even show) · safety ratings · fuel economy · window stickers (GM, Stellantis, Ford, Hyundai) · warranty estimate · market range from visible comps · fatal-crash flag · theft/total-loss check (guided NICB) |
+| ✅ Free report features | VIN decode & specs (NHTSA vPIC, 154 fields) · recalls · complaints/TSBs/investigations · safety ratings · window stickers (GM, Stellantis, Ford, Hyundai) · market range from visible comps · fatal-crash flag · theft/total-loss check (guided NICB) |
 | 🟡 Near-parity | Federal title brands & total loss — free via an official NMVTIS provider link-out · odometer history — free in ~15 states (NY publishes full-VIN inspection data as bulk open data) · ownership estimate — inferred from listing history |
 | 🔴 Structural gaps (for everyone) | Police-reported non-fatal accidents (open crash data deliberately strips VINs) and dealer service records (proprietary, contractually locked). OpenVIN handles both with a labeled proxy-signal stack and crowdsourced owner uploads — never by pretending |
 
@@ -54,8 +54,8 @@ was checked, what was found, and what nobody can see.
 ## Roadmap
 
 1. **Phase 1 — Parity core**: self-hosted VIN decode, NHTSA mirrors, NY open-data
-   mirror, first state adapters, auction index, listing history, streaming report page
-   with the coverage-disclosure panel.
+   mirror, first state adapters, auction index, listing history, and streaming report
+   page with source status shown in each section.
 2. **Phase 2 — Depth**: remaining state adapters, accounts & garage, crowdsourced
    service-record vault, VIN alerts, SEO surfaces.
 3. **Phase 3 — Extensions**: optional at-cost NMVTIS embed, seller mode, public API,
