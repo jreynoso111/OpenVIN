@@ -32,6 +32,12 @@ interface FetchJsonOptions {
   timeoutMs?: number;
   /** Extra Accept header, e.g. 'application/json' for fueleconomy.gov */
   accept?: string;
+  /**
+   * NHTSA vehicle endpoints return HTTP 400 for some unsupported vehicle
+   * lines, even when the JSON body explicitly reports a successful empty
+   * result. Accept only that documented no-match shape when opted in.
+   */
+  acceptNhtsaEmptyResults400?: boolean;
 }
 
 function delay(ms: number): Promise<void> {
@@ -70,7 +76,11 @@ async function attemptFetch(
   url: string,
   options: FetchJsonOptions,
 ): Promise<AttemptResult> {
-  const { timeoutMs = DEFAULT_TIMEOUT_MS, accept } = options;
+  const {
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+    accept,
+    acceptNhtsaEmptyResults400 = false,
+  } = options;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -79,6 +89,30 @@ async function attemptFetch(
       headers: accept ? { Accept: accept } : undefined,
     });
     if (!response.ok) {
+      if (response.status === 400 && acceptNhtsaEmptyResults400) {
+        try {
+          const data: unknown = await response.json();
+          const root = asRecord(data);
+          const results = root
+            ? asArray(root['results']) ?? asArray(root['Results'])
+            : null;
+          const count = root
+            ? intOrNull(root['count'] ?? root['Count'])
+            : null;
+          const message = root
+            ? stringOrNull(root['message'] ?? root['Message'])
+            : null;
+          if (
+            results?.length === 0 &&
+            count === 0 &&
+            message?.toLowerCase() === 'results returned successfully'
+          ) {
+            return { ok: true, data };
+          }
+        } catch {
+          // Fall through to the normal HTTP error result for non-JSON bodies.
+        }
+      }
       return {
         ok: false,
         note: `The source responded with HTTP ${response.status} — it may be temporarily down.`,

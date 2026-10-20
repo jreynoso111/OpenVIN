@@ -59,7 +59,7 @@ export async function getRecalls(
   const url =
     `${RECALLS_URL}?make=${encodeURIComponent(make)}` +
     `&model=${encodeURIComponent(model)}&modelYear=${modelYear}`;
-  const fetched = await fetchJson(url);
+  const fetched = await fetchJson(url, { acceptNhtsaEmptyResults400: true });
   if (!fetched.ok) {
     return { status: 'unavailable', source, note: `Recall lookup failed. ${fetched.note}` };
   }
