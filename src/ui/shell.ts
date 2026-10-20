@@ -55,12 +55,7 @@ function wordmark(onHome: () => void): HTMLElement {
       },
     },
     logoMark(),
-    el(
-      'span',
-      { class: 'wordmark__text' },
-      el('span', { class: 'wordmark__name' }, 'High View'),
-      el('span', { class: 'wordmark__byline' }, 'A service for Truckline Capital LLC'),
-    ),
+    el('span', { class: 'wordmark__text' }, el('span', { class: 'wordmark__name' }, 'High View')),
   );
 }
 

@@ -169,14 +169,6 @@ code {
   letter-spacing: 0.01em;
 }
 
-.wordmark__byline {
-  font-size: 0.625rem;
-  font-weight: 400;
-  letter-spacing: 0.02em;
-  color: var(--color-on-ink-muted);
-  white-space: nowrap;
-}
-
 /* ---------- Search ---------- */
 
 .search {
