@@ -1,11 +1,11 @@
 /**
- * High View tokens — a dispatch-ledger look: warm paper, ink, hairline rules,
- * monospace identifiers and one signal color (amber) for "latest" and
- * pivots. Every component color comes from here; both themes are designed.
+ * High View tokens — a light, technical instrument look: cool grey surfaces,
+ * navy ink, hairline rules, monospace identifiers and one signal color (steel
+ * blue) for "latest" and pivots. Every component color comes from here.
  */
 
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
 
   --font-sans: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
   --font-display: 'Segoe UI Variable Display', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
@@ -26,24 +26,24 @@
   --duration-reveal: 320ms;
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 
-  /* Light: paper and ink */
-  --color-bg: oklch(96.6% 0.008 85);
-  --color-card: oklch(99.2% 0.004 85);
-  --color-inset: oklch(94% 0.01 85);
-  --color-text: oklch(23% 0.018 255);
-  --color-text-secondary: oklch(44% 0.016 255);
-  --color-text-tertiary: oklch(58% 0.012 255);
-  --color-hairline: oklch(86% 0.012 85);
-  --color-hairline-strong: oklch(74% 0.014 85);
+  /* Light: cool grey and navy ink */
+  --color-bg: oklch(97% 0.005 250);
+  --color-card: oklch(100% 0 0);
+  --color-inset: oklch(95% 0.008 250);
+  --color-text: oklch(24% 0.03 258);
+  --color-text-secondary: oklch(44% 0.025 255);
+  --color-text-tertiary: oklch(57% 0.02 255);
+  --color-hairline: oklch(89% 0.012 250);
+  --color-hairline-strong: oklch(77% 0.02 252);
 
-  --color-ink-bar: oklch(23% 0.02 255);
-  --color-on-ink: oklch(95% 0.008 85);
-  --color-on-ink-muted: oklch(72% 0.012 255);
+  --color-ink-bar: oklch(27% 0.045 258);
+  --color-on-ink: oklch(96% 0.006 250);
+  --color-on-ink-muted: oklch(74% 0.02 255);
 
-  --color-signal: oklch(72% 0.16 62);
-  --color-signal-strong: oklch(56% 0.15 55);
-  --tint-signal: oklch(72% 0.16 62 / 0.14);
-  --color-link: oklch(42% 0.11 250);
+  --color-signal: oklch(62% 0.15 245);
+  --color-signal-strong: oklch(48% 0.15 250);
+  --tint-signal: oklch(62% 0.15 245 / 0.12);
+  --color-link: oklch(46% 0.14 252);
 
   --color-accent: var(--color-signal-strong);
   --color-ok: oklch(52% 0.11 155);
@@ -51,35 +51,6 @@
   --tint-danger: oklch(52% 0.18 28 / 0.1);
   --tint-ok: oklch(52% 0.11 155 / 0.11);
   --color-star: var(--color-signal);
-  --skeleton-base: oklch(23% 0.018 255 / 0.07);
-  --selection: oklch(72% 0.16 62 / 0.3);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: oklch(17.5% 0.01 255);
-    --color-card: oklch(21% 0.012 255);
-    --color-inset: oklch(24.5% 0.012 255);
-    --color-text: oklch(93% 0.008 85);
-    --color-text-secondary: oklch(74% 0.01 85);
-    --color-text-tertiary: oklch(60% 0.01 255);
-    --color-hairline: oklch(31% 0.012 255);
-    --color-hairline-strong: oklch(42% 0.012 255);
-
-    --color-ink-bar: oklch(13.5% 0.01 255);
-    --color-on-ink: oklch(93% 0.008 85);
-    --color-on-ink-muted: oklch(66% 0.01 255);
-
-    --color-signal: oklch(78% 0.15 68);
-    --color-signal-strong: oklch(80% 0.14 70);
-    --tint-signal: oklch(78% 0.15 68 / 0.14);
-    --color-link: oklch(78% 0.09 240);
-
-    --color-ok: oklch(74% 0.12 155);
-    --color-danger: oklch(70% 0.16 28);
-    --tint-danger: oklch(70% 0.16 28 / 0.14);
-    --tint-ok: oklch(74% 0.12 155 / 0.13);
-    --skeleton-base: oklch(93% 0.008 85 / 0.08);
-    --selection: oklch(78% 0.15 68 / 0.3);
-  }
+  --skeleton-base: oklch(24% 0.03 258 / 0.07);
+  --selection: oklch(62% 0.15 245 / 0.25);
 }
