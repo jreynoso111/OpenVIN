@@ -236,12 +236,32 @@
   margin-top: 0.8rem;
 }
 
+.source-board__empty {
+  margin: 0;
+  padding: 0.65rem 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-micro);
+  line-height: 1.5;
+}
+
 .source-row {
   padding: 0.72rem 0;
   border-top: 1px solid var(--color-hairline);
 }
 
-.source-row:first-child {
+.source-row:not([hidden]) {
+  border-top: 0;
+}
+
+.source-row:not([hidden]) ~ .source-row:not([hidden]) {
+  border-top: 1px solid var(--color-hairline);
+}
+
+.source-row[hidden] {
+  display: none;
+}
+
+.source-row:first-child:not([hidden]) {
   border-top: 0;
 }
 

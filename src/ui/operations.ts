@@ -4,9 +4,11 @@ import type {
   CommercialInspection,
   ComplaintRecord,
   ComplaintsSummary,
+  FuelEconomy,
   GuidedLink,
   OdometerReading,
   RecallCampaign,
+  SafetyRating,
   SectionResult,
   VehicleIdentity,
 } from '../lib/types';
@@ -113,6 +115,47 @@ function sourceStatusLabel(status: SectionResult<unknown>['status']): string {
   }
 }
 
+function hasUsefulSourceData(id: string, data: unknown): boolean {
+  if (data === null || data === undefined) return false;
+  if (id === 'identity') {
+    const identity = data as VehicleIdentity;
+    return Boolean(identity.make.trim() || identity.model.trim() || identity.modelYear !== null);
+  }
+  if (id === 'recalls' || id === 'odometer' || id === 'commercial-inspections') {
+    return Array.isArray(data) && data.length > 0;
+  }
+  if (id === 'complaints') {
+    const summary = data as ComplaintsSummary;
+    return summary.vinMatches.length > 0 || summary.totalForVehicleLine > 0;
+  }
+  if (id === 'safety') {
+    const rating = data as SafetyRating;
+    return Boolean(
+      rating.vehicleDescription.trim() ||
+      rating.overallRating?.trim() ||
+      rating.frontCrashRating?.trim() ||
+      rating.sideCrashRating?.trim() ||
+      rating.rolloverRating?.trim() ||
+      rating.vehiclePicture?.trim() ||
+      rating.complaintsCount !== null ||
+      rating.recallsCount !== null ||
+      rating.investigationCount !== null,
+    );
+  }
+  if (id === 'fuel-economy') {
+    const fuel = data as FuelEconomy;
+    return Boolean(
+      fuel.city !== null ||
+      fuel.highway !== null ||
+      fuel.combined !== null ||
+      fuel.co2GramsPerMile !== null ||
+      fuel.fuelType?.trim() ||
+      fuel.matchedName?.trim(),
+    );
+  }
+  return false;
+}
+
 export function createOperationsSnapshot(): OperationsSnapshot {
   const activityFeatured = el('div', { class: 'activity-featured' });
   const activityList = el('div', { class: 'activity-list' });
@@ -127,6 +170,11 @@ export function createOperationsSnapshot(): OperationsSnapshot {
     { row: HTMLElement; status: HTMLElement; detail: HTMLElement; checked: HTMLElement }
   >();
   const sources = el('div', { class: 'source-board__rows' });
+  const sourceEmpty = el(
+    'p',
+    { class: 'source-board__empty', 'aria-live': 'polite' },
+    'Checking connected sources…',
+  );
 
   for (const spec of SOURCE_SPECS) {
     const status = el('span', { class: 'source-row__status source-row__status--loading' }, 'Checking');
@@ -149,33 +197,11 @@ export function createOperationsSnapshot(): OperationsSnapshot {
       detail,
       checked,
     );
+    row.hidden = true;
     sourceRows.set(spec.id, { row, status, detail, checked });
     sources.append(row);
   }
-
-  const tmsStatus = el('span', { class: 'source-row__status source-row__status--manual' }, 'Not connected');
-  sources.append(
-    el(
-      'article',
-      { class: 'source-row source-row--system' },
-      el(
-        'div',
-        { class: 'source-row__top' },
-        el(
-          'div',
-          {},
-          el('p', { class: 'source-row__scope' }, 'FLEET OPERATIONS'),
-          el('h3', { class: 'source-row__name' }, 'Vektor TMS'),
-        ),
-        tmsStatus,
-      ),
-      el(
-        'p',
-        { class: 'source-row__detail' },
-        'No authorized Vektor TMS feed is connected. FMCSA records show historical inspections, not dispatch status or live fleet location.',
-      ),
-    ),
-  );
+  sources.append(sourceEmpty);
 
   const activityPanel = el(
     'section',
@@ -226,7 +252,7 @@ export function createOperationsSnapshot(): OperationsSnapshot {
   const root = el('div', { class: 'operations-snapshot' }, activityPanel, sourcePanel);
   const activity: ActivityItem[] = [];
   const settled = new Set<string>();
-  let guidedSet = false;
+  const sourceSettled = new Set<string>();
   let latestQuery = 0;
 
   const renderActivity = (): void => {
@@ -258,6 +284,16 @@ export function createOperationsSnapshot(): OperationsSnapshot {
   const setSource = (id: string, result: SectionResult<unknown>): void => {
     const elements = sourceRows.get(id);
     if (!elements) return;
+    const hasData = result.status === 'hit' && hasUsefulSourceData(id, result.data);
+    elements.row.hidden = !hasData;
+    sourceSettled.add(id);
+    const hasVisibleSource = [...sourceRows.values()].some(({ row }) => !row.hidden);
+    sourceEmpty.hidden = hasVisibleSource;
+    if (!hasVisibleSource) {
+      sourceEmpty.textContent = sourceSettled.size === SOURCE_SPECS.length
+        ? 'No connected source returned matching information for this VIN.'
+        : 'Checking connected sources…';
+    }
     const timestamp = parsedDate(result.source.fetchedAt);
     const status = sourceStatusLabel(result.status);
     elements.status.textContent = status;
@@ -380,27 +416,8 @@ export function createOperationsSnapshot(): OperationsSnapshot {
     setFuelEconomy(result): void {
       setSource('fuel-economy', result);
     },
-    setGuided(links): void {
-      if (guidedSet) return;
-      guidedSet = true;
-      const count = links.filter((link) => link.kind === 'nmvtis' || link.kind === 'nicb').length;
-      const row = el(
-        'article',
-        { class: 'source-row source-row--manual' },
-        el(
-          'div',
-          { class: 'source-row__top' },
-          el(
-            'div',
-            {},
-            el('p', { class: 'source-row__scope' }, 'TITLE · BRAND · THEFT'),
-            el('h3', { class: 'source-row__name' }, 'Official checks'),
-          ),
-          el('span', { class: 'source-row__status source-row__status--guided' }, `${count} manual checks`),
-        ),
-        el('p', { class: 'source-row__detail' }, 'Open official or authorized portals below. Their results are not returned to High View.'),
-      );
-      sources.append(row);
+    setGuided(_links): void {
+      // Manual lookups are linked elsewhere; Source Monitor shows queried sources only.
     },
   };
 }
