@@ -213,5 +213,13 @@ export function buildGuidedLinks(vin: string, identity: VehicleIdentity | null):
     ...STATE_EMISSIONS_LINKS,
     ...AUCTION_LINKS,
     ...serviceLinks(make),
+    {
+      kind: 'history',
+      label: 'Full commercial history (Dcontrol)',
+      url: 'https://dcontrol.com/vin/' + encodeURIComponent(vin),
+      description:
+        'A third-party service that keeps its own archive of commercial inspections, carriers and plates, including older records and carriers that are now inactive.',
+      badge: 'Free',
+    },
   ];
 }

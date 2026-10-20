@@ -108,6 +108,7 @@ export function caseLayout(
 }
 
 const CHECK_GROUPS: ReadonlyArray<{ kinds: readonly GuidedLinkKind[]; title: string }> = [
+  { kinds: ['history'], title: 'Older commercial history' },
   { kinds: ['nicb', 'nmvtis'], title: 'Theft & title brands' },
   { kinds: ['state-title'], title: 'State title & liens' },
   { kinds: ['auction'], title: 'Auction & salvage' },

@@ -111,4 +111,9 @@ describe('buildGuidedLinks', () => {
       expect(link.description.length).toBeGreaterThan(10);
     }
   });
+
+  test('links the VIN to the third-party commercial history page', () => {
+    const history = buildGuidedLinks(VIN, null).find((l) => l.kind === 'history');
+    expect(history?.url).toBe('https://dcontrol.com/vin/' + VIN);
+  });
 });

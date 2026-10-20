@@ -181,6 +181,7 @@ export interface WarrantyEstimate {
 export type GuidedLinkKind =
   | 'nmvtis'
   | 'nicb'
+  | 'history'
   | 'oem-recall'
   | 'state-title'
   | 'state-emissions'
