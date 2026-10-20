@@ -10,7 +10,7 @@ import { caseHeader, caseLayout, limitsNote } from './case';
 import { carrierCard, carrierName } from './carrier';
 import { createLedger, createPanel, emptyNote } from './panel';
 import { dotPivot, vinPivot } from './pivot';
-import { countPlaces, frequencyList, lastSeen, placeText, sightingTable } from './sightings';
+import { countPlaces, frequencyChips, frequencyList, lastSeen, placeText, sightingTable } from './sightings';
 import { renderStateMap, stateCounts } from './stateMap';
 
 interface VehicleUse {
@@ -133,7 +133,7 @@ export function renderPlateFile(
             'div',
             { class: 'where__grid' },
             renderStateMap(stateCounts(sightings)) ?? frequencyList('States', countPlaces(sightings, 'state')),
-            frequencyList('Inspection sites', countPlaces(sightings, 'site'), 5),
+            frequencyChips('Inspection sites', countPlaces(sightings, 'site'), 8),
           ),
         ),
       );

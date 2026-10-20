@@ -116,6 +116,35 @@ export function frequencyList(
   );
 }
 
+/** Compact wrapped chips ("I-80 WB, IL ×2") — the dense alternative to frequencyList. */
+export function frequencyChips(
+  title: string,
+  counts: readonly PlaceCount[],
+  limit = 8,
+): HTMLElement | null {
+  if (counts.length === 0) return null;
+  const shown = counts.slice(0, limit);
+  const rest = counts.slice(limit);
+  return el(
+    'div',
+    { class: 'chips' },
+    el('h3', { class: 'freq__title' }, title),
+    el(
+      'ul',
+      { class: 'chips__list' },
+      ...shown.map((entry) =>
+        el(
+          'li',
+          { class: 'chip', title: entry.lastDate ? 'Last ' + formatDate(entry.lastDate) : undefined },
+          el('span', { class: 'chip__label' }, entry.label),
+          el('span', { class: 'chip__count' }, '×' + formatNumber(entry.count)),
+        ),
+      ),
+      rest.length > 0 ? el('li', { class: 'chip chip--more' }, '+' + formatNumber(rest.length) + ' more') : null,
+    ),
+  );
+}
+
 type Column = 'date' | 'place' | 'vin' | 'plate' | 'unit' | 'carrier' | 'oos';
 
 const HEAD: Readonly<Record<Column, string>> = {

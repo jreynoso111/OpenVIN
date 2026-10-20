@@ -95,19 +95,18 @@ export function renderStateMap(counts: readonly StateCount[], noun = 'inspection
       'figcaption',
       { class: 'usmap__caption' },
       el(
-        'ol',
-        { class: 'usmap__rank' },
-        ...ranked.slice(0, 18).map((c) =>
+        'ul',
+        { class: 'chips__list' },
+        ...ranked.slice(0, 10).map((c) =>
           el(
             'li',
-            {},
-            el('strong', {}, c.state),
-            ' ' + formatNumber(c.count),
-            c.lastDate ? el('span', { class: 'muted' }, ' · last ' + formatDate(c.lastDate)) : null,
+            { class: 'chip', title: c.lastDate ? 'Last ' + formatDate(c.lastDate) : undefined },
+            el('span', { class: 'chip__label' }, c.state),
+            el('span', { class: 'chip__count' }, '×' + formatNumber(c.count)),
           ),
         ),
+        ranked.length > 10 ? el('li', { class: 'chip chip--more' }, '+' + (ranked.length - 10) + ' more') : null,
       ),
-      ranked.length > 18 ? el('p', { class: 'usmap__outside' }, '+ ' + (ranked.length - 18) + ' more states — hover the map for each count.') : null,
       outside.length > 0
         ? el('p', { class: 'usmap__outside' }, 'Outside the 50 states: ', outside.map((c) => c.state + ' ' + formatNumber(c.count)).join(' · '))
         : null,

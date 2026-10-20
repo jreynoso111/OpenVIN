@@ -10,7 +10,7 @@ import { el, formatDate, formatNumber } from './dom';
 import { carrierBase, carrierCard, carrierName } from './carrier';
 import { emptyNote, factList } from './panel';
 import { dotPivot, platePivot, vinPivot } from './pivot';
-import { countPlaces, frequencyList, lastSeen, placeText } from './sightings';
+import { countPlaces, frequencyChips, frequencyList, lastSeen, placeText } from './sightings';
 import { renderStateMap, stateCounts } from './stateMap';
 
 /** Rebuild the census profile flattened onto an inspection record. */
@@ -106,7 +106,7 @@ export function renderWhereSeen(records: readonly CommercialInspection[]): HTMLE
       { class: 'where__grid' },
       renderStateMap(stateCounts(records)) ??
         frequencyList('States', countPlaces(records.map((r) => ({ date: r.date, state: r.state, site: r.location })), 'state')),
-      frequencyList('Inspection sites', countPlaces(records.map((r) => ({ date: r.date, state: r.state, site: r.location })), 'site'), 5),
+      frequencyChips('Inspection sites', countPlaces(records.map((r) => ({ date: r.date, state: r.state, site: r.location })), 'site'), 8),
     ),
     bases.length > 1
       ? el(
