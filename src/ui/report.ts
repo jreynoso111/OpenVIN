@@ -59,22 +59,33 @@ function settle<T>(promise: Promise<SectionResult<T>>, name: string): Promise<Se
   return promise.catch(() => unavailable<T>(name));
 }
 
+/**
+ * Plates and carriers in the order the unit used them, oldest first, joined by
+ * arrows so "A → B" reads as "moved from A to B". The per-link arrow that
+ * pivots normally carry is dropped here (.ids .pivot) to avoid a second arrow.
+ */
 function keyIdentifiers(records: readonly CommercialInspection[]): HTMLElement | null {
   const plates = new Map<string, HTMLElement>();
-  for (const record of records) {
+  for (const record of [...records].reverse()) {
     if (!record.plate) continue;
     const key = record.plate + '|' + (record.plateState ?? '');
     if (!plates.has(key)) plates.set(key, platePivot(record.plate, record.plateState));
   }
-  const carriers = carrierUses(records).map((use) =>
-    dotPivot(use.carrier.dotNumber, use.carrier.legalName ?? use.carrier.dbaName ?? undefined),
-  );
+  const carriers = carrierUses(records)
+    .sort((a, b) => (a.first ?? '').localeCompare(b.first ?? ''))
+    .map((use) => dotPivot(use.carrier.dotNumber, use.carrier.legalName ?? use.carrier.dbaName ?? undefined));
   if (plates.size === 0 && carriers.length === 0) return null;
+  const chain = (items: readonly HTMLElement[]): Node[] =>
+    items.flatMap((item, i) => (i === 0 ? [item] : [el('span', { class: 'ids__then', 'aria-label': 'then' }, '→'), item]));
   return el(
     'div',
     { class: 'ids' },
-    plates.size > 0 ? el('div', { class: 'ids__group' }, el('span', { class: 'ids__label' }, 'Plates'), ...plates.values()) : null,
-    carriers.length > 0 ? el('div', { class: 'ids__group' }, el('span', { class: 'ids__label' }, 'Carriers'), ...carriers) : null,
+    plates.size > 0
+      ? el('div', { class: 'ids__group', title: 'Oldest first' }, el('span', { class: 'ids__label' }, 'Plates'), ...chain([...plates.values()]))
+      : null,
+    carriers.length > 0
+      ? el('div', { class: 'ids__group', title: 'Oldest first' }, el('span', { class: 'ids__label' }, 'Carriers'), ...chain(carriers))
+      : null,
   );
 }
 

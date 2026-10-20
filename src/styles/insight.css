@@ -4,6 +4,17 @@
  * which are mixes of the signal color.
  */
 
+/* ---------- Header identifiers: oldest → newest ---------- */
+
+.ids .pivot::after {
+  content: none;
+}
+
+.ids__then {
+  color: var(--color-signal-strong);
+  font-weight: 700;
+}
+
 /* ---------- Header actions ---------- */
 
 .rail-block[hidden] {
