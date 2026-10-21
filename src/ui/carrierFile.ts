@@ -47,9 +47,9 @@ function fleetRow(vehicle: FleetVehicle): HTMLElement {
         }),
       ),
     ),
-    el('td', { 'data-label': 'Unit # on record' }, vehicle.companyUnits.slice(0, 2).join(' · ') || '—'),
+    el('td', { 'data-label': 'Unit #' }, vehicle.companyUnits.slice(0, 2).join(' · ') || '—'),
     el('td', { 'data-label': 'Last inspection' }, placeText(last), el('span', { class: 'sub' }, (last.date ? formatDate(last.date) : '—') + (age ? ' · ' + age : ''))),
-    el('td', { 'data-label': 'Inspections', class: 'num' }, formatNumber(vehicle.inspectionCount)),
+    el('td', { 'data-label': 'Inspection count', class: 'num' }, formatNumber(vehicle.inspectionCount)),
   );
 }
 
@@ -77,7 +77,7 @@ function fleetTable(fleet: CarrierFleet, dot: string): HTMLElement {
       'p',
       { class: 'panel__hint fleet__explanation' },
       'A VIN appears here when an FMCSA roadside inspection lists it under USDOT ' + dot +
-        '. That links it to this USDOT for the inspection record, but does not prove current ownership or operation. This list uses inspection history, not a last-seen signal. “Inspections” counts distinct records in the date range below.',
+        '. That association is for the inspection record; it does not prove who owns or operates the vehicle today. This list is based on inspection history, not a last-seen signal. Inspection count is the number of distinct records for that VIN in the date range below.',
     ),
     el('div', { class: 'filter' }, input, count),
     el(
@@ -87,7 +87,7 @@ function fleetTable(fleet: CarrierFleet, dot: string): HTMLElement {
         'table',
         { class: 'log' },
         el('caption', { class: 'visually-hidden' }, 'Vehicles recorded on roadside inspections under this USDOT number'),
-        el('thead', {}, el('tr', {}, ...['VIN', 'Plates', 'Unit # on record', 'Last inspection', 'Inspections'].map((h) => el('th', { scope: 'col' }, h)))),
+        el('thead', {}, el('tr', {}, ...['VIN', 'Plates', 'Unit #', 'Last inspection', 'Inspection count'].map((h) => el('th', { scope: 'col' }, h)))),
         body,
       ),
     ),

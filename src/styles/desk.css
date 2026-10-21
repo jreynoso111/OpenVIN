@@ -842,6 +842,11 @@
     padding-right: 0.45rem;
   }
 
+  #carrier-fleet .log th {
+    white-space: normal;
+    line-height: 1.25;
+  }
+
   #carrier-fleet .log th:nth-child(1),
   #carrier-fleet .log td:nth-child(1) { width: 24%; }
 
@@ -852,10 +857,10 @@
   #carrier-fleet .log td:nth-child(3) { width: 12%; }
 
   #carrier-fleet .log th:nth-child(4),
-  #carrier-fleet .log td:nth-child(4) { width: 34%; }
+  #carrier-fleet .log td:nth-child(4) { width: 32%; }
 
   #carrier-fleet .log th:nth-child(5),
-  #carrier-fleet .log td:nth-child(5) { width: 14%; }
+  #carrier-fleet .log td:nth-child(5) { width: 16%; }
 
   #carrier-fleet .log__vin {
     white-space: normal;
