@@ -221,16 +221,30 @@ export function standingBlock(carrier: CarrierProfile): HTMLElement {
         ]);
       } else if (standing.oosOrders.length > 0) {
         const last = standing.oosOrders[0];
-        rows.push(['Out-of-service order', 'None active · past order' + (last?.date ? ' ' + formatDate(last.date) : '') + (last?.reason ? ' (' + last.reason + ')' : '')]);
+        rows.push([
+          'Out-of-service order',
+          'None active · past order' +
+            (last?.date ? ' ' + formatDate(last.date) : '') +
+            (last?.rescindDate ? ' · rescinded ' + formatDate(last.rescindDate) : '') +
+            (last?.reason ? ' (' + last.reason + ')' : ''),
+        ]);
       } else {
         rows.push(['Out-of-service order', 'None on record']);
       }
       if (standing.revocations.length > 0) {
         const latest = standing.revocations[0];
+        const cutoff = new Date();
+        cutoff.setMonth(cutoff.getMonth() - 24);
+        const cutoffDate = cutoff.toISOString().slice(0, 10);
+        const recentUnreinstatedRevocation = standing.revocations.some(
+          (r) => /involuntary/i.test(r.kind) && !r.reinstatedDate && r.effectiveDate && r.effectiveDate >= cutoffDate,
+        );
         rows.push([
-          'Authority revoked',
-          standing.revocations.length + '× · latest ' + (latest?.kind.toLowerCase() ?? '') + (latest?.effectiveDate ? ' ' + formatDate(latest.effectiveDate) : ''),
-          standing.revocations.some((r) => /involuntary/i.test(r.kind)) ? 'warn' : undefined,
+          'Historical authority revocation',
+          standing.revocations.length + '× · latest ' + (latest?.kind.toLowerCase() ?? '') +
+            (latest?.effectiveDate ? ' ' + formatDate(latest.effectiveDate) : '') +
+            (latest?.reinstatedDate ? ' · reinstated ' + formatDate(latest.reinstatedDate) : ''),
+          recentUnreinstatedRevocation ? 'warn' : undefined,
         ]);
       }
       if (standing.authoritySince) rows.push(['Authority since', formatDate(standing.authoritySince)]);
@@ -252,6 +266,11 @@ export function standingBlock(carrier: CarrierProfile): HTMLElement {
       }
       block.replaceChildren(
         el('h4', { class: 'standing__title' }, 'Regulatory standing'),
+        el(
+          'p',
+          { class: 'standing__note muted' },
+          'Current USDOT and authority status appear in the Census profile; entries here include dated FMCSA history.',
+        ),
         el(
           'dl',
           { class: 'standing__list' },

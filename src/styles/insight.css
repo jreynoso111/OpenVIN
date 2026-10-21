@@ -625,6 +625,10 @@
   color: var(--color-text-secondary);
 }
 
+.standing__note {
+  margin: 0 0 0.35rem;
+}
+
 .standing__list {
   display: grid;
   gap: 0.2rem;

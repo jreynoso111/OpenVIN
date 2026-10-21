@@ -304,7 +304,7 @@ export function standingFlags(
   const cutoff = new Date(now);
   cutoff.setMonth(cutoff.getMonth() - 24);
   const recent = standing.revocations.find(
-    (r) => /involuntary/i.test(r.kind) && r.effectiveDate && r.effectiveDate >= cutoff.toISOString().slice(0, 10),
+    (r) => /involuntary/i.test(r.kind) && !r.reinstatedDate && r.effectiveDate && r.effectiveDate >= cutoff.toISOString().slice(0, 10),
   );
   if (recent) {
     flags.push({
