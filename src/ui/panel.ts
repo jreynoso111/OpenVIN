@@ -137,7 +137,7 @@ export function factList(
   return el(
     'dl',
     { class: className },
-    ...rows.map(([label, value]) => el('div', {}, el('dt', {}, label), el('dd', {}, value))),
+    ...rows.map(([label, value]) => el('div', { 'data-fact': label }, el('dt', {}, label), el('dd', {}, value))),
   );
 }
 

@@ -1286,23 +1286,30 @@
     padding: 0.4rem 0.6rem;
   }
 
-  /* Profile: facts across the page, authority beside standing, then the rest */
+  /* Profile: facts in four columns, then the authority/standing blocks share
+     the row (a lone block takes the full width), then insurance and crashes */
   #carrier-profile .panel__body > div {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    display: flex;
+    flex-wrap: wrap;
     gap: 0.35rem 0.6rem;
-    align-items: start;
+    align-items: flex-start;
   }
 
   #carrier-profile .facts {
-    display: block;
-    grid-column: 1 / -1;
-    column-count: 4;
-    column-gap: 0.8rem;
+    display: grid;
+    flex: 1 1 100%;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-auto-flow: dense;
+    gap: 0.3rem 0.8rem;
+  }
+
+  #carrier-profile .facts > [data-fact='Cargo types reported'],
+  #carrier-profile .facts > [data-fact='Other cargo detail'] {
+    grid-column: span 2;
   }
 
   #carrier-profile .facts > div {
-    margin-bottom: 0.3rem;
+    min-width: 0;
     break-inside: avoid;
   }
 
@@ -1326,9 +1333,16 @@
     line-height: 1.25;
   }
 
+  #carrier-profile .authority,
+  #carrier-profile .standing {
+    flex: 1 1 45%;
+    min-width: 0;
+  }
+
   #carrier-profile .insurance,
   #carrier-profile .crashes {
-    grid-column: 1 / -1;
+    flex: 1 1 100%;
+    min-width: 0;
   }
 
   #carrier-profile .authority__title,
@@ -1420,7 +1434,7 @@
 
   #carrier-area .usmap__svg {
     display: block;
-    max-height: 56mm;
+    max-height: 44mm;
     margin-inline: auto;
   }
 
