@@ -277,14 +277,6 @@
   min-width: 0;
 }
 
-/* The carrier file reads profile → area → fleet in the DOM (so print follows
-   that order), but on screen the searchable fleet leads. */
-@media screen {
-  .desk__main > #carrier-fleet {
-    order: -1;
-  }
-}
-
 .desk__rail {
   display: grid;
   gap: 1.25rem;
