@@ -282,6 +282,9 @@
   gap: 1.25rem;
   position: sticky;
   top: 4.5rem;
+  max-height: calc(100vh - 5.5rem);
+  max-height: calc(100dvh - 5.5rem);
+  overflow-y: auto;
 }
 
 @media (max-width: 960px) {
@@ -293,6 +296,8 @@
   .desk__rail {
     position: static;
     top: auto;
+    max-height: none;
+    overflow-y: visible;
   }
 }
 
@@ -324,6 +329,14 @@
 .panel__hint {
   font-size: var(--text-micro);
   color: var(--color-text-tertiary);
+}
+
+.fleet__explanation {
+  margin: 0 0 0.85rem;
+  max-width: 95ch;
+  font-size: var(--text-small);
+  line-height: 1.5;
+  color: var(--color-text-secondary);
 }
 
 .panel__body {
@@ -852,6 +865,7 @@
 
 .log {
   width: 100%;
+  min-width: 78rem;
   border-collapse: collapse;
   font-size: var(--text-small);
 }
@@ -881,6 +895,61 @@
 .log .num {
   font-family: var(--font-mono);
   text-align: right;
+}
+
+/* The carrier fleet has shorter fields than the roadside evidence log. Keep
+   its columns inside the panel instead of inheriting the wide-log minimum. */
+@media screen and (min-width: 721px) {
+  #carrier-fleet .log {
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
+  }
+
+  #carrier-fleet .log th,
+  #carrier-fleet .log td {
+    padding-right: 0.45rem;
+  }
+
+  #carrier-fleet .log th {
+    white-space: normal;
+    line-height: 1.25;
+  }
+
+  #carrier-fleet .log th:nth-child(1),
+  #carrier-fleet .log td:nth-child(1) { width: 24%; }
+
+  #carrier-fleet .log th:nth-child(2),
+  #carrier-fleet .log td:nth-child(2) { width: 16%; }
+
+  #carrier-fleet .log th:nth-child(3),
+  #carrier-fleet .log td:nth-child(3) { width: 12%; }
+
+  #carrier-fleet .log th:nth-child(4),
+  #carrier-fleet .log td:nth-child(4) { width: 32%; }
+
+  #carrier-fleet .log th:nth-child(5),
+  #carrier-fleet .log td:nth-child(5) { width: 16%; }
+
+  #carrier-fleet .log__vin {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  /* The plate's vehicle summary is a compact five-column table; keep its
+     VINs, carrier links and last-stop labels inside the available panel. */
+  #plate-vehicles .log {
+    width: auto;
+    max-width: 100%;
+    min-width: 0;
+    table-layout: auto;
+  }
+
+  #plate-vehicles .log__vin,
+  #plate-vehicles .log td {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
 }
 
 .sub {
@@ -946,6 +1015,15 @@
   .log tr,
   .log td {
     display: block;
+  }
+
+  .log {
+    min-width: 0;
+  }
+
+  .log__vin {
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   .log tr {

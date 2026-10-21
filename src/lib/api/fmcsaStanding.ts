@@ -27,6 +27,7 @@ export interface OosOrder {
 export interface Revocation {
   kind: string;
   effectiveDate: string | null;
+  reinstatedDate?: string | null;
 }
 
 export interface SmsMeasures {
@@ -69,6 +70,7 @@ export function parseOosOrders(
     if (!row) continue;
     const rescindDate = textField(row['rescind_date'])?.slice(0, 10) ?? null;
     orders.push({
+      // The feed can retain an ACTIVE status after the order was rescinded.
       active: textField(row['status'])?.toUpperCase() === 'ACTIVE' && (!rescindDate || rescindDate > today),
       date: textField(row['oos_date'])?.slice(0, 10) ?? null,
       rescindDate,
@@ -85,9 +87,36 @@ export function parseRevocations(rows: readonly unknown[]): Revocation[] {
     if (!row) continue;
     const kind = textField(row['order2_type_desc']);
     if (!kind) continue;
-    list.push({ kind, effectiveDate: usDate(row['order2_effective_date']) });
+    list.push({ kind, effectiveDate: usDate(row['order2_effective_date']), reinstatedDate: null });
   }
   return list.sort((a, b) => (b.effectiveDate ?? '').localeCompare(a.effectiveDate ?? ''));
+}
+
+function parseReinstatementDates(rows: readonly unknown[]): string[] {
+  const dates: string[] = [];
+  for (const value of rows) {
+    const row = asRecord(value);
+    if (!row || textField(row['original_action_desc'])?.toUpperCase() !== 'REINSTATED') continue;
+    const date = usDate(row['orig_served_date']);
+    if (date) dates.push(date);
+  }
+  return dates.sort();
+}
+
+function addReinstatementDates(revocations: Revocation[], rows: readonly unknown[]): Revocation[] {
+  const reinstatements = parseReinstatementDates(rows);
+  return revocations.map((revocation) => {
+    const date = revocation.effectiveDate;
+    if (!date) return revocation;
+    const nextRevocation = revocations
+      .map((item) => item.effectiveDate)
+      .filter((item): item is string => item !== null && item > date)
+      .sort()[0];
+    const reinstatedDate = reinstatements.find(
+      (item) => item > date && (!nextRevocation || item < nextRevocation),
+    ) ?? null;
+    return { ...revocation, reinstatedDate };
+  });
 }
 
 export function parseAuthoritySince(rows: readonly unknown[]): string | null {
@@ -164,7 +193,7 @@ export function getCarrierStanding(
     return {
       dotNumber: plain,
       oosOrders: parseOosOrders(oos ?? []),
-      revocations: parseRevocations(revocations ?? []),
+      revocations: addReinstatementDates(parseRevocations(revocations ?? []), authority ?? []),
       authoritySince: parseAuthoritySince(authority ?? []),
       sms: sms ? parseSms(sms) : null,
     };

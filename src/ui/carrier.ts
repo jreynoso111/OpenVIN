@@ -496,7 +496,8 @@ export function standingBlock(carrier: CarrierProfile): HTMLElement {
           formatNumber(standing.revocations.length) + ' historical revocation entr' +
             (standing.revocations.length === 1 ? 'y' : 'ies') +
             (latest?.kind ? ' · latest: ' + latest.kind.toLowerCase() : '') +
-            (latest?.effectiveDate ? ' · effective ' + formatDate(latest.effectiveDate) : ''),
+            (latest?.effectiveDate ? ' · effective ' + formatDate(latest.effectiveDate) : '') +
+            (latest?.reinstatedDate ? ' · reinstated ' + formatDate(latest.reinstatedDate) : ''),
         ]);
       }
       if (standing.authoritySince) rows.push(['Authority since', formatDate(standing.authoritySince)]);
@@ -518,6 +519,11 @@ export function standingBlock(carrier: CarrierProfile): HTMLElement {
       }
       block.replaceChildren(
         el('h4', { class: 'standing__title' }, 'Regulatory standing'),
+        el(
+          'p',
+          { class: 'standing__note muted' },
+          'Current USDOT and authority status appear in the Census profile; entries here include dated FMCSA history.',
+        ),
         el(
           'dl',
           { class: 'standing__list' },

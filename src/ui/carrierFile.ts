@@ -49,11 +49,11 @@ function fleetRow(vehicle: FleetVehicle): HTMLElement {
     ),
     el('td', { 'data-label': 'Unit #' }, vehicle.companyUnits.slice(0, 2).join(' · ') || '—'),
     el('td', { 'data-label': 'Last inspection' }, placeText(last), el('span', { class: 'sub' }, (last.date ? formatDate(last.date) : '—') + (age ? ' · ' + age : ''))),
-    el('td', { 'data-label': 'Inspection records', class: 'num' }, formatNumber(vehicle.sightings)),
+    el('td', { 'data-label': 'Inspection records', class: 'num' }, formatNumber(vehicle.inspectionCount)),
   );
 }
 
-function fleetTable(fleet: CarrierFleet): HTMLElement {
+function fleetTable(fleet: CarrierFleet, dot: string): HTMLElement {
   if (fleet.vehicles.length === 0) return emptyNote('Inspections were found but no unit VINs were recorded on them.');
   const body = el('tbody');
   const count = el('p', { class: 'filter__count' });
@@ -73,14 +73,20 @@ function fleetTable(fleet: CarrierFleet): HTMLElement {
   return el(
     'div',
     {},
+    el(
+      'p',
+      { class: 'panel__hint fleet__explanation' },
+      'A VIN appears here when an FMCSA roadside inspection lists it under USDOT ' + dot +
+        '. That association is for the inspection record; it does not prove who owns or operates the vehicle today. This list is based on inspection history, not a last-seen signal. Inspection count is the number of distinct records for that VIN in the date range below.',
+    ),
     el('div', { class: 'filter' }, input, count),
     el(
       'div',
-      { class: 'log-wrap', tabindex: '0', 'aria-label': 'Fleet recorded at roadside inspections' },
+      { class: 'log-wrap', tabindex: '0', 'aria-label': 'Vehicles recorded on roadside inspections' },
       el(
         'table',
         { class: 'log' },
-        el('caption', { class: 'visually-hidden' }, 'Units recorded on this carrier’s inspections'),
+        el('caption', { class: 'visually-hidden' }, 'Vehicles recorded on roadside inspections under this USDOT number'),
         el('thead', {}, el('tr', {}, ...['VIN', 'Plates', 'Unit #', 'Last inspection', 'Inspection records'].map((h) => el('th', { scope: 'col' }, h)))),
         body,
       ),
@@ -148,7 +154,7 @@ export function renderCarrierFile(
 ): void {
   const header = caseHeader('Carrier file', (kind === 'dot' ? 'USDOT ' : 'MC ') + number);
   const area = createPanel({ id: 'carrier-area', title: 'Operating area', hint: 'Where its units were stopped on recent inspections.', lines: 3 });
-  const fleet = createPanel({ id: 'carrier-fleet', title: 'Fleet seen at roadside', hint: 'Search a cab number, plate or partial VIN to find one truck.', lines: 6 });
+  const fleet = createPanel({ id: 'carrier-fleet', title: 'Fleet seen at roadside', hint: 'Search by VIN, plate, unit number or make.', lines: 6 });
   const profile = createPanel({
     id: 'carrier-profile',
     title: 'Census profile',
@@ -188,7 +194,7 @@ export function renderCarrierFile(
             el('div', { class: 'where__grid' }, renderStateMap(data.states, 'inspection') ?? frequencyList('States', data.states.map((s) => ({ label: s.state, count: s.count, lastDate: s.lastDate })), 8)),
           ),
         );
-        fleet.fill(fleetTable(data));
+        fleet.fill(fleetTable(data, dot));
       });
   };
 

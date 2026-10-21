@@ -50,7 +50,9 @@ export function renderSummary(
   const flags = [...buildFlags(vin, records, links), ...extraFlags].sort((a, b) => order[a.tone] - order[b.tone]);
   const age = ageLabel(summary.lastDate);
   const resultNotes = [
-    summary.outOfService > 0 ? formatNumber(summary.outOfService) + ' out of service' : null,
+    summary.outOfService > 0
+      ? formatNumber(summary.outOfService) + ' inspection' + (summary.outOfService === 1 ? '' : 's') + " didn't pass"
+      : null,
     summary.vehicleViolations > 0 ? formatNumber(summary.vehicleViolations) + ' vehicle violations' : null,
     summary.unknownVehicleResults > 0
       ? formatNumber(summary.unknownVehicleResults) + ' unit results unavailable'

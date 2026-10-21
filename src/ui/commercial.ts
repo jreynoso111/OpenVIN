@@ -168,9 +168,11 @@ function companions(records: readonly CommercialInspection[]): Companion[] {
 }
 
 function relation(kind: string, subject: Node, detail: Node | string, evidence: string): HTMLElement {
+  const kindClass =
+    kind === 'Plate record' ? ' rel--plate-record' : kind === 'Same inspection' ? ' rel--same-inspection' : '';
   return el(
     'li',
-    { class: 'rel' },
+    { class: 'rel' + kindClass },
     el('span', { class: 'rel__kind' }, kind),
     el('span', { class: 'rel__subject' }, subject),
     el('div', { class: 'rel__detail' }, detail),
@@ -354,7 +356,11 @@ function findings(record: CommercialInspection): Node {
     'span',
     {},
     oos
-      ? el('span', { class: 'tag', 'data-tone': 'danger' }, 'Out of service')
+      ? el(
+          'span',
+          { class: 'tag', 'data-tone': 'danger', title: 'FMCSA recorded the vehicle as out of service during this inspection.' },
+          "Didn't pass",
+        )
       : !resultKnown
         ? el('span', { class: 'muted' }, 'Unit result unavailable')
         : el('span', { class: count > 0 ? '' : 'muted' }, count > 0 ? formatNumber(count) + ' vehicle violation' + (count === 1 ? '' : 's') : 'Clean'),
