@@ -213,6 +213,9 @@
   gap: 1.25rem;
   position: sticky;
   top: 4.5rem;
+  max-height: calc(100vh - 5.5rem);
+  max-height: calc(100dvh - 5.5rem);
+  overflow-y: auto;
 }
 
 @media (max-width: 960px) {
@@ -224,6 +227,8 @@
   .desk__rail {
     position: static;
     top: auto;
+    max-height: none;
+    overflow-y: visible;
   }
 }
 

@@ -102,7 +102,7 @@ export function caseLayout(
       'div',
       { class: 'desk__grid' },
       el('div', { class: 'desk__main' }, ...mainBlocks),
-      el('aside', { class: 'desk__rail', 'aria-label': 'Sources and follow-up checks' }, ...railBlocks),
+      el('aside', { class: 'desk__rail', 'aria-label': 'Sources and follow-up checks', tabindex: '0' }, ...railBlocks),
     ),
   );
 }
