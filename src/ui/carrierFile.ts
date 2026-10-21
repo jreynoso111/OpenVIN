@@ -33,11 +33,25 @@ function fleetRow(vehicle: FleetVehicle, viewedDot: string): HTMLElement {
   const latest = vehicle.latestInspection;
   const latestAge = ageLabel(latest?.date ?? null);
   const currentDot = viewedDot.replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+  const latestIsAnotherCarrier = Boolean(latest && latest.carrierDotNumber !== currentDot);
   const latestCarrier = !latest
     ? 'Carrier not verified'
-    : latest.carrierDotNumber === currentDot
-      ? 'This carrier · USDOT ' + latest.carrierDotNumber
-      : 'Another carrier · USDOT ' + latest.carrierDotNumber;
+    : latestIsAnotherCarrier
+      ? 'Another carrier · USDOT ' + latest.carrierDotNumber
+      : 'This carrier · USDOT ' + latest.carrierDotNumber;
+  const inspectionResult = latest?.vehicleOutOfService === null || !latest
+    ? el('span', { class: 'muted' }, 'Unavailable')
+    : latest.vehicleOutOfService > 0
+      ? el(
+          'span',
+          { class: 'tag', 'data-tone': 'danger', title: 'FMCSA recorded this exact unit as out of service during this inspection.' },
+          "Didn't pass",
+        )
+      : el(
+          'span',
+          { class: 'tag', 'data-tone': 'ok', title: 'No vehicle out-of-service violation was recorded for this unit in this inspection.' },
+          'Passed',
+        );
   return el(
     'tr',
     {},
@@ -56,13 +70,19 @@ function fleetRow(vehicle: FleetVehicle, viewedDot: string): HTMLElement {
     ),
     el('td', { 'data-label': 'Unit #' }, vehicle.companyUnits.slice(0, 2).join(' · ') || '—'),
     el('td', { 'data-label': 'Last inspection' }, placeText(last), el('span', { class: 'sub' }, last.date ? formatDate(last.date) : '—')),
-    el('td', { 'data-label': 'Inspection count', class: 'num' }, formatNumber(vehicle.inspectionCount)),
     el(
       'td',
       { 'data-label': 'Latest inspection' },
       latest ? (latestAge ?? 'Date unavailable') : 'Unavailable',
-      el('span', { class: 'sub' }, latest?.date ? formatDate(latest.date) + ' · ' + latestCarrier : latestCarrier),
+      el('span', { class: 'sub' }, latest?.date ? formatDate(latest.date) : 'Date unavailable'),
+      el(
+        'span',
+        { class: 'sub carrier-fleet__latest-carrier', 'data-tone': latestIsAnotherCarrier ? 'warn' : 'muted' },
+        latestCarrier,
+      ),
     ),
+    el('td', { 'data-label': 'Inspection result' }, inspectionResult),
+    el('td', { 'data-label': 'Inspection count', class: 'num' }, formatNumber(vehicle.inspectionCount)),
   );
 }
 
@@ -90,7 +110,7 @@ function fleetTable(fleet: CarrierFleet, dot: string): HTMLElement {
       'p',
       { class: 'panel__hint fleet__explanation' },
       'A VIN appears here when an FMCSA roadside inspection lists it under USDOT ' + dot +
-        '. The latest-inspection column compares exact-VIN records across carriers in the available FMCSA files; “Another carrier” identifies the USDOT on that record, not the vehicle’s current operator or ownership. Inspection count is the number of distinct records for this USDOT in the date range below.',
+        '. The latest-inspection column compares exact-VIN records across carriers in the available FMCSA files; “Another carrier” identifies the USDOT on that record, not the vehicle’s current operator or ownership. Result is based on vehicle out-of-service findings: Passed means none were recorded; Didn’t pass means FMCSA recorded the unit as out of service. Inspection count is the number of distinct records for this USDOT in the date range below.',
     ),
     el('div', { class: 'filter' }, input, count),
     el(
@@ -100,7 +120,7 @@ function fleetTable(fleet: CarrierFleet, dot: string): HTMLElement {
         'table',
         { class: 'log' },
         el('caption', { class: 'visually-hidden' }, 'Vehicles recorded on roadside inspections under this USDOT number'),
-        el('thead', {}, el('tr', {}, ...['VIN', 'Plates', 'Unit #', 'Last inspection', 'Inspection count', 'Latest inspection'].map((h) => el('th', { scope: 'col' }, h)))),
+        el('thead', {}, el('tr', {}, ...['VIN', 'Plates', 'Unit #', 'Last inspection', 'Latest inspection', 'Result', 'Inspection count'].map((h) => el('th', { scope: 'col' }, h)))),
         body,
       ),
     ),

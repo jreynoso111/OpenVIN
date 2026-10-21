@@ -266,7 +266,12 @@ export interface FleetVehicle {
   inspectionCount: number;
   lastSeen: UnitSighting;
   /** Latest exact-VIN inspection across carriers in the available FMCSA files. */
-  latestInspection: { date: string; carrierDotNumber: string } | null;
+  latestInspection: {
+    date: string;
+    carrierDotNumber: string;
+    /** Exact-unit OOS result; null when FMCSA unit violations could not be joined. */
+    vehicleOutOfService: number | null;
+  } | null;
   firstSeenDate: string | null;
 }
 

@@ -46,9 +46,12 @@ const LATEST_INSPECTION_ID_BATCH_SIZE = 300;
 /** Latest dated inspection with a known USDOT, keyed by the exact VIN. */
 async function latestInspectionByVin(
   vins: readonly string[],
-): Promise<Map<string, { date: string; carrierDotNumber: string }>> {
+): Promise<Map<string, { date: string; carrierDotNumber: string; vehicleOutOfService: number | null }>> {
+  type UnitRef = { inspectionId: string; unitId: string | null };
+  type LatestInspection = { date: string; carrierDotNumber: string; units: UnitRef[] };
+
   const uniqueVins = [...new Set(vins)];
-  const inspectionIdsByVin = new Map<string, Set<string>>();
+  const unitsByVin = new Map<string, Map<string, UnitRef>>();
   const incompleteVins = new Set<string>();
 
   const vinBatches: string[][] = [];
@@ -59,7 +62,7 @@ async function latestInspectionByVin(
     const response = await fetchJson(
       socrataUrl(UNIT_DATASET, {
         where: 'insp_unit_vehicle_id_number in (' + batch.map(soqlString).join(',') + ')',
-        select: 'inspection_id,insp_unit_vehicle_id_number',
+        select: 'inspection_id,insp_unit_id,insp_unit_vehicle_id_number',
         limit: LATEST_UNIT_ROW_CAP,
       }),
       { timeoutMs: 20_000 },
@@ -71,22 +74,27 @@ async function latestInspectionByVin(
     }
     for (const unit of rows.map(parseUnit)) {
       if (!unit?.vin || !batch.includes(unit.vin)) continue;
-      const ids = inspectionIdsByVin.get(unit.vin) ?? new Set<string>();
-      ids.add(unit.inspectionId);
-      inspectionIdsByVin.set(unit.vin, ids);
+      const units = unitsByVin.get(unit.vin) ?? new Map<string, UnitRef>();
+      const key = unit.inspectionId + ':' + (unit.unitId ?? 'unknown');
+      units.set(key, { inspectionId: unit.inspectionId, unitId: unit.unitId });
+      unitsByVin.set(unit.vin, units);
     }
     for (const vin of batch) {
-      if (!inspectionIdsByVin.has(vin)) incompleteVins.add(vin);
+      if (!unitsByVin.has(vin)) incompleteVins.add(vin);
     }
   }));
 
+  const inspectionIdsByVin = new Map<string, Set<string>>();
   const vinsByInspectionId = new Map<string, Set<string>>();
-  for (const [vin, ids] of inspectionIdsByVin) {
-    for (const id of ids) {
-      const owners = vinsByInspectionId.get(id) ?? new Set<string>();
+  for (const [vin, units] of unitsByVin) {
+    const ids = new Set<string>();
+    for (const unit of units.values()) {
+      ids.add(unit.inspectionId);
+      const owners = vinsByInspectionId.get(unit.inspectionId) ?? new Set<string>();
       owners.add(vin);
-      vinsByInspectionId.set(id, owners);
+      vinsByInspectionId.set(unit.inspectionId, owners);
     }
+    inspectionIdsByVin.set(vin, ids);
   }
   const inspectionIds = [...vinsByInspectionId.keys()];
   const inspectionBatches: string[][] = [];
@@ -113,7 +121,7 @@ async function latestInspectionByVin(
     }
   });
 
-  const latest = new Map<string, { date: string; carrierDotNumber: string }>();
+  const latestRows = new Map<string, LatestInspection>();
   for (const [vin, ids] of inspectionIdsByVin) {
     for (const id of ids) {
       const inspection = inspections.get(id);
@@ -121,11 +129,45 @@ async function latestInspectionByVin(
         incompleteVins.add(vin);
         continue;
       }
-      const current = latest.get(vin);
+      const current = latestRows.get(vin);
       if (!current || inspection.date > current.date) {
-        latest.set(vin, { date: inspection.date, carrierDotNumber: inspection.dotNumber });
+        latestRows.set(vin, {
+          date: inspection.date,
+          carrierDotNumber: inspection.dotNumber,
+          units: [...(unitsByVin.get(vin)?.values() ?? [])]
+            .filter((unit) => unit.inspectionId === id),
+        });
+      } else if (inspection.date === current.date) {
+        if (inspection.dotNumber !== current.carrierDotNumber) {
+          incompleteVins.add(vin);
+        } else {
+          current.units.push(
+            ...[...(unitsByVin.get(vin)?.values() ?? [])]
+              .filter((unit) => unit.inspectionId === id),
+          );
+        }
       }
     }
+  }
+
+  const latestInspectionIds = [...new Set(
+    [...latestRows.values()].flatMap((inspection) => inspection.units.map((unit) => unit.inspectionId)),
+  )];
+  const findingsByUnit = await loadVehicleFindingsByUnit(latestInspectionIds);
+  const latest = new Map<string, { date: string; carrierDotNumber: string; vehicleOutOfService: number | null }>();
+  for (const [vin, inspection] of latestRows) {
+    const canCheckExactUnit = findingsByUnit !== null && inspection.units.every((unit) => unit.unitId !== null);
+    const vehicleOutOfService = canCheckExactUnit
+      ? inspection.units.some((unit) =>
+          (findingsByUnit.get(unit.inspectionId + ':' + unit.unitId) ?? [])
+            .some((finding) => finding.outOfService),
+        ) ? 1 : 0
+      : null;
+    latest.set(vin, {
+      date: inspection.date,
+      carrierDotNumber: inspection.carrierDotNumber,
+      vehicleOutOfService,
+    });
   }
   for (const vin of incompleteVins) latest.delete(vin);
   return latest;
