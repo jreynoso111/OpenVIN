@@ -326,6 +326,12 @@
   color: var(--color-text-secondary);
 }
 
+.htl__record {
+  color: var(--color-text-tertiary);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+}
+
 .htl__hint {
   margin: 0.2rem 0 0;
   font-size: var(--text-micro);

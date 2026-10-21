@@ -27,6 +27,7 @@ function eventLine(event: TimelineEvent): HTMLElement {
     event.plate ? el('span', { class: 'htl__detail' }, platePivot(event.plate.plate, event.plate.state)) : null,
     event.dot ? el('span', { class: 'htl__detail' }, dotPivot(event.dot, event.detail ?? undefined)) : null,
     !event.plate && !event.dot && event.detail ? el('span', { class: 'htl__detail' }, event.detail) : null,
+    event.inspectionId ? el('span', { class: 'htl__record' }, 'VIN-matched FMCSA inspection #', event.inspectionId) : null,
   );
 }
 

@@ -211,6 +211,8 @@ export interface TimelineEvent {
   kind: TimelineKind;
   title: string;
   detail: string | null;
+  /** FMCSA inspection number for VIN-matched roadside events. */
+  inspectionId?: string;
   /** Pivot target for the event, when it has one. */
   plate?: { plate: string; state: string | null };
   dot?: string;
@@ -256,6 +258,7 @@ export function buildTimeline(records: readonly CommercialInspection[]): Timelin
       date: record.date,
       kind: oos ? 'oos' : 'inspection',
       title: oos ? 'Out of service' : 'Roadside inspection',
+      inspectionId: record.inspectionId,
       detail:
         where +
         (oos
