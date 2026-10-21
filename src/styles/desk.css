@@ -815,6 +815,35 @@
   text-align: right;
 }
 
+/* The carrier fleet has shorter fields than the roadside evidence log. Keep
+   its columns inside the panel instead of inheriting the wide-log minimum. */
+@media screen and (min-width: 721px) {
+  #carrier-fleet .log {
+    min-width: 0;
+    table-layout: fixed;
+  }
+
+  #carrier-fleet .log th:nth-child(1),
+  #carrier-fleet .log td:nth-child(1) { width: 22%; }
+
+  #carrier-fleet .log th:nth-child(2),
+  #carrier-fleet .log td:nth-child(2) { width: 17%; }
+
+  #carrier-fleet .log th:nth-child(3),
+  #carrier-fleet .log td:nth-child(3) { width: 13%; }
+
+  #carrier-fleet .log th:nth-child(4),
+  #carrier-fleet .log td:nth-child(4) { width: 36%; }
+
+  #carrier-fleet .log th:nth-child(5),
+  #carrier-fleet .log td:nth-child(5) { width: 12%; }
+
+  #carrier-fleet .log__vin {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
 .sub {
   display: block;
   font-size: var(--text-label);
