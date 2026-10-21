@@ -776,6 +776,7 @@
 
   /* Keep the report focused on evidence; omit the auxiliary source rail. */
   .desk__rail,
+  #where,
   #timeline,
   #ny {
     display: none !important;
@@ -991,43 +992,6 @@
     padding-block: 0.6rem;
   }
 
-  /* Keep location facts and counts, while removing map artwork in print. */
-  #where .where {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 0.5rem 1rem;
-    align-items: start;
-  }
-
-  #where .where > .where__lead {
-    grid-column: 1 / -1;
-    grid-row: auto;
-    display: grid;
-    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
-    gap: 0.5rem 1rem;
-  }
-
-  #where .where > .where__grid {
-    display: contents;
-  }
-
-  #where .where > .where__grid > .usmap {
-    display: block;
-    grid-column: 1;
-    grid-row: auto;
-  }
-
-  #where .where > .where__grid > .chips {
-    grid-column: 2;
-    grid-row: auto;
-    margin-top: 0;
-  }
-
-  #where .where > .where__bases {
-    grid-column: 1 / -1;
-    grid-row: auto;
-  }
-
   .last-seen__place {
     font-size: 1.05rem;
   }
@@ -1046,18 +1010,6 @@
   .where__lead .facts dd {
     overflow-wrap: anywhere;
     font-size: 0.65rem;
-  }
-
-  #where .where__grid:has(> .usmap) {
-    display: contents;
-  }
-
-  #where .usmap__svg {
-    display: none !important;
-  }
-
-  #where .usmap__caption .chips__list {
-    display: flex;
   }
 
   .chips {
