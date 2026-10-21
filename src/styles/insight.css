@@ -770,9 +770,15 @@
 
   /* One column, natural flow */
   .desk__grid,
-  .desk__main,
-  .desk__rail {
+  .desk__main {
     display: block;
+  }
+
+  /* Keep the report focused on evidence; omit the auxiliary source rail. */
+  .desk__rail,
+  #timeline,
+  #ny {
+    display: none !important;
   }
 
   .desk__main > *,
@@ -903,28 +909,7 @@
     margin-right: 0.6rem;
   }
 
-  /* Timeline: wrap into rows instead of scrolling sideways */
-  .htl__track {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    width: auto;
-    min-width: 0;
-    row-gap: 0.9rem;
-    padding-top: 0.3rem;
-  }
-
-  .htl__stop {
-    flex: none;
-    max-width: none;
-  }
-
-  /* Year label rides inside its stop, so a page break cannot strand it */
-  .htl__year {
-    position: static;
-    margin-bottom: 0.1rem;
-  }
-
-  /* Page one: header, a compact summary and the map together */
+  /* Keep the vehicle identity compact at the start of the report. */
   .case__body,
   .case__ids {
     margin-top: 0.25rem;
@@ -1006,38 +991,41 @@
     padding-block: 0.6rem;
   }
 
-  /* Where seen: facts on the left, map and sites on the right */
-  .where {
+  /* Keep location facts and counts, while removing map artwork in print. */
+  #where .where {
     display: grid;
-    grid-template-columns: 42% minmax(0, 1fr);
-    column-gap: 1rem;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.5rem 1rem;
     align-items: start;
   }
 
-  .where > .where__lead {
-    grid-column: 1;
-    grid-row: 1;
-    display: block;
+  #where .where > .where__lead {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    gap: 0.5rem 1rem;
   }
 
-  .where > .where__grid {
+  #where .where > .where__grid {
     display: contents;
   }
 
-  .where > .where__grid > .usmap {
+  #where .where > .where__grid > .usmap {
+    display: block;
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  #where .where > .where__grid > .chips {
     grid-column: 2;
-    grid-row: 1 / span 3;
+    grid-row: auto;
+    margin-top: 0;
   }
 
-  .where > .where__grid > .chips {
-    grid-column: 1;
-    grid-row: 3;
-    margin-top: 0.3rem;
-  }
-
-  .where > .where__bases {
-    grid-column: 1;
-    grid-row: 2;
+  #where .where > .where__bases {
+    grid-column: 1 / -1;
+    grid-row: auto;
   }
 
   .last-seen__place {
@@ -1060,17 +1048,16 @@
     font-size: 0.65rem;
   }
 
-  .where__grid:has(> .usmap) {
+  #where .where__grid:has(> .usmap) {
     display: contents;
   }
 
-  .usmap__svg {
-    width: 100%;
-    max-width: none;
+  #where .usmap__svg {
+    display: none !important;
   }
 
-  .usmap__caption .chips__list {
-    display: none;
+  #where .usmap__caption .chips__list {
+    display: flex;
   }
 
   .chips {
