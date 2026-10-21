@@ -13,7 +13,7 @@ import { emptyNote } from './panel';
 
 const KIND_LABEL: Readonly<Record<TimelineEvent['kind'], string>> = {
   inspection: 'Inspection',
-  oos: 'Out of service',
+  oos: 'Inspection result',
   plate: 'Plate',
   carrier: 'Carrier',
 };

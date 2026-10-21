@@ -125,7 +125,7 @@ export function buildFlags(
   if (summary.outOfService > 0) {
     flags.push({
       tone: 'danger',
-      title: 'Placed out of service on ' + plural(summary.outOfService, 'inspection'),
+      title: plural(summary.outOfService, 'inspection') + " didn't pass",
       detail: 'A roadside inspector found a vehicle defect serious enough to stop the unit. See the roadside log for the findings.',
     });
   }
@@ -257,7 +257,7 @@ export function buildTimeline(records: readonly CommercialInspection[]): Timelin
     events.push({
       date: record.date,
       kind: oos ? 'oos' : 'inspection',
-      title: oos ? 'Out of service' : 'Roadside inspection',
+      title: oos ? "Didn't pass" : 'Roadside inspection',
       inspectionId: record.inspectionId,
       detail:
         where +

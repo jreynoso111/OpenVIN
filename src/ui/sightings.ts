@@ -177,7 +177,11 @@ function cell(sighting: UnitSighting, column: Column, carrierNames: ReadonlyMap<
         : '—';
     case 'oos':
       return (sighting.vehicleOutOfService ?? 0) > 0
-        ? el('span', { class: 'tag', 'data-tone': 'danger' }, 'Out of service')
+        ? el(
+            'span',
+            { class: 'tag', 'data-tone': 'danger', title: 'FMCSA recorded the vehicle as out of service during this inspection.' },
+            "Didn't pass",
+          )
         : el('span', { class: 'muted' }, 'Inspected');
   }
 }
