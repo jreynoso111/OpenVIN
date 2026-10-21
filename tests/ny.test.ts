@@ -17,11 +17,50 @@ const NY_ROW = {
 describe('mapInspectionRow', () => {
   test('maps miles, ISO date, source, and a result note', () => {
     const reading = mapInspectionRow(NY_ROW);
-    expect(reading).toEqual({
+    expect(reading).toMatchObject({
       date: '2025-03-13',
       miles: 267968,
       source: 'NY State inspection',
       note: 'INITIAL INSPECTION · Safety: PASS · Emissions: PASS',
+    });
+  });
+
+  test('keeps the rest of the inspection record, dropping "none" values', () => {
+    const reading = mapInspectionRow({
+      ...NY_ROW,
+      inspection_expiration: '2026-03-31T00:00:00.000',
+      no_registration_reason: 'VEHICLE WITH OUT OF STATE REGISTRATION OR TITLE',
+      fuel_type: 'DIESEL',
+      hybrid: 'FALSE',
+      vehicle_weight_class: '18,001+',
+      nyma: 'IN NYMA',
+      on_board_diagnostic_check: 'NOT APPLICABLE',
+      inspection_test_type: 'HEAVY DUTY OPACITY',
+      wheel_removed_1: 'LEFT REARMOST BRAKE DRUM OR HUB AND DRUM ASSEMBLY',
+      wheel_removed_2: 'RIGHT REARMOST BRAKE DRUM OR HUB AND DRUM ASSEMBLY',
+      warning_message: 'NONE',
+      advisory_message: 'NONE',
+      emissions_waiver_issued: 'NO',
+      ten_day_extension_issued: 'YES',
+    });
+    expect(reading?.ny).toMatchObject({
+      type: 'INITIAL INSPECTION',
+      validThrough: '2026-03-31',
+      safety: 'PASS',
+      emissions: 'PASS',
+      obd: null,
+      warning: null,
+      advisory: null,
+      emissionsWaiver: false,
+      tenDayExtension: true,
+      noRegistrationReason: 'VEHICLE WITH OUT OF STATE REGISTRATION OR TITLE',
+      metroArea: 'IN NYMA',
+      testType: 'HEAVY DUTY OPACITY',
+      componentsRemoved: [
+        'LEFT REARMOST BRAKE DRUM OR HUB AND DRUM ASSEMBLY',
+        'RIGHT REARMOST BRAKE DRUM OR HUB AND DRUM ASSEMBLY',
+      ],
+      vehicle: { year: '2011', make: 'TOYOT', model: 'CAMRY', fuel: 'DIESEL', hybrid: false, weightClass: '18,001+' },
     });
   });
 

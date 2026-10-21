@@ -1,12 +1,14 @@
 /** Section 6 — odometer history: inline SVG chart, rollback check, table. */
 
-import type { GuidedLink, OdometerReading, SectionResult } from '../lib/types';
+import type { GuidedLink, NyInspectionDetail, OdometerReading, SectionResult } from '../lib/types';
 import { el, formatDate, formatNumber, svgEl } from './dom';
 import { guidedLinkRow } from './links';
+import { factList } from './panel';
 
 const VIEW_W = 480;
 const VIEW_H = 220;
-const PAD = { top: 28, right: 24, bottom: 32, left: 24 } as const;
+// Room above the line for the value labels and the mi/yr note, so they never overlap.
+const PAD = { top: 42, right: 24, bottom: 32, left: 24 } as const;
 const MAX_VALUE_LABELS = 6;
 const MAX_DATE_LABELS = 4;
 
@@ -276,6 +278,126 @@ function readingsTable(readings: readonly OdometerReading[]): HTMLElement {
   );
 }
 
+
+/* ---------- NY inspection detail ---------- */
+
+/** "INITIAL INSPECTION" → "Initial inspection". */
+function sentence(text: string): string {
+  const lower = text.toLowerCase().replace(/nyma/g, 'NYMA');
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
+}
+
+function resultTag(result: string | null): Node | string {
+  if (result === null) return '—';
+  const upper = result.toUpperCase();
+  const tone = upper === 'PASS' ? 'ok' : upper === 'FAIL' ? 'danger' : 'muted';
+  return el('span', { class: 'tag', 'data-tone': tone }, sentence(result));
+}
+
+/** What the NY record says about the vehicle itself, from its most recent inspection. */
+function nyVehicleFacts(latest: NyInspectionDetail): HTMLElement | null {
+  const vehicle = latest.vehicle;
+  const name = [vehicle.year, vehicle.make, vehicle.model].filter(Boolean).join(' ');
+  return factList([
+    ['Vehicle (as recorded by NY)', name || null],
+    ['Fuel', vehicle.fuel ? sentence(vehicle.fuel) : null],
+    ['Transmission', vehicle.transmission ? sentence(vehicle.transmission) : null],
+    ['Hybrid', vehicle.hybrid === null ? null : vehicle.hybrid ? 'Yes' : 'No'],
+    ['Weight class (lb)', vehicle.weightClass],
+    ['Registration class', vehicle.registrationClass],
+    ['Emissions area', latest.metroArea ? sentence(latest.metroArea) : null],
+  ]);
+}
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+function spanText(fromIso: string, toIso: string): string {
+  const days = Math.round((new Date(toIso).getTime() - new Date(fromIso).getTime()) / MS_PER_DAY);
+  if (days < 45) return days + (days === 1 ? ' day' : ' days');
+  const months = Math.round(days / 30.44);
+  if (months < 24) return months + ' months';
+  return (days / 365.25).toFixed(1) + ' years';
+}
+
+/** Miles gained since the previous reading, with the time between them. */
+function intervalText(previous: OdometerReading | undefined, reading: OdometerReading): string | null {
+  if (!previous) return null;
+  const delta = reading.miles - previous.miles;
+  return (delta >= 0 ? '+' : '−') + formatNumber(Math.abs(delta)) + ' mi in ' + spanText(previous.date, reading.date);
+}
+
+/** One plain-language observation about how little or how much the odometer moved. */
+function usageObservation(readings: readonly OdometerReading[]): string | null {
+  const first = readings[0];
+  const last = readings[readings.length - 1];
+  if (!first || !last || first === last) return null;
+  const days = (new Date(last.date).getTime() - new Date(first.date).getTime()) / MS_PER_DAY;
+  const miles = last.miles - first.miles;
+  if (days < 180 || miles < 0) return null;
+  const perYear = Math.round(miles / (days / 365.25));
+  if (perYear >= 1000) return null;
+  return (
+    'The odometer moved only ' + formatNumber(miles) + ' mi between the first and last inspection (' +
+    spanText(first.date, last.date) + '). That can mean very little use, a stale or re-entered reading, or a unit that is mostly ' +
+    'driven out of state; compare with other records.'
+  );
+}
+
+function nyNotes(detail: NyInspectionDetail): HTMLElement | null {
+  const items: string[] = [];
+  if (detail.noRegistrationReason) items.push(sentence(detail.noRegistrationReason));
+  if (detail.emissionsWaiver) items.push('Emissions waiver issued');
+  if (detail.tenDayExtension) items.push('Ten-day extension issued');
+  if (detail.warning) items.push('Warning: ' + sentence(detail.warning));
+  if (detail.advisory) items.push('Advisory: ' + sentence(detail.advisory));
+  if (detail.testType) items.push(sentence(detail.testType) + ' test');
+  if (detail.componentsRemoved.length > 0) {
+    items.push('Removed for inspection: ' + detail.componentsRemoved.map((part) => part.toLowerCase()).join('; '));
+  }
+  if (items.length === 0) return null;
+  return el('ul', { class: 'ny-notes' }, ...items.map((item) => el('li', {}, item)));
+}
+
+/** Full inspection history, newest first, with everything the NY record carries. */
+function nyHistory(readings: readonly OdometerReading[]): HTMLElement {
+  const rows = readings
+    .map((reading, index) => ({ reading, previous: readings[index - 1] }))
+    .reverse()
+    .map(({ reading, previous }) => {
+      const detail = reading.ny;
+      const interval = intervalText(previous, reading);
+      return el(
+        'tr',
+        {},
+        el('td', {}, formatDate(reading.date), detail?.validThrough ? el('span', { class: 'sub' }, 'valid through ' + formatDate(detail.validThrough)) : null),
+        el('td', { class: 'num' }, formatNumber(reading.miles) + ' mi', interval ? el('span', { class: 'sub' }, interval) : null),
+        el('td', {}, detail?.type ? sentence(detail.type) : '—'),
+        el('td', {}, resultTag(detail?.safety ?? null)),
+        el('td', {}, resultTag(detail?.emissions ?? null)),
+        el('td', {}, (detail && nyNotes(detail)) ?? '—'),
+      );
+    });
+  return el(
+    'div',
+    { class: 'table-scroll' },
+    el(
+      'table',
+      { class: 'data-table ny-history' },
+      el('caption', { class: 'visually-hidden' }, 'New York State inspection history'),
+      el(
+        'thead',
+        {},
+        el(
+          'tr',
+          {},
+          ...['Inspected', 'Odometer', 'Type', 'Safety', 'Emissions', 'Notes'].map((heading) => el('th', { scope: 'col' }, heading)),
+        ),
+      ),
+      el('tbody', {}, ...rows),
+    ),
+  );
+}
+
 export function renderOdometer(
   result: SectionResult<OdometerReading[]>,
   stateEmissionLinks: readonly GuidedLink[],
@@ -284,12 +406,17 @@ export function renderOdometer(
     const readings = sortReadings(result.data);
     const points = computePoints(readings);
     const drops = findRollbacks(readings);
+    const latestDetail = [...readings].reverse().find((reading) => reading.ny)?.ny;
+    const hasNy = readings.some((reading) => reading.ny);
+    const observation = usageObservation(readings);
     return el(
       'div',
       { class: 'card' },
       buildChart(points),
       drops.length > 0 ? rollbackCallout(drops) : null,
-      readingsTable(readings),
+      observation ? el('p', { class: 'note ny-observation' }, observation) : null,
+      latestDetail ? nyVehicleFacts(latestDetail) : null,
+      hasNy ? nyHistory(readings) : readingsTable(readings),
     );
   }
 

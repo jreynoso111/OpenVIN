@@ -1325,6 +1325,57 @@
   border-bottom: var(--rule);
 }
 
+/* New York inspection history */
+
+.ny-observation {
+  margin: 0.75rem 0;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--color-warn);
+  background: var(--color-inset);
+}
+
+.card > .facts {
+  margin-top: 0.9rem;
+}
+
+.ny-history {
+  margin-top: 0.9rem;
+}
+
+.ny-history th {
+  font-size: var(--text-label);
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+
+.ny-history td {
+  vertical-align: top;
+}
+
+.ny-history td.num {
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.ny-history .sub {
+  font-family: var(--font-sans);
+}
+
+.ny-notes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-micro);
+  color: var(--color-text-secondary);
+}
+
+.ny-notes li + li {
+  margin-top: 0.15rem;
+}
+
 .callout {
   margin-top: 0.75rem;
   padding: 0.5rem 0.75rem;

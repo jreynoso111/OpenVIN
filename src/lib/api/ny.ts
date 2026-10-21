@@ -5,7 +5,7 @@
  * Dataset: https://data.ny.gov/resource/vezn-fmmk
  */
 
-import type { OdometerReading, SectionResult } from '../types';
+import type { NyInspectionDetail, OdometerReading, SectionResult } from '../types';
 import { asArray, asRecord, fetchJson, intOrNull, stringOrNull } from './http';
 
 const NY_URL = 'https://data.ny.gov/resource/vezn-fmmk.json';
@@ -27,6 +27,52 @@ function buildNote(record: Record<string, unknown>): string | undefined {
   return parts.length > 0 ? parts.join(' · ') : undefined;
 }
 
+/** A text field, or null when blank or one of the dataset's "nothing here" values. */
+function field(record: Record<string, unknown>, key: string): string | null {
+  const value = stringOrNull(record[key]);
+  if (value === null) return null;
+  return /^(none|not applicable|n\/a)$/i.test(value) ? null : value;
+}
+
+function flag(record: Record<string, unknown>, key: string): boolean {
+  return /^(y|yes|true)$/i.test(stringOrNull(record[key]) ?? '');
+}
+
+function detailOf(record: Record<string, unknown>): NyInspectionDetail {
+  const expiry = stringOrNull(record['inspection_expiration']);
+  const hybrid = stringOrNull(record['hybrid']);
+  return {
+    type: field(record, 'inspection_type'),
+    validThrough: expiry ? expiry.slice(0, 10) : null,
+    safety: field(record, 'safety_inspection_result'),
+    emissions: field(record, 'initial_emission_result'),
+    obd: field(record, 'on_board_diagnostic_check'),
+    emissionControl: field(record, 'emission_control_device_check'),
+    gasCap: field(record, 'gas_cap_result'),
+    readiness: field(record, 'overall_readiness_result'),
+    testType: field(record, 'inspection_test_type'),
+    emissionsWaiver: flag(record, 'emissions_waiver_issued'),
+    tenDayExtension: flag(record, 'ten_day_extension_issued'),
+    noRegistrationReason: field(record, 'no_registration_reason'),
+    metroArea: field(record, 'nyma'),
+    componentsRemoved: ['wheel_removed_1', 'wheel_removed_2', 'wheel_removed_3', 'wheel_removed_4']
+      .map((key) => field(record, key))
+      .filter((value): value is string => value !== null),
+    warning: field(record, 'warning_message'),
+    advisory: field(record, 'advisory_message'),
+    vehicle: {
+      year: field(record, 'model_year'),
+      make: field(record, 'make_code'),
+      model: field(record, 'model_name'),
+      fuel: field(record, 'fuel_type'),
+      transmission: field(record, 'vehicle_transmission_type'),
+      hybrid: hybrid === null ? null : /^(y|yes|true)$/i.test(hybrid),
+      weightClass: field(record, 'vehicle_weight_class'),
+      registrationClass: field(record, 'registration_class'),
+    },
+  };
+}
+
 /** Map one Socrata inspection row to an OdometerReading; null when unusable. */
 export function mapInspectionRow(record: Record<string, unknown>): OdometerReading | null {
   const miles = intOrNull(record['odometer_reading']);
@@ -34,7 +80,7 @@ export function mapInspectionRow(record: Record<string, unknown>): OdometerReadi
   const rawDate = stringOrNull(record['inspection_date']);
   if (rawDate === null) return null;
   const date = rawDate.slice(0, 10); // "2025-03-13T12:17:50.000" → "2025-03-13"
-  return { date, miles, source: 'NY State inspection', note: buildNote(record) };
+  return { date, miles, source: 'NY State inspection', note: buildNote(record), ny: detailOf(record) };
 }
 
 /** Parse rows, drop unusable ones, sort ascending by date, dedupe (date, miles). */

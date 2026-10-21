@@ -98,6 +98,40 @@ export interface OdometerReading {
   miles: number;
   source: string; // e.g. "NY State inspection"
   note?: string; // e.g. inspection result
+  /** Everything else the NY inspection record carries, when the source is NY. */
+  ny?: NyInspectionDetail;
+}
+
+/** Fields of a NY DMV inspection record beyond the odometer; null when blank or "none". */
+export interface NyInspectionDetail {
+  type: string | null;
+  validThrough: string | null;
+  safety: string | null;
+  emissions: string | null;
+  obd: string | null;
+  emissionControl: string | null;
+  gasCap: string | null;
+  readiness: string | null;
+  testType: string | null;
+  emissionsWaiver: boolean;
+  tenDayExtension: boolean;
+  /** Why the vehicle had no NY registration at the time, e.g. out-of-state title. */
+  noRegistrationReason: string | null;
+  metroArea: string | null;
+  /** Brake drums / hubs etc. removed for inspection. */
+  componentsRemoved: string[];
+  warning: string | null;
+  advisory: string | null;
+  vehicle: {
+    year: string | null;
+    make: string | null;
+    model: string | null;
+    fuel: string | null;
+    transmission: string | null;
+    hybrid: boolean | null;
+    weightClass: string | null;
+    registrationClass: string | null;
+  };
 }
 
 /** Public vehicle-unit findings from a commercial roadside inspection. */
