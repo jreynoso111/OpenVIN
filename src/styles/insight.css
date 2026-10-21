@@ -1826,13 +1826,13 @@
   #plate-vehicles .log th:nth-child(5) { width: 14%; }
 
   /* Roadside log: Date | Where | VIN | Unit | Carrier | Result | Findings */
-  #plate-log .log th:nth-child(1) { width: 11%; }
-  #plate-log .log th:nth-child(2) { width: 17%; }
-  #plate-log .log th:nth-child(3) { width: 17%; }
-  #plate-log .log th:nth-child(4) { width: 15%; }
+  #plate-log .log th:nth-child(1) { width: 10%; }
+  #plate-log .log th:nth-child(2) { width: 13%; }
+  #plate-log .log th:nth-child(3) { width: 13%; }
+  #plate-log .log th:nth-child(4) { width: 13%; }
   #plate-log .log th:nth-child(5) { width: 17%; }
-  #plate-log .log th:nth-child(6) { width: 10%; }
-  #plate-log .log th:nth-child(7) { width: 13%; }
+  #plate-log .log th:nth-child(6) { width: 11%; }
+  #plate-log .log th:nth-child(7) { width: 23%; }
 
   /* Never strand a panel title or a table header at the foot of a page */
   #plate-vehicles .panel__head,
@@ -1849,10 +1849,23 @@
     page-break-before: avoid;
   }
 
+  #plate-log .findings > summary {
+    list-style: none;
+  }
+
+  #plate-log .findings > summary::-webkit-details-marker {
+    display: none;
+  }
+
   #plate-log .findings ul {
-    margin-top: 0.1rem;
-    padding-left: 0.8rem;
-    font-size: 0.52rem;
+    margin: 0.05rem 0 0;
+    padding-left: 0.6rem;
+    font-size: 0.5rem;
+    line-height: 1.1;
+  }
+
+  #plate-log .findings li + li {
+    margin-top: 0.05rem;
   }
 
   /* Where seen: summary beside a map that stays small */
@@ -2127,13 +2140,13 @@
   }
 
   /* Class | Date | Where | Plate | Carrier | Other units | Result */
-  #roadside .log th:nth-child(2) { width: 11%; }
-  #roadside .log th:nth-child(3) { width: 11%; }
-  #roadside .log th:nth-child(4) { width: 15%; }
-  #roadside .log th:nth-child(5) { width: 13%; }
-  #roadside .log th:nth-child(6) { width: 17%; }
-  #roadside .log th:nth-child(7) { width: 22%; }
-  #roadside .log th:nth-child(8) { width: 11%; }
+  #roadside .log th:nth-child(2) { width: 9%; }
+  #roadside .log th:nth-child(3) { width: 10%; }
+  #roadside .log th:nth-child(4) { width: 13%; }
+  #roadside .log th:nth-child(5) { width: 11%; }
+  #roadside .log th:nth-child(6) { width: 14%; }
+  #roadside .log th:nth-child(7) { width: 17%; }
+  #roadside .log th:nth-child(8) { width: 26%; }
 
   #roadside .log__type-warning {
     display: block;
@@ -2145,10 +2158,24 @@
     margin: 0 0 0.15rem;
   }
 
+  /* Failed-inspection detail: the wide result column, one tight line per finding */
+  #roadside .findings > summary {
+    list-style: none;
+  }
+
+  #roadside .findings > summary::-webkit-details-marker {
+    display: none;
+  }
+
   #roadside .findings ul {
-    margin-top: 0.1rem;
-    padding-left: 0.8rem;
-    font-size: 0.52rem;
+    margin: 0.05rem 0 0;
+    padding-left: 0.6rem;
+    font-size: 0.5rem;
+    line-height: 1.1;
+  }
+
+  #roadside .findings li + li {
+    margin-top: 0.05rem;
   }
 
   #roadside .panel__head,
