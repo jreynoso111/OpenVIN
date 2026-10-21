@@ -8,7 +8,7 @@ import { getCarrierFleet, getCarriersById, searchCarriersByName } from '../lib/a
 import type { CarrierFleet, CarrierProfile, FleetVehicle, SectionResult } from '../lib/types';
 import { ageLabel, el, formatDate, formatNumber } from './dom';
 import { caseHeader, caseLayout, limitsNote } from './case';
-import { carrierBase, carrierFacts, crashLine, insuranceLine, standingBlock, carrierLine, carrierName, docketLabel, operationText } from './carrier';
+import { carrierAuthorityBlock, carrierBase, carrierFacts, crashLine, insuranceLine, standingBlock, carrierLine, carrierName, docketLabel, operationText } from './carrier';
 import { createLedger, createPanel, emptyNote } from './panel';
 import { externalLink, platePivot, saferSnapshotUrl, vinPivot } from './pivot';
 import { frequencyList, lastSeen, placeText } from './sightings';
@@ -48,8 +48,8 @@ function fleetRow(vehicle: FleetVehicle): HTMLElement {
       ),
     ),
     el('td', { 'data-label': 'Unit #' }, vehicle.companyUnits.slice(0, 2).join(' · ') || '—'),
-    el('td', { 'data-label': 'Last stop' }, placeText(last), el('span', { class: 'sub' }, (last.date ? formatDate(last.date) : '—') + (age ? ' · ' + age : ''))),
-    el('td', { 'data-label': 'Stops', class: 'num' }, formatNumber(vehicle.sightings)),
+    el('td', { 'data-label': 'Last inspection' }, placeText(last), el('span', { class: 'sub' }, (last.date ? formatDate(last.date) : '—') + (age ? ' · ' + age : ''))),
+    el('td', { 'data-label': 'Inspection records', class: 'num' }, formatNumber(vehicle.sightings)),
   );
 }
 
@@ -81,7 +81,7 @@ function fleetTable(fleet: CarrierFleet): HTMLElement {
         'table',
         { class: 'log' },
         el('caption', { class: 'visually-hidden' }, 'Units recorded on this carrier’s inspections'),
-        el('thead', {}, el('tr', {}, ...['VIN', 'Plates', 'Unit #', 'Last stop', 'Stops'].map((h) => el('th', { scope: 'col' }, h)))),
+        el('thead', {}, el('tr', {}, ...['VIN', 'Plates', 'Unit #', 'Last inspection', 'Inspection records'].map((h) => el('th', { scope: 'col' }, h)))),
         body,
       ),
     ),
@@ -149,7 +149,12 @@ export function renderCarrierFile(
   const header = caseHeader('Carrier file', (kind === 'dot' ? 'USDOT ' : 'MC ') + number);
   const area = createPanel({ id: 'carrier-area', title: 'Operating area', hint: 'Where its units were stopped on recent inspections.', lines: 3 });
   const fleet = createPanel({ id: 'carrier-fleet', title: 'Fleet seen at roadside', hint: 'Search a cab number, plate or partial VIN to find one truck.', lines: 6 });
-  const profile = createPanel({ id: 'carrier-profile', title: 'Census profile', lines: 4 });
+  const profile = createPanel({
+    id: 'carrier-profile',
+    title: 'Census profile',
+    hint: 'FMCSA registration, cargo and MCS-150 details reported on the carrier record; fields can have different update dates.',
+    lines: 4,
+  });
   const ledger = createLedger();
   ledger.add('census', 'Company Census · FMCSA');
   ledger.add('fleet', 'Roadside inspections · FMCSA');
@@ -158,7 +163,7 @@ export function renderCarrierFile(
     caseLayout(header.root, [fleet.root, area.root, profile.root], [
       ledger.root,
       actions,
-      limitsNote('Units listed were inspected under this USDOT number. Leased or sold units can still appear, and current fleet assignments are not public.'),
+      limitsNote('These units were listed during roadside inspections associated with this USDOT on the dates shown. The list is not a confirmed current fleet or ownership roster; leased or sold units can still appear. “Inspection records” counts the inspections where the VIN was listed.'),
     ]),
   );
 
@@ -224,16 +229,36 @@ export function renderCarrierFile(
         ),
       );
       profile.fill(
-        el('div', {}, carrierFacts(carrier) ?? emptyNote('No census details.'), standingBlock(carrier), insuranceLine(carrier), crashLine(carrier.dotNumber)),
+        el(
+          'div',
+          {},
+          carrierFacts(carrier, true) ?? emptyNote('No census details.'),
+          carrierAuthorityBlock(carrier),
+          standingBlock(carrier),
+          insuranceLine(carrier, true),
+          crashLine(carrier.dotNumber),
+        ),
       );
       const snapshot = saferSnapshotUrl(carrier.dotNumber);
       if (snapshot) {
+        const safetyProfile = 'https://ai.fmcsa.dot.gov/SMS/Carrier/' + carrier.dotNumber + '/Overview.aspx';
         actions.replaceChildren(
           el(
             'section',
             { class: 'rail-block' },
             el('h2', { class: 'rail-block__title' }, 'Official record'),
-            el('ul', { class: 'checks' }, el('li', {}, externalLink(snapshot, 'SAFER Company Snapshot', ''))),
+            el(
+              'ul',
+              { class: 'checks' },
+              el('li', {}, externalLink(snapshot, 'SAFER Company Snapshot', '')),
+              el('li', {}, externalLink(safetyProfile, 'FMCSA SMS & enforcement profile', '')),
+              el('li', {}, externalLink(
+                'https://data.transportation.gov/Trucking-and-Motorcoaches/Motus-BOC3-All-With-History/6snj-ed7q',
+                'FMCSA BOC-3 public history file',
+                '',
+              )),
+            ),
+            el('p', { class: 'rail-block__note' }, 'The public BOC-3 file has no event dates or current/cancelled status, so it cannot confirm the present process-agent filing.'),
           ),
         );
       }

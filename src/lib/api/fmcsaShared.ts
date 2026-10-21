@@ -33,6 +33,12 @@ export const INSPECTION_SELECT =
 
 export const CENSUS_SELECT =
   'dot_number,legal_name,dba_name,business_org_id,business_org_desc,status_code,classdef,' +
+  'carrier_operation,hm_ind,mcs150_mileage,mcs150_mileage_year,' +
+  'crgo_genfreight,crgo_household,crgo_metalsheet,crgo_motoveh,crgo_drivetow,crgo_logpole,' +
+  'crgo_bldgmat,crgo_mobilehome,crgo_machlrg,crgo_produce,crgo_liqgas,crgo_intermodal,' +
+  'crgo_passengers,crgo_oilfield,crgo_livestock,crgo_grainfeed,crgo_coalcoke,crgo_meat,' +
+  'crgo_garbage,crgo_usmail,crgo_chem,crgo_drybulk,crgo_coldfood,crgo_beverages,' +
+  'crgo_paperprod,crgo_utility,crgo_farmsupp,crgo_construct,crgo_waterwell,crgo_cargoothr,crgo_cargoothr_desc,' +
   'truck_units,power_units,total_drivers,recordable_crash_rate,mcs150_date,add_date,' +
   'docket1prefix,docket1,docket1_status_code,safety_rating,safety_rating_date,phy_city,phy_state';
 
@@ -135,6 +141,41 @@ export function parseCarrier(value: unknown): CarrierProfile | null {
     ? nonPlaceholderName(row['dba_name'])
     : carrierBusinessName(row['dba_name'], orgId, orgDescription);
   const isBusiness = Boolean(legalName || dbaName);
+  const cargoLabels: ReadonlyArray<readonly [string, string]> = [
+    ['crgo_genfreight', 'General freight'],
+    ['crgo_household', 'Household goods'],
+    ['crgo_metalsheet', 'Metal sheets/coils'],
+    ['crgo_motoveh', 'Motor vehicles'],
+    ['crgo_drivetow', 'Drive/tow away'],
+    ['crgo_logpole', 'Logs and poles'],
+    ['crgo_bldgmat', 'Building materials'],
+    ['crgo_mobilehome', 'Mobile homes'],
+    ['crgo_machlrg', 'Machinery and large objects'],
+    ['crgo_produce', 'Fresh produce'],
+    ['crgo_liqgas', 'Liquids and gases'],
+    ['crgo_intermodal', 'Intermodal containers'],
+    ['crgo_passengers', 'Passengers'],
+    ['crgo_oilfield', 'Oilfield equipment'],
+    ['crgo_livestock', 'Livestock'],
+    ['crgo_grainfeed', 'Grain, feed, hay'],
+    ['crgo_coalcoke', 'Coal and coke'],
+    ['crgo_meat', 'Meat'],
+    ['crgo_garbage', 'Garbage and refuse'],
+    ['crgo_usmail', 'U.S. Mail'],
+    ['crgo_chem', 'Chemicals'],
+    ['crgo_drybulk', 'Dry bulk'],
+    ['crgo_coldfood', 'Refrigerated food'],
+    ['crgo_beverages', 'Beverages'],
+    ['crgo_paperprod', 'Paper products'],
+    ['crgo_utility', 'Utilities'],
+    ['crgo_farmsupp', 'Farm supplies'],
+    ['crgo_construct', 'Construction'],
+    ['crgo_waterwell', 'Water well'],
+    ['crgo_cargoothr', 'Other cargo'],
+  ];
+  const cargoClasses = cargoLabels
+    .filter(([field]) => ['X', 'Y', '1', 'TRUE'].includes(textField(row[field])?.toUpperCase() ?? ''))
+    .map(([, label]) => label);
   return {
     dotNumber,
     legalName,
@@ -142,6 +183,12 @@ export function parseCarrier(value: unknown): CarrierProfile | null {
     isBusiness,
     status: textField(row['status_code']),
     operationClass: textField(row['classdef']),
+    carrierOperation: textField(row['carrier_operation']),
+    hazmatIndicator: textField(row['hm_ind']),
+    reportedMileage: intOrNull(row['mcs150_mileage']),
+    reportedMileageYear: intOrNull(row['mcs150_mileage_year']),
+    cargoClasses,
+    otherCargoDescription: textField(row['crgo_cargoothr_desc']),
     truckUnits: intOrNull(row['truck_units']),
     powerUnits: intOrNull(row['power_units']),
     drivers: intOrNull(row['total_drivers']),

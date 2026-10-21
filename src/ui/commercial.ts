@@ -6,6 +6,7 @@
 import { isGenericPlate } from '../lib/analysis';
 import type { PlateLink } from '../lib/report';
 import type { CarrierProfile, CommercialInspection, UnitSighting } from '../lib/types';
+import { unitTypeLabel } from '../lib/api/fmcsaShared';
 import { el, formatDate, formatNumber } from './dom';
 import { carrierBase, carrierCard, carrierName } from './carrier';
 import { emptyNote, factList } from './panel';
@@ -142,6 +143,7 @@ interface Companion {
   sighting: UnitSighting;
   count: number;
   last: string | null;
+  inspections: Array<{ id: string; date: string | null }>;
 }
 
 function companions(records: readonly CommercialInspection[]): Companion[] {
@@ -150,13 +152,19 @@ function companions(records: readonly CommercialInspection[]): Companion[] {
     for (const unit of record.companions) {
       const key = unit.vin ?? (unit.plate ?? '') + '|' + (unit.plateState ?? '');
       if (key === '|') continue;
-      const entry = map.get(key) ?? { sighting: unit, count: 0, last: null };
-      entry.count += 1;
-      if (unit.date && (!entry.last || unit.date > entry.last)) entry.last = unit.date;
+      const entry = map.get(key) ?? { sighting: unit, count: 0, last: null, inspections: [] };
+      if (!entry.inspections.some((inspection) => inspection.id === record.inspectionId)) {
+        const date = record.date ?? unit.date;
+        entry.inspections.push({ id: record.inspectionId, date });
+        entry.count = entry.inspections.length;
+        if (date && (!entry.last || date > entry.last)) entry.last = date;
+      }
       map.set(key, entry);
     }
   }
-  return [...map.values()].sort((a, b) => b.count - a.count || (b.last ?? '').localeCompare(a.last ?? ''));
+  return [...map.values()]
+    .map((entry) => ({ ...entry, inspections: [...entry.inspections].sort((a, b) => (b.date ?? '').localeCompare(a.date ?? '')) }))
+    .sort((a, b) => b.count - a.count || (b.last ?? '').localeCompare(a.last ?? ''));
 }
 
 function relation(kind: string, subject: Node, detail: Node | string, evidence: string): HTMLElement {
@@ -165,16 +173,30 @@ function relation(kind: string, subject: Node, detail: Node | string, evidence: 
     { class: 'rel' },
     el('span', { class: 'rel__kind' }, kind),
     el('span', { class: 'rel__subject' }, subject),
-    el('span', { class: 'rel__detail' }, detail),
+    el('div', { class: 'rel__detail' }, detail),
     el('span', { class: 'rel__evidence' }, evidence),
+  );
+}
+
+function relationGroup(title: string, description: string, rows: readonly HTMLElement[]): HTMLElement | null {
+  if (rows.length === 0) return null;
+  return el(
+    'section',
+    { class: 'rel-group' },
+    el('h3', { class: 'rel-group__title' }, title),
+    el('p', { class: 'rel-group__hint' }, description),
+    el('ul', { class: 'rels' }, ...rows),
   );
 }
 
 export function renderConnections(
   records: readonly CommercialInspection[],
   plateLinks: readonly PlateLink[],
+  searchedVin: string,
 ): HTMLElement {
-  const rows: HTMLElement[] = [];
+  const plateRows: HTMLElement[] = [];
+  const carrierRows: HTMLElement[] = [];
+  const companionRows: HTMLElement[] = [];
 
   const plates = new Map<string, { plate: string; state: string | null; count: number; first: string | null; last: string | null }>();
   for (const record of records) {
@@ -190,27 +212,67 @@ export function renderConnections(
   }
   for (const entry of [...plates.values()].sort((a, b) => (b.last ?? '').localeCompare(a.last ?? ''))) {
     const shared = plateLinks.find((link) => link.plate === entry.plate && link.state === entry.state);
-    const otherVins = [...new Set((shared?.sightings ?? []).map((s) => s.vin).filter((v): v is string => Boolean(v)))];
-    rows.push(
+    const otherSightings = (shared?.sightings ?? []).filter((sighting) => sighting.vin && sighting.vin !== searchedVin);
+    const otherVins = [...new Set(otherSightings.map((sighting) => sighting.vin as string))];
+    const sightingsByVin = new Map<string, UnitSighting[]>();
+    for (const sighting of otherSightings) {
+      const sightings = sightingsByVin.get(sighting.vin!) ?? [];
+      sightings.push(sighting);
+      sightingsByVin.set(sighting.vin!, sightings);
+    }
+    const detail = isGenericPlate(entry.plate)
+      ? 'Temporary or paper plate; a shared plate like this is a weak vehicle match.'
+      : otherVins.length > 0
+        ? el(
+            'div',
+            {},
+            'The same plate appears under other VINs. Compare the inspection IDs below with this VIN’s roadside log to see whether any sighting belongs to the same stop.',
+            el(
+              'ul',
+              { class: 'rel__sightings' },
+              ...otherVins.slice(0, 5).map((vin) => {
+                const dates = [...new Set((sightingsByVin.get(vin) ?? []).map((sighting) => sighting.date).filter((date): date is string => Boolean(date)))];
+                return el(
+                  'li',
+                  {},
+                  vinPivot(vin),
+                  ' · other plate record',
+                  ': ',
+                  ...(sightingsByVin.get(vin) ?? []).slice(0, 5).map((sighting, index) =>
+                    el(
+                      'span',
+                      { class: 'rel__sighting-id' },
+                      index > 0 ? ' · ' : '',
+                      sighting.date ? formatDate(sighting.date) : dates.length > 0 ? dates.map(formatDate).join(', ') : 'Date not reported',
+                      ' · FMCSA #',
+                      sighting.inspectionId,
+                    ),
+                  ),
+                );
+              }),
+              otherVins.length > 5 ? el('li', {}, 'and ' + (otherVins.length - 5) + ' more VINs') : null,
+            ),
+          )
+        : 'No other VIN was found under this plate in the current FMCSA file.';
+    plateRows.push(
       relation(
-        'Plate',
+        'Plate record',
         platePivot(entry.plate, entry.state),
-        isGenericPlate(entry.plate)
-          ? 'Temporary or paper plate — shared by many vehicles'
-          : otherVins.length > 0
-          ? el('span', {}, 'Also recorded on ', ...otherVins.slice(0, 3).flatMap((v, i) => [i > 0 ? ', ' : '', vinPivot(v)]), otherVins.length > 3 ? ' +' + (otherVins.length - 3) : '')
-          : 'Only this VIN in FMCSA files',
-        formatNumber(entry.count) + '× · ' + span(entry.first, entry.last),
+        detail,
+        'Searched VIN: ' + formatNumber(entry.count) + '× · ' + span(entry.first, entry.last),
       ),
     );
   }
 
   for (const use of carrierUses(records)) {
-    rows.push(
+    carrierRows.push(
       relation(
-        'Carrier',
+        'Carrier on record',
         dotPivot(use.carrier.dotNumber, carrierName(use.carrier)),
-        [carrierBase(use.carrier), use.carrier.dbaName ? 'DBA ' + use.carrier.dbaName : null].filter(Boolean).join(' · ') || 'USDOT ' + use.carrier.dotNumber,
+        [
+          [carrierBase(use.carrier), use.carrier.dbaName ? 'DBA ' + use.carrier.dbaName : null].filter(Boolean).join(' · ') || 'USDOT ' + use.carrier.dotNumber,
+          'Listed on this VIN’s FMCSA inspection records.',
+        ].join(' · '),
         formatNumber(use.count) + '× · ' + span(use.first, use.last),
       ),
     );
@@ -218,25 +280,54 @@ export function renderConnections(
 
   for (const companion of companions(records).slice(0, 8)) {
     const unit = companion.sighting;
-    rows.push(
+    const unitDetails = [unit.unitType, unit.make, unit.companyUnit ? '#' + unit.companyUnit : null]
+      .filter(Boolean)
+      .join(' · ');
+    const inspectionList = el(
+      'details',
+      { class: 'rel__proof' },
+      el('summary', {}, 'Show matching FMCSA inspections (' + formatNumber(companion.count) + ')'),
+      el(
+        'ul',
+        { class: 'rel__sightings' },
+        ...companion.inspections.map((inspection) =>
+          el(
+            'li',
+            {},
+            inspection.date ? formatDate(inspection.date) : 'Date not reported',
+            ' · FMCSA inspection #',
+            inspection.id,
+          ),
+        ),
+      ),
+    );
+    companionRows.push(
       relation(
-        unit.unitType ?? 'Coupled unit',
+        'Same inspection',
         unit.vin ? vinPivot(unit.vin) : el('span', { class: 'muted' }, 'VIN not recorded'),
         el(
-          'span',
+          'div',
           {},
-          unit.plate ? platePivot(unit.plate, unit.plateState) : null,
-          [unit.make, unit.companyUnit ? '#' + unit.companyUnit : null].filter(Boolean).length > 0
-            ? ' ' + [unit.make, unit.companyUnit ? '#' + unit.companyUnit : null].filter(Boolean).join(' · ')
-            : null,
+          unitDetails || 'Other inspected unit',
+          unit.plate ? el('div', { class: 'rel__unit-plate' }, 'Plate ', platePivot(unit.plate, unit.plateState)) : null,
+          el('p', { class: 'rel__explanation' }, 'FMCSA listed this unit in the same roadside inspection as VIN ' + searchedVin + '.'),
+          inspectionList,
         ),
-        'together ' + formatNumber(companion.count) + '× · last ' + (companion.last ? formatDate(companion.last) : '—'),
+        formatNumber(companion.count) + ' shared inspection' + (companion.count === 1 ? '' : 's') + ' · latest ' + (companion.last ? formatDate(companion.last) : '—'),
       ),
     );
   }
 
-  if (rows.length === 0) return emptyNote('No plates, carriers or coupled units are linked to this VIN yet.');
-  return el('ul', { class: 'rels' }, ...rows);
+  if (plateRows.length + carrierRows.length + companionRows.length === 0) {
+    return emptyNote('No plates, carriers or other units are linked to this VIN yet.');
+  }
+  return el(
+    'div',
+    { class: 'rel-groups' },
+    relationGroup('Same plate', 'A shared plate alone does not establish a shared inspection. Compare the FMCSA inspection IDs with the roadside log.', plateRows),
+    relationGroup('Carrier on this VIN’s record', 'These carriers appear on the searched VIN’s own FMCSA inspection records.', carrierRows),
+    relationGroup('Other units in the same inspection', 'These VINs were listed alongside the searched VIN under the FMCSA inspection IDs shown below.', companionRows),
+  );
 }
 
 /* ---------- Carriers ---------- */
@@ -286,39 +377,75 @@ function findings(record: CommercialInspection): Node {
   return details;
 }
 
-export function renderRoadsideLog(records: readonly CommercialInspection[]): HTMLElement {
+function unitTypeConflict(fmcsatype: string | null, decodedType: string | null): boolean {
+  if (!fmcsatype || !decodedType) return false;
+  const fmcsa = fmcsatype.toUpperCase();
+  const decoded = decodedType.toUpperCase();
+  return (decoded.includes('TRAILER') && (fmcsa.includes('TRUCK TRACTOR') || fmcsa.includes('STRAIGHT TRUCK'))) ||
+    ((decoded.includes('TRUCK') || decoded.includes('TRACTOR')) && fmcsa.includes('SEMI-TRAILER'));
+}
+
+export function renderRoadsideLog(
+  records: readonly CommercialInspection[],
+  searchedVin: string,
+  decodedType: string | null = null,
+): HTMLElement {
   const table = el(
     'table',
     { class: 'log' },
-    el('caption', { class: 'visually-hidden' }, 'Roadside inspections of this VIN'),
+    el('caption', { class: 'visually-hidden' }, 'FMCSA roadside inspections matched to VIN ' + searchedVin),
     el(
       'thead',
       {},
-      el('tr', {}, ...['Date', 'Where', 'Plate', 'Carrier', 'Coupled with', 'Vehicle result'].map((h) => el('th', { scope: 'col' }, h))),
+      el('tr', {}, ...['Exact VIN match', 'FMCSA class', 'Date', 'Where', 'Plate', 'Carrier', 'Other units in the same inspection', 'Result for this VIN'].map((h) => el('th', { scope: 'col' }, h))),
     ),
   );
   const body = el('tbody');
   for (const record of records) {
     const carrier = carrierFromRecord(record);
+    const fmcsaType = unitTypeLabel(record.vehicleTypeCode);
+    const typeConflict = unitTypeConflict(fmcsaType, decodedType);
     body.append(
       el(
         'tr',
         {},
+        el('td', { 'data-label': 'Exact VIN match' }, el('code', { class: 'log__vin' }, searchedVin), el('span', { class: 'sub' }, 'VIN matched in FMCSA unit file')),
+        el(
+          'td',
+          { 'data-label': 'FMCSA class' },
+          fmcsaType ?? el('span', { class: 'muted' }, 'Not reported'),
+          typeConflict ? el('span', { class: 'tag log__type-warning', 'data-tone': 'warn' }, 'Check: VIN decode says ' + decodedType) : null,
+        ),
         el('td', { 'data-label': 'Date' }, record.date ? el('time', { datetime: record.date }, formatDate(record.date)) : '—', el('span', { class: 'sub' }, 'Insp. ' + record.inspectionId)),
         el('td', { 'data-label': 'Where' }, placeText({ date: record.date, state: record.state, site: record.location }), record.level ? el('span', { class: 'sub' }, 'Level ' + record.level) : null),
         el('td', { 'data-label': 'Plate' }, record.plate ? platePivot(record.plate, record.plateState) : '—', record.companyUnit ? el('span', { class: 'sub' }, 'Unit #' + record.companyUnit) : null),
         el('td', { 'data-label': 'Carrier' }, carrier ? dotPivot(carrier.dotNumber, carrier.legalName ?? carrier.dbaName ?? undefined) : '—'),
         el(
           'td',
-          { 'data-label': 'Coupled with' },
+          { 'data-label': 'Other units in the same inspection' },
           record.companions.length === 0
             ? el('span', { class: 'muted' }, '—')
-            : el('span', { class: 'stack' }, ...record.companions.map((c) => (c.vin ? vinPivot(c.vin) : c.plate ? platePivot(c.plate, c.plateState) : el('span', { class: 'muted' }, c.unitType ?? 'Unit')))),
+            : el(
+                'span',
+                { class: 'stack' },
+                ...record.companions.map((c) =>
+                  el(
+                    'span',
+                    { class: 'log__companion' },
+                    c.vin ? vinPivot(c.vin) : c.plate ? platePivot(c.plate, c.plateState) : el('span', { class: 'muted' }, 'VIN not recorded'),
+                    el(
+                      'span',
+                      { class: 'sub' },
+                      [c.unitType, c.position !== null ? 'FMCSA unit ' + c.position : null].filter(Boolean).join(' · ') || 'Listed in inspection #' + record.inspectionId,
+                    ),
+                  ),
+                ),
+              ),
         ),
-        el('td', { 'data-label': 'Vehicle result' }, findings(record)),
+        el('td', { 'data-label': 'Result for this VIN' }, findings(record)),
       ),
     );
   }
   table.append(body);
-  return el('div', { class: 'log-wrap', tabindex: '0', 'aria-label': 'Roadside inspections of this VIN' }, table);
+  return el('div', { class: 'log-wrap', tabindex: '0', 'aria-label': 'FMCSA roadside inspections matched to VIN ' + searchedVin }, table);
 }

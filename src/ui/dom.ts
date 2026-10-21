@@ -1,4 +1,4 @@
-/** Tiny DOM builders — the only "framework" in OpenVIN. */
+/** Tiny DOM builders — the only "framework" in High View. */
 
 type Child = Node | string | null | undefined | false;
 

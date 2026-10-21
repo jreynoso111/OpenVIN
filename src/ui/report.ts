@@ -13,9 +13,11 @@ import type {
   GuidedLink,
   OdometerReading,
   RecallCampaign,
+  SafetyRating,
   SectionResult,
   VehicleIdentity,
 } from '../lib/types';
+import type { NhtsaOdiLookup } from '../lib/api/nhtsaOdi';
 import {
   carrierUses,
   renderCarriers,
@@ -33,6 +35,8 @@ import { dotPivot, platePivot } from './pivot';
 import { renderComplaints, renderRecalls } from './modelLine';
 import { renderSummary } from './summary';
 import { renderTimeline } from './timeline';
+import { renderSafety } from './safety';
+import { renderNhtsaOdi } from './nhtsaOdi';
 
 /** Mirror of the data layer's startReport() return shape (src/lib/report). */
 export interface ReportHandles {
@@ -41,6 +45,8 @@ export interface ReportHandles {
   readonly commercialInspections: Promise<SectionResult<CommercialInspection[]>>;
   readonly recalls: Promise<SectionResult<RecallCampaign[]>>;
   readonly complaints: Promise<SectionResult<ComplaintsSummary>>;
+  readonly safety: Promise<SectionResult<SafetyRating>>;
+  readonly nhtsaOdi?: Promise<SectionResult<NhtsaOdiLookup>>;
   readonly plateLinks: Promise<PlateLink[]>;
   readonly guidedLinks: Promise<GuidedLink[]>;
 }
@@ -96,14 +102,38 @@ export function renderReport(
   vin: string,
 ): void {
   const header = caseHeader('VIN file', vin);
-  const summary = createPanel({ id: 'summary', title: 'Summary', hint: 'What the public roadside records show at a glance.', lines: 3 });
+  const summary = createPanel({
+    id: 'summary',
+    title: 'Summary',
+    hint: 'FMCSA roadside records matching the VIN text; check the log for any unit-class conflicts.',
+    lines: 3,
+  });
   const where = createPanel({ id: 'where', title: 'Where it has been seen', hint: 'Historical roadside stops — not live tracking.', lines: 4 });
-  const links = createPanel({ id: 'connections', title: 'Connections', hint: 'Plates, carriers and units recorded with this VIN. Every identifier opens its own file.', lines: 4 });
-  const timeline = createPanel({ id: 'timeline', title: 'Timeline', hint: 'Inspections, plate changes and carrier changes in order.', lines: 4 });
-  const log = createPanel({ id: 'roadside', title: 'Roadside log', lines: 5 });
+  const links = createPanel({
+    id: 'connections',
+    title: 'Connections',
+    hint: 'Each group names the evidence: a shared plate, a carrier on this VIN’s inspection record, or another unit listed in the same inspection.',
+    lines: 4,
+  });
+  const timeline = createPanel({
+    id: 'timeline',
+    title: 'Timeline',
+    hint: 'Roadside events below are exact VIN text matches for ' + vin + '. Check the log for any FMCSA vehicle-class conflict before attributing an event.',
+    lines: 4,
+  });
+  const log = createPanel({
+    id: 'roadside',
+    title: 'Roadside log',
+    hint: 'Each row matched VIN ' + vin + ' in FMCSA. The FMCSA class is shown per row; conflicts with the NHTSA VIN decode are flagged. Other VINs are listed units in that same inspection.',
+    lines: 5,
+  });
   const carriers = createPanel({ id: 'carriers', title: 'Carriers', lines: 3 });
   const recallPanel = createPanel({ id: 'recalls', title: 'Recalls', hint: 'NHTSA campaigns for this year, make and model.', lines: 3 });
   const complaintPanel = createPanel({ id: 'complaints', title: 'Owner complaints', hint: 'NHTSA complaint reports for this model line.', lines: 3 });
+  const safetyPanel = createPanel({ id: 'safety', title: 'Safety & investigations', hint: 'NCAP ratings and investigation counts for a related model variant.', lines: 3 });
+  const nhtsaOdiPanel = handles.nhtsaOdi
+    ? createPanel({ id: 'odi', title: 'Investigations & manufacturer communications', hint: 'NHTSA TSBs, campaigns, and investigation records for the decoded model line.', lines: 3 })
+    : null;
   const odometer = createPanel({ id: 'ny', title: 'New York inspections', lines: 3 });
 
   const ledger = createLedger();
@@ -112,6 +142,8 @@ export function renderReport(
   ledger.add('plates', 'Plate cross-check · FMCSA');
   ledger.add('recalls', 'Recalls · NHTSA');
   ledger.add('complaints', 'Complaints · NHTSA ODI');
+  ledger.add('safety', 'Safety ratings and investigations · NHTSA');
+  if (nhtsaOdiPanel) ledger.add('odi', 'ODI investigations and communications · NHTSA');
   ledger.add('ny', 'NY inspections · data.ny.gov');
   const checks = el('div');
 
@@ -122,6 +154,8 @@ export function renderReport(
       [
         ledger.root,
         checks,
+        safetyPanel.root,
+        ...(nhtsaOdiPanel ? [nhtsaOdiPanel.root] : []),
         recallPanel.root,
         complaintPanel.root,
         limitsNote(
@@ -135,13 +169,21 @@ export function renderReport(
     if (callbacks.isCurrent()) run(value);
   };
 
+  let decodedVehicleType: string | null = null;
+  let roadsideRecords: readonly CommercialInspection[] | null = null;
+  const refreshRoadsideLog = (): void => {
+    if (roadsideRecords) log.fill(renderRoadsideLog(roadsideRecords, vin, decodedVehicleType));
+  };
+
   void settle(handles.identity, 'NHTSA vPIC').then(
     live((result) => {
+      decodedVehicleType = result.data?.vehicleType ?? null;
       const rendered = renderIdentity(result);
       header.setTitle(rendered.vehicleName ?? 'Unidentified vehicle');
       header.setBody(rendered.content);
       ledger.set('vpic', result.status, result.source, result.status === 'hit' ? 'Decoded' : undefined);
       callbacks.onVehicleName(rendered.vehicleName ?? '');
+      refreshRoadsideLog();
     }),
   );
 
@@ -165,6 +207,7 @@ export function renderReport(
   void commercial.then(
     live((result) => {
       const records = result.data ?? [];
+      roadsideRecords = records.length > 0 ? records : null;
       ledger.set(
         'fmcsa',
         result.status,
@@ -188,7 +231,7 @@ export function renderReport(
       summaryRecords = records;
       refreshSummary();
       timeline.fill(renderTimeline(records));
-      log.fill(renderRoadsideLog(records));
+      refreshRoadsideLog();
       const carrierBlock = renderCarriers(records);
       if (carrierBlock) carriers.fill(carrierBlock);
       else carriers.drop();
@@ -199,7 +242,7 @@ export function renderReport(
     live(([result, plateLinks]) => {
       const records = result.data ?? [];
       if (records.length === 0) return;
-      links.fill(renderConnections(records, plateLinks));
+      links.fill(renderConnections(records, plateLinks, vin));
       summaryPlates = plateLinks;
       refreshSummary();
       const shared = linkedVins(vin, plateLinks).length;
@@ -243,6 +286,36 @@ export function renderReport(
       complaintPanel.fill(renderComplaints(result));
     }),
   );
+
+  void settle(handles.safety, 'NHTSA Safety Ratings').then(
+    live((result) => {
+      const investigations = result.data?.investigationCount;
+      ledger.set(
+        'safety',
+        result.status,
+        result.source,
+        result.status === 'hit' && investigations !== null && investigations !== undefined
+          ? formatNumber(investigations) + ' model-line investigations'
+          : undefined,
+      );
+      safetyPanel.fill(renderSafety(result));
+    }),
+  );
+
+  if (handles.nhtsaOdi && nhtsaOdiPanel) {
+    void settle(handles.nhtsaOdi, 'NHTSA ODI public data mirror').then(
+      live((result) => {
+        const total = (result.data?.communicationCount ?? 0) + (result.data?.investigationCount ?? 0);
+        ledger.set(
+          'odi',
+          result.status,
+          result.source,
+          result.data ? formatNumber(total) + ' model-line records' : undefined,
+        );
+        nhtsaOdiPanel.fill(renderNhtsaOdi(result));
+      }),
+    );
+  }
 
   void Promise.all([settle(handles.nyInspections, 'NY State inspections'), guided]).then(
     live(([result, guidedLinks]) => {

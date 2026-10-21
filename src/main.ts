@@ -12,6 +12,7 @@ import { validateVin } from './lib/vin';
 import { renderCarrierFile, renderNameResults } from './ui/carrierFile';
 import { renderPlateFile } from './ui/plateFile';
 import { renderReport, type ReportHandles } from './ui/report';
+import { mountLocalArchive } from './ui/archive';
 import { mountShell, rememberSearch } from './ui/shell';
 
 const BASE_TITLE = 'High View — Truck Investigation Desk';
@@ -63,6 +64,7 @@ function showFile(query: SearchQuery): void {
           document.title = (name ? name + ' · ' : '') + query.value + ' — High View';
         },
       }, query.value);
+      mountLocalArchive(shell.main, query.value, handles, isCurrent);
       break;
     }
     case 'plate':

@@ -11,6 +11,7 @@ import type {
   GuidedLink,
   OdometerReading,
   RecallCampaign,
+  SafetyRating,
   SectionResult,
   UnitSighting,
   VehicleIdentity,
@@ -21,6 +22,8 @@ import { getNyInspections } from './api/ny';
 import { getCommercialInspections } from './api/fmcsa';
 import { getRecalls } from './api/recalls';
 import { getComplaints } from './api/complaints';
+import { getSafetyRating } from './api/safety';
+import { getNhtsaOdiVehicleLine, nhtsaOdiMirrorEnabled, type NhtsaOdiLookup } from './api/nhtsaOdi';
 import { otherVinsForPlates } from './api/fmcsaLookup';
 import { buildGuidedLinks } from './links';
 
@@ -38,6 +41,10 @@ export interface ReportHandle {
   /** NHTSA campaigns and complaints for the decoded year/make/model line. */
   recalls: Promise<SectionResult<RecallCampaign[]>>;
   complaints: Promise<SectionResult<ComplaintsSummary>>;
+  /** NHTSA NCAP ratings and model-line investigation count, not a VIN finding. */
+  safety: Promise<SectionResult<SafetyRating>>;
+  /** Local Ubuntu mirror; exact model-line records, not a VIN finding. */
+  nhtsaOdi?: Promise<SectionResult<NhtsaOdiLookup>>;
   /** Second hop: other vehicles recorded under this vehicle's plates. */
   plateLinks: Promise<PlateLink[]>;
   guidedLinks: Promise<GuidedLink[]>;
@@ -100,6 +107,27 @@ export function startReport(vin: string): ReportHandle {
     )
     .catch(() => unavailable<ComplaintsSummary>('NHTSA Complaints (ODI)', 'The complaint lookup failed unexpectedly.'));
 
+  const safety = identity
+    .then((decoded) =>
+      decoded.data
+        ? getSafetyRating(decoded.data)
+        : unavailable<SafetyRating>('NHTSA Safety Ratings', 'Safety data needs a decoded year, make and model.'),
+    )
+    .catch(() => unavailable<SafetyRating>('NHTSA Safety Ratings', 'The safety lookup failed unexpectedly.'));
+
+  const nhtsaOdi = nhtsaOdiMirrorEnabled()
+    ? identity
+        .then((decoded) =>
+          decoded.data
+            ? getNhtsaOdiVehicleLine(decoded.data)
+            : unavailable<NhtsaOdiLookup>(
+                'NHTSA ODI public data mirror',
+                'The ODI lookup needs the decoded model year, make, and model.',
+              ),
+        )
+        .catch(() => unavailable<NhtsaOdiLookup>('NHTSA ODI public data mirror', 'The ODI lookup failed unexpectedly.'))
+    : undefined;
+
   const plateLinks = commercialInspections
     .then((result) => otherVinsForPlates(normalized, distinctPlates(result.data ?? [])))
     .catch(() => []);
@@ -114,6 +142,8 @@ export function startReport(vin: string): ReportHandle {
     commercialInspections,
     recalls,
     complaints,
+    safety,
+    nhtsaOdi,
     plateLinks,
     guidedLinks,
   };

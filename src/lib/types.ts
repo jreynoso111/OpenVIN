@@ -210,6 +210,14 @@ export interface CarrierProfile {
   isBusiness: boolean;
   status: string | null;
   operationClass: string | null;
+  /** MCS-150 carrier operation code: A interstate, B intrastate HM, C intrastate non-HM. */
+  carrierOperation?: string | null;
+  hazmatIndicator?: string | null;
+  reportedMileage?: number | null;
+  reportedMileageYear?: number | null;
+  /** Public census commodity classes marked by the carrier. */
+  cargoClasses?: string[];
+  otherCargoDescription?: string | null;
   truckUnits: number | null;
   powerUnits: number | null;
   drivers: number | null;

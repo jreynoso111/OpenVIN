@@ -22,13 +22,44 @@ function countItem(label: string, value: number | null): HTMLElement | null {
   return el('span', {}, el('strong', {}, formatNumber(value)), ` ${label}`);
 }
 
+function officialIssueLinks(): HTMLElement {
+  return el(
+    'p',
+    { class: 'mline__foot' },
+    'Public follow-up: ',
+    el(
+      'a',
+      {
+        href: 'https://www.nhtsa.gov/search-safety-issues',
+        target: '_blank',
+        rel: 'noopener noreferrer',
+      },
+      'search recalls and investigations ↗',
+    ),
+    ' · ',
+    el(
+      'a',
+      {
+        href: 'https://www.nhtsa.gov/nhtsa-datasets-and-apis#manufacturer-communications',
+        target: '_blank',
+        rel: 'noopener noreferrer',
+      },
+      'manufacturer communications and service bulletins ↗',
+    ),
+  );
+}
+
 export function renderSafety(result: SectionResult<SafetyRating>): HTMLElement {
   if (result.status !== 'hit' || !result.data) {
     return el(
-      'p',
-      { class: 'note' },
-      result.note ??
-        'NHTSA has not published NCAP crash-test ratings for this vehicle.',
+      'div',
+      {},
+      el(
+        'p',
+        { class: 'note' },
+        result.note ?? 'NHTSA has not published NCAP crash-test ratings for this vehicle.',
+      ),
+      officialIssueLinks(),
     );
   }
 
@@ -47,11 +78,7 @@ export function renderSafety(result: SectionResult<SafetyRating>): HTMLElement {
   );
 
   const counts = el('div', { class: 'safety-counts' });
-  const items = [
-    countItem('complaints', safety.complaintsCount),
-    countItem('recalls', safety.recallsCount),
-    countItem('investigations', safety.investigationCount),
-  ];
+  const items = [countItem('model-line investigations', safety.investigationCount)];
   for (const item of items) {
     if (item) counts.append(item);
   }
@@ -86,5 +113,11 @@ export function renderSafety(result: SectionResult<SafetyRating>): HTMLElement {
       `Rated as: ${safety.vehicleDescription}`,
     ),
     grid,
+    el(
+      'p',
+      { class: 'mline__foot' },
+      'The rating and investigation count describe the closest NHTSA test variant for this model line, not this exact VIN. A manufacturer bulletin does not prove that a repair applies to or was completed on this vehicle.',
+    ),
+    officialIssueLinks(),
   );
 }

@@ -326,6 +326,12 @@
   color: var(--color-text-secondary);
 }
 
+.htl__record {
+  color: var(--color-text-tertiary);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+}
+
 .htl__hint {
   margin: 0.2rem 0 0;
   font-size: var(--text-micro);
@@ -516,6 +522,40 @@
   color: var(--color-text);
 }
 
+.crashes__summary {
+  margin: 0;
+}
+
+.crashes__history {
+  margin-top: 0.55rem;
+}
+
+.crashes__history > summary {
+  cursor: pointer;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.crashes__list {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.55rem 0;
+  padding-left: 1.25rem;
+}
+
+.crashes__item {
+  padding-left: 0.1rem;
+}
+
+.crashes__item > span {
+  display: inline-block;
+  margin-left: 0.45rem;
+}
+
+.crashes__foot {
+  margin: 0.55rem 0 0;
+}
+
 /* ---------- Recalls and complaints ---------- */
 
 .mline {
@@ -591,6 +631,12 @@
   margin: 0;
 }
 
+.odi__freshness {
+  margin: 0.15rem 0 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-micro);
+}
+
 /* ---------- Carrier standing ---------- */
 
 .standing {
@@ -644,12 +690,79 @@
 .standing__list [data-tone='warn'] dd { color: var(--color-warn); font-weight: 600; }
 .standing__list [data-tone='danger'] dd { color: var(--color-danger); font-weight: 700; }
 
+.standing__foot {
+  margin: 0.45rem 0 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-micro);
+}
+
 @media (max-width: 34rem) {
   .standing__list > div {
     grid-template-columns: 1fr;
     gap: 0;
   }
 }
+
+/* ---------- Carrier operating authority ---------- */
+
+.authority {
+  margin: 0.7rem 0 0;
+  padding: 0.5rem 0.7rem;
+  border: var(--rule);
+  border-radius: var(--radius);
+  background: var(--color-inset);
+  color: var(--color-text-secondary);
+  font-size: var(--text-small);
+}
+
+.authority--pending { color: var(--color-text-tertiary); }
+
+.authority__title {
+  margin: 0 0 0.35rem;
+  color: var(--color-text-secondary);
+  font-size: var(--text-label);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.authority__current,
+.authority__history ol {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.authority__current > li,
+.authority__history li {
+  padding: 0.35rem 0;
+  border-top: var(--rule);
+}
+
+.authority__row {
+  display: grid;
+  grid-template-columns: minmax(6rem, auto) minmax(10rem, 1fr) auto;
+  gap: 0.35rem 0.6rem;
+  align-items: baseline;
+}
+
+.authority__row > strong { color: var(--color-text); }
+
+.authority__detail,
+.authority__fallback,
+.authority__foot {
+  margin: 0.25rem 0 0;
+  font-size: var(--text-micro);
+}
+
+.authority__history { margin-top: 0.45rem; }
+.authority__history > summary,
+.insurance__history > summary { cursor: pointer; font-weight: 650; color: var(--color-text); }
+.authority__history li strong { display: block; color: var(--color-text); }
+.authority__history li span { display: block; margin-top: 0.1rem; font-size: var(--text-micro); }
+.authority__foot { margin-top: 0.5rem; color: var(--color-text-tertiary); }
 
 /* ---------- Carrier insurance ---------- */
 
@@ -708,7 +821,34 @@
   font-size: var(--text-micro);
 }
 
+.insurance__note {
+  margin: 0.4rem 0 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-micro);
+}
+
+.insurance__history { margin-top: 0.45rem; }
+
+.insurance__history-list {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0.4rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.insurance__history-list li strong { color: var(--color-text); }
+.insurance__history-list li span { margin-left: 0.35rem; font-size: var(--text-micro); }
+
 @media (max-width: 34rem) {
+  .authority__row {
+    grid-template-columns: 1fr auto;
+  }
+
+  .authority__row > span:nth-child(2) {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
   .insurance__list li {
     grid-template-columns: 1fr auto;
   }

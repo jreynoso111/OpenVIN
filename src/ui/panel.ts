@@ -90,8 +90,6 @@ export function createLedger(): Ledger {
     el('h2', { class: 'rail-block__title', id: 'ledger-title' }, 'Sources checked'),
     list,
   );
-  // Hidden for now: the ledger keeps updating, so unhiding it is one line.
-  root.hidden = true;
   return {
     root,
     add(key: string, label: string): void {

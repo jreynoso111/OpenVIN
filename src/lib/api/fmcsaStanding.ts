@@ -20,6 +20,7 @@ export const NATIONAL_VEHICLE_OOS_RATE = 0.22;
 export interface OosOrder {
   active: boolean;
   date: string | null;
+  rescindDate: string | null;
   reason: string | null;
 }
 
@@ -58,14 +59,19 @@ const BASIC_ALERTS: ReadonlyArray<readonly [string, string]> = [
   ['veh_maint_ac', 'Vehicle maintenance'],
 ];
 
-export function parseOosOrders(rows: readonly unknown[]): OosOrder[] {
+export function parseOosOrders(
+  rows: readonly unknown[],
+  today: string = new Date().toISOString().slice(0, 10),
+): OosOrder[] {
   const orders: OosOrder[] = [];
   for (const value of rows) {
     const row = asRecord(value);
     if (!row) continue;
+    const rescindDate = textField(row['rescind_date'])?.slice(0, 10) ?? null;
     orders.push({
-      active: textField(row['status'])?.toUpperCase() === 'ACTIVE',
+      active: textField(row['status'])?.toUpperCase() === 'ACTIVE' && (!rescindDate || rescindDate > today),
       date: textField(row['oos_date'])?.slice(0, 10) ?? null,
+      rescindDate,
       reason: textField(row['oos_reason']),
     });
   }
@@ -144,7 +150,7 @@ export function getCarrierStanding(
   if (cached) return cached;
 
   const run = Promise.all([
-    rowsOf(datasetUrl(OOS_ORDER_DATASET, "dot_number='" + plain + "'", 20, 'status,oos_date,oos_reason')),
+    rowsOf(datasetUrl(OOS_ORDER_DATASET, "dot_number='" + plain + "'", 20, 'status,oos_date,rescind_date,oos_reason')),
     rowsOf(datasetUrl(REVOCATION_DATASET, "dot_number='" + padded + "'", 20, 'order2_type_desc,order2_effective_date')),
     docket && /^[A-Z]{2}\d+$/.test(docket)
       ? rowsOf(datasetUrl(AUTHORITY_HISTORY_DATASET, "docket_number='" + docket + "'", 200, 'original_action_desc,orig_served_date'))
