@@ -1260,7 +1260,32 @@
   }
 
   .desk__main:has(#carrier-profile) > * {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.35rem;
+  }
+
+  /* Masthead of this file only: tighter, so the census profile ends on page one */
+  .desk:has(#carrier-profile) {
+    padding-top: 0;
+  }
+
+  .desk:has(#carrier-profile) .case {
+    padding-bottom: 0.5rem;
+  }
+
+  .desk:has(#carrier-profile) .case::before {
+    margin-bottom: 0.25rem;
+    padding-bottom: 0.2rem;
+  }
+
+  .desk:has(#carrier-profile) .case__title {
+    margin-top: 0.15rem;
+    font-size: 1.05rem;
+    line-height: 1.1;
+  }
+
+  .desk:has(#carrier-profile) .case__body,
+  .desk:has(#carrier-profile) .case__ids {
+    margin-top: 0.1rem;
   }
 
   #carrier-profile,
@@ -1270,16 +1295,22 @@
     page-break-inside: auto;
   }
 
-  #carrier-profile .panel__head,
   #carrier-area .panel__head,
   #carrier-fleet .panel__head {
     padding-block: 0.25rem;
   }
 
-  #carrier-profile .panel__body,
+  #carrier-profile .panel__head {
+    padding-block: 0.2rem;
+  }
+
   #carrier-area .panel__body,
   #carrier-fleet .panel__body {
     padding: 0.4rem 0.6rem;
+  }
+
+  #carrier-profile .panel__body {
+    padding: 0.3rem 0.5rem;
   }
 
   /* Profile: compact, and built from plain block flow (no flex/grid around
@@ -1302,26 +1333,28 @@
   #carrier-profile .facts > div {
     display: inline-block;
     width: 19.4%;
-    margin: 0 0.6% 0.2rem 0;
+    margin: 0 0.6% 0.12rem 0;
     vertical-align: top;
-    font-size: 0.62rem;
+    font-size: 0.6rem;
     break-inside: avoid;
     page-break-inside: avoid;
   }
 
+  /* Long cargo lists take a near-full row, so they wrap to fewer lines */
   #carrier-profile .facts > [data-fact='Cargo types reported'],
   #carrier-profile .facts > [data-fact='Other cargo detail'] {
-    width: 59.4%;
+    width: 79%;
   }
 
   #carrier-profile .facts dt {
     font-size: 0.5rem;
+    line-height: 1.2;
   }
 
   #carrier-profile .facts dd {
     margin-top: 0;
-    font-size: 0.62rem;
-    line-height: 1.2;
+    font-size: 0.58rem;
+    line-height: 1.1;
   }
 
   #carrier-profile .authority,
@@ -1329,10 +1362,10 @@
   #carrier-profile .insurance,
   #carrier-profile .crashes {
     box-sizing: border-box;
-    margin: 0 0 0.3rem;
-    padding: 0.25rem 0.4rem;
-    font-size: 0.6rem;
-    line-height: 1.2;
+    margin: 0 0 0.2rem;
+    padding: 0.2rem 0.35rem;
+    font-size: 0.56rem;
+    line-height: 1.15;
     break-inside: avoid;
     page-break-inside: avoid;
   }
@@ -1340,8 +1373,8 @@
   #carrier-profile .authority__title,
   #carrier-profile .standing__title,
   #carrier-profile .insurance__title {
-    margin-bottom: 0.1rem;
-    font-size: 0.52rem;
+    margin-bottom: 0.05rem;
+    font-size: 0.5rem;
   }
 
   /* One compact run per authority: docket, type, status, then its filings */
@@ -1351,7 +1384,7 @@
 
   #carrier-profile .authority__current > li {
     display: block;
-    padding: 0.1rem 0;
+    padding: 0.04rem 0;
   }
 
   #carrier-profile .authority__row {
@@ -1359,7 +1392,7 @@
   }
 
   #carrier-profile .authority__row > * {
-    margin-right: 0.4rem;
+    margin-right: 0.3rem;
   }
 
   #carrier-profile .authority__row .tag {
@@ -1369,16 +1402,16 @@
 
   #carrier-profile .authority__detail {
     display: inline;
-    margin: 0 0.4rem 0 0;
-    font-size: 0.54rem;
+    margin: 0 0.3rem 0 0;
+    font-size: 0.5rem;
   }
 
   #carrier-profile .authority__foot,
   #carrier-profile .insurance__note,
   #carrier-profile .crashes__foot {
-    margin-top: 0.1rem;
+    margin-top: 0.05rem;
     font-size: 0.5rem;
-    line-height: 1.15;
+    line-height: 1.1;
   }
 
   #carrier-profile .standing__note,
@@ -1396,11 +1429,12 @@
     display: inline-grid;
     box-sizing: border-box;
     width: 49.5%;
-    padding-right: 0.4rem;
+    padding-right: 0.3rem;
     vertical-align: top;
-    font-size: 0.6rem;
-    grid-template-columns: 5.2rem minmax(0, 1fr);
-    gap: 0.3rem;
+    font-size: 0.56rem;
+    line-height: 1.15;
+    grid-template-columns: 5rem minmax(0, 1fr);
+    gap: 0.2rem;
     break-inside: avoid;
     page-break-inside: avoid;
   }
@@ -1410,12 +1444,13 @@
   }
 
   #carrier-profile .insurance__list li {
-    grid-template-columns: 6rem 5.5rem minmax(0, 1fr);
-    gap: 0 0.4rem;
+    grid-template-columns: 5rem 4.9rem minmax(0, 1fr);
+    gap: 0 0.35rem;
+    line-height: 1.1;
   }
 
   #carrier-profile .insurance__who {
-    font-size: 0.52rem;
+    font-size: 0.5rem;
   }
 
   #carrier-profile .authority__history,
@@ -1527,6 +1562,7 @@
     border-bottom: 1px solid #000;
     font-size: 0.5rem;
     white-space: normal;
+    overflow-wrap: normal;
     color: #333;
   }
 
