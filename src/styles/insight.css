@@ -1412,7 +1412,20 @@
     margin-top: 0.15rem;
   }
 
-  /* Operating area: stop summary beside a map that fits in about a third of a page */
+  /* Operating area: always starts a fresh page, so its title is never split
+     from the map. Stop summary beside a map of about a third of a page. */
+  #carrier-area {
+    break-before: page;
+    page-break-before: always;
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  #carrier-area .panel__head {
+    break-after: avoid-page;
+    page-break-after: avoid;
+  }
+
   #carrier-area .panel__body {
     break-inside: avoid-page;
   }
