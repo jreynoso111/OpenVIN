@@ -916,6 +916,36 @@
     line-height: 1.25;
   }
 
+  #carrier-fleet .carrier-fleet__sort {
+    display: inline-flex;
+    width: 100%;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 0.3rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-align: left;
+    text-transform: inherit;
+    white-space: inherit;
+    cursor: pointer;
+  }
+
+  #carrier-fleet .carrier-fleet__sort:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+
+  #carrier-fleet .carrier-fleet__sort-indicator {
+    flex: 0 0 auto;
+    font-size: 0.9em;
+    letter-spacing: 0;
+    opacity: 0.75;
+  }
+
   #carrier-fleet .log th:nth-child(1),
   #carrier-fleet .log td:nth-child(1) { width: 20%; }
 

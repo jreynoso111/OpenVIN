@@ -28,6 +28,51 @@ function matchesFilter(vehicle: FleetVehicle, term: string): boolean {
   return haystack.includes(term.toUpperCase().replace(/[\s-]/g, ''));
 }
 
+type FleetSortKey = 'vin' | 'plates' | 'unit' | 'lastInspection' | 'latestInspection' | 'result' | 'inspectionCount';
+type FleetSortValue = string | number | null;
+type FleetSortDirection = 'ascending' | 'descending';
+
+const fleetSortColumns: Array<{ key: FleetSortKey; label: string }> = [
+  { key: 'vin', label: 'VIN' },
+  { key: 'plates', label: 'Plates' },
+  { key: 'unit', label: 'Unit #' },
+  { key: 'lastInspection', label: 'Last inspection' },
+  { key: 'latestInspection', label: 'Latest inspection' },
+  { key: 'result', label: 'Result' },
+  { key: 'inspectionCount', label: 'Inspection count' },
+];
+
+function fleetSortValue(vehicle: FleetVehicle, key: FleetSortKey): FleetSortValue {
+  switch (key) {
+    case 'vin':
+      return vehicle.vin;
+    case 'plates':
+      return vehicle.plates.join(' ') || null;
+    case 'unit':
+      return vehicle.companyUnits.join(' ') || null;
+    case 'lastInspection':
+      return vehicle.lastSeen.date;
+    case 'latestInspection':
+      return vehicle.latestInspection?.date ?? null;
+    case 'result':
+      if (!vehicle.latestInspection || vehicle.latestInspection.vehicleOutOfService === null) return 0;
+      return vehicle.latestInspection.vehicleOutOfService > 0 ? 2 : 1;
+    case 'inspectionCount':
+      return vehicle.inspectionCount;
+  }
+}
+
+function compareFleetValues(a: FleetSortValue, b: FleetSortValue, direction: FleetSortDirection): number {
+  // Keep unavailable values last in either direction.
+  if (a === null && b === null) return 0;
+  if (a === null) return 1;
+  if (b === null) return -1;
+  const comparison = typeof a === 'number' && typeof b === 'number'
+    ? a - b
+    : String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' });
+  return direction === 'ascending' ? comparison : -comparison;
+}
+
 function fleetRow(vehicle: FleetVehicle, viewedDot: string): HTMLElement {
   const last = vehicle.lastSeen;
   const latest = vehicle.latestInspection;
@@ -90,11 +135,54 @@ function fleetTable(fleet: CarrierFleet, dot: string): HTMLElement {
   if (fleet.vehicles.length === 0) return emptyNote('Inspections were found but no unit VINs were recorded on them.');
   const body = el('tbody');
   const count = el('p', { class: 'filter__count' });
+  let filterTerm = '';
+  let sortKey: FleetSortKey | null = null;
+  let sortDirection: FleetSortDirection = 'ascending';
+  let headerCells: Array<{ key: FleetSortKey; label: string; cell: HTMLTableCellElement; button: HTMLButtonElement; indicator: HTMLSpanElement }> = [];
   const render = (term: string): void => {
-    const shown = fleet.vehicles.filter((vehicle) => matchesFilter(vehicle, term));
+    filterTerm = term;
+    const filtered = fleet.vehicles.filter((vehicle) => matchesFilter(vehicle, term));
+    const activeSortKey = sortKey;
+    const shown = activeSortKey === null
+      ? filtered
+      : filtered
+        .map((vehicle, index) => ({ vehicle, index }))
+        .sort((a, b) => compareFleetValues(fleetSortValue(a.vehicle, activeSortKey), fleetSortValue(b.vehicle, activeSortKey), sortDirection) || a.index - b.index)
+        .map(({ vehicle }) => vehicle);
     body.replaceChildren(...shown.slice(0, 300).map((vehicle) => fleetRow(vehicle, dot)));
     count.textContent = formatNumber(shown.length) + ' of ' + formatNumber(fleet.vehicles.length) + ' units';
+    headerCells.forEach(({ key, label, cell, button, indicator }) => {
+      const active = key === sortKey;
+      cell.setAttribute('aria-sort', active ? sortDirection : 'none');
+      indicator.textContent = active ? (sortDirection === 'ascending' ? '↑' : '↓') : '↕';
+      button.title = active
+        ? label + ', sorted ' + sortDirection + '. Click to reverse.'
+        : 'Sort by ' + label + ' in ascending order.';
+    });
   };
+  headerCells = fleetSortColumns.map(({ key, label }) => {
+    const indicator = el('span', { class: 'carrier-fleet__sort-indicator', 'aria-hidden': 'true' }, '↕');
+    const button = el(
+      'button',
+      {
+        class: 'carrier-fleet__sort',
+        type: 'button',
+        title: 'Sort by ' + label + ' in ascending order.',
+        onclick: () => {
+          if (sortKey === key) sortDirection = sortDirection === 'ascending' ? 'descending' : 'ascending';
+          else {
+            sortKey = key;
+            sortDirection = 'ascending';
+          }
+          render(filterTerm);
+        },
+      },
+      label,
+      indicator,
+    );
+    const cell = el('th', { scope: 'col', 'aria-sort': 'none' }, button);
+    return { key, label, cell, button, indicator };
+  });
   const input = el('input', {
     class: 'filter__input',
     type: 'search',
@@ -120,7 +208,7 @@ function fleetTable(fleet: CarrierFleet, dot: string): HTMLElement {
         'table',
         { class: 'log' },
         el('caption', { class: 'visually-hidden' }, 'Vehicles recorded on roadside inspections under this USDOT number'),
-        el('thead', {}, el('tr', {}, ...['VIN', 'Plates', 'Unit #', 'Last inspection', 'Latest inspection', 'Result', 'Inspection count'].map((h) => el('th', { scope: 'col' }, h)))),
+        el('thead', {}, el('tr', {}, ...headerCells.map(({ cell }) => cell))),
         body,
       ),
     ),
