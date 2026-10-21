@@ -917,27 +917,33 @@
   }
 
   #carrier-fleet .log th:nth-child(1),
-  #carrier-fleet .log td:nth-child(1) { width: 24%; }
+  #carrier-fleet .log td:nth-child(1) { width: 22%; }
 
   #carrier-fleet .log th:nth-child(2),
-  #carrier-fleet .log td:nth-child(2) { width: 16%; }
+  #carrier-fleet .log td:nth-child(2) { width: 12%; }
 
   #carrier-fleet .log th:nth-child(3),
   #carrier-fleet .log td:nth-child(3) {
-    width: 16%;
+    width: 11%;
     text-align: right;
     overflow-wrap: anywhere;
   }
 
   #carrier-fleet .log th:nth-child(4),
   #carrier-fleet .log td:nth-child(4) {
-    width: 28%;
+    width: 19%;
     text-align: right;
     overflow-wrap: anywhere;
   }
 
   #carrier-fleet .log th:nth-child(5),
-  #carrier-fleet .log td:nth-child(5) { width: 16%; }
+  #carrier-fleet .log td:nth-child(5) { width: 12%; }
+
+  #carrier-fleet .log th:nth-child(6),
+  #carrier-fleet .log td:nth-child(6) {
+    width: 24%;
+    overflow-wrap: anywhere;
+  }
 
   #carrier-fleet .log__vin {
     white-space: normal;

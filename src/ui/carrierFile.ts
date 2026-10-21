@@ -28,9 +28,16 @@ function matchesFilter(vehicle: FleetVehicle, term: string): boolean {
   return haystack.includes(term.toUpperCase().replace(/[\s-]/g, ''));
 }
 
-function fleetRow(vehicle: FleetVehicle): HTMLElement {
+function fleetRow(vehicle: FleetVehicle, viewedDot: string): HTMLElement {
   const last = vehicle.lastSeen;
-  const age = ageLabel(last.date);
+  const latest = vehicle.latestInspection;
+  const latestAge = ageLabel(latest?.date ?? null);
+  const currentDot = viewedDot.replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+  const latestCarrier = !latest
+    ? 'Carrier not verified'
+    : latest.carrierDotNumber === currentDot
+      ? 'This carrier · USDOT ' + latest.carrierDotNumber
+      : 'Another carrier · USDOT ' + latest.carrierDotNumber;
   return el(
     'tr',
     {},
@@ -48,8 +55,14 @@ function fleetRow(vehicle: FleetVehicle): HTMLElement {
       ),
     ),
     el('td', { 'data-label': 'Unit #' }, vehicle.companyUnits.slice(0, 2).join(' · ') || '—'),
-    el('td', { 'data-label': 'Last inspection' }, placeText(last), el('span', { class: 'sub' }, (last.date ? formatDate(last.date) : '—') + (age ? ' · ' + age : ''))),
-    el('td', { 'data-label': 'Inspection records', class: 'num' }, formatNumber(vehicle.inspectionCount)),
+    el('td', { 'data-label': 'Last inspection' }, placeText(last), el('span', { class: 'sub' }, last.date ? formatDate(last.date) : '—')),
+    el('td', { 'data-label': 'Inspection count', class: 'num' }, formatNumber(vehicle.inspectionCount)),
+    el(
+      'td',
+      { 'data-label': 'Latest inspection' },
+      latest ? (latestAge ?? 'Date unavailable') : 'Unavailable',
+      el('span', { class: 'sub' }, latest?.date ? formatDate(latest.date) + ' · ' + latestCarrier : latestCarrier),
+    ),
   );
 }
 
@@ -59,7 +72,7 @@ function fleetTable(fleet: CarrierFleet, dot: string): HTMLElement {
   const count = el('p', { class: 'filter__count' });
   const render = (term: string): void => {
     const shown = fleet.vehicles.filter((vehicle) => matchesFilter(vehicle, term));
-    body.replaceChildren(...shown.slice(0, 300).map(fleetRow));
+    body.replaceChildren(...shown.slice(0, 300).map((vehicle) => fleetRow(vehicle, dot)));
     count.textContent = formatNumber(shown.length) + ' of ' + formatNumber(fleet.vehicles.length) + ' units';
   };
   const input = el('input', {
@@ -77,7 +90,7 @@ function fleetTable(fleet: CarrierFleet, dot: string): HTMLElement {
       'p',
       { class: 'panel__hint fleet__explanation' },
       'A VIN appears here when an FMCSA roadside inspection lists it under USDOT ' + dot +
-        '. That association is for the inspection record; it does not prove who owns or operates the vehicle today. This list is based on inspection history, not a last-seen signal. Inspection count is the number of distinct records for that VIN in the date range below.',
+        '. The latest-inspection column compares exact-VIN records across carriers in the available FMCSA files; “Another carrier” identifies the USDOT on that record, not the vehicle’s current operator or ownership. Inspection count is the number of distinct records for this USDOT in the date range below.',
     ),
     el('div', { class: 'filter' }, input, count),
     el(
@@ -87,7 +100,7 @@ function fleetTable(fleet: CarrierFleet, dot: string): HTMLElement {
         'table',
         { class: 'log' },
         el('caption', { class: 'visually-hidden' }, 'Vehicles recorded on roadside inspections under this USDOT number'),
-        el('thead', {}, el('tr', {}, ...['VIN', 'Plates', 'Unit #', 'Last inspection', 'Inspection records'].map((h) => el('th', { scope: 'col' }, h)))),
+        el('thead', {}, el('tr', {}, ...['VIN', 'Plates', 'Unit #', 'Last inspection', 'Inspection count', 'Latest inspection'].map((h) => el('th', { scope: 'col' }, h)))),
         body,
       ),
     ),
@@ -169,7 +182,7 @@ export function renderCarrierFile(
     caseLayout(header.root, [fleet.root, area.root, profile.root], [
       ledger.root,
       actions,
-      limitsNote('These units were listed during roadside inspections associated with this USDOT on the dates shown. The list is not a confirmed current fleet or ownership roster; leased or sold units can still appear. “Inspection records” counts the inspections where the VIN was listed.'),
+      limitsNote('These units were listed during roadside inspections associated with this USDOT on the dates shown. The list is not a confirmed current fleet or ownership roster; leased or sold units can still appear. Inspection count is the number of records where the VIN was listed under this USDOT.'),
     ]),
   );
 

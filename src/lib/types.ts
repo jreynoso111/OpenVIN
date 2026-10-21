@@ -265,6 +265,8 @@ export interface FleetVehicle {
   companyUnits: string[];
   inspectionCount: number;
   lastSeen: UnitSighting;
+  /** Latest exact-VIN inspection across carriers in the available FMCSA files. */
+  latestInspection: { date: string; carrierDotNumber: string } | null;
   firstSeenDate: string | null;
 }
 

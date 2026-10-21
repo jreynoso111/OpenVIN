@@ -39,6 +39,97 @@ import {
 } from './fmcsa';
 
 const FLEET_INSPECTION_CAP = 400;
+const LATEST_VIN_BATCH_SIZE = 25;
+const LATEST_UNIT_ROW_CAP = 5000;
+const LATEST_INSPECTION_ID_BATCH_SIZE = 300;
+
+/** Latest dated inspection with a known USDOT, keyed by the exact VIN. */
+async function latestInspectionByVin(
+  vins: readonly string[],
+): Promise<Map<string, { date: string; carrierDotNumber: string }>> {
+  const uniqueVins = [...new Set(vins)];
+  const inspectionIdsByVin = new Map<string, Set<string>>();
+  const incompleteVins = new Set<string>();
+
+  const vinBatches: string[][] = [];
+  for (let offset = 0; offset < uniqueVins.length; offset += LATEST_VIN_BATCH_SIZE) {
+    vinBatches.push(uniqueVins.slice(offset, offset + LATEST_VIN_BATCH_SIZE));
+  }
+  await Promise.all(vinBatches.map(async (batch) => {
+    const response = await fetchJson(
+      socrataUrl(UNIT_DATASET, {
+        where: 'insp_unit_vehicle_id_number in (' + batch.map(soqlString).join(',') + ')',
+        select: 'inspection_id,insp_unit_vehicle_id_number',
+        limit: LATEST_UNIT_ROW_CAP,
+      }),
+      { timeoutMs: 20_000 },
+    );
+    const rows = response.ok ? asArray(response.data) : null;
+    if (!rows || rows.length >= LATEST_UNIT_ROW_CAP) {
+      batch.forEach((vin) => incompleteVins.add(vin));
+      return;
+    }
+    for (const unit of rows.map(parseUnit)) {
+      if (!unit?.vin || !batch.includes(unit.vin)) continue;
+      const ids = inspectionIdsByVin.get(unit.vin) ?? new Set<string>();
+      ids.add(unit.inspectionId);
+      inspectionIdsByVin.set(unit.vin, ids);
+    }
+    for (const vin of batch) {
+      if (!inspectionIdsByVin.has(vin)) incompleteVins.add(vin);
+    }
+  }));
+
+  const vinsByInspectionId = new Map<string, Set<string>>();
+  for (const [vin, ids] of inspectionIdsByVin) {
+    for (const id of ids) {
+      const owners = vinsByInspectionId.get(id) ?? new Set<string>();
+      owners.add(vin);
+      vinsByInspectionId.set(id, owners);
+    }
+  }
+  const inspectionIds = [...vinsByInspectionId.keys()];
+  const inspectionBatches: string[][] = [];
+  for (let offset = 0; offset < inspectionIds.length; offset += LATEST_INSPECTION_ID_BATCH_SIZE) {
+    inspectionBatches.push(inspectionIds.slice(offset, offset + LATEST_INSPECTION_ID_BATCH_SIZE));
+  }
+  const inspectionChunks = await Promise.all(inspectionBatches.map((batch) => loadInspections(batch)));
+  const inspections = new Map<string, InspectionRow>();
+  inspectionChunks.forEach((chunk, index) => {
+    const batch = inspectionBatches[index];
+    if (!chunk) {
+      for (const id of batch) {
+        for (const vin of vinsByInspectionId.get(id) ?? []) incompleteVins.add(vin);
+      }
+      return;
+    }
+    for (const id of batch) {
+      const inspection = chunk.get(id);
+      if (!inspection) {
+        for (const vin of vinsByInspectionId.get(id) ?? []) incompleteVins.add(vin);
+      } else {
+        inspections.set(id, inspection);
+      }
+    }
+  });
+
+  const latest = new Map<string, { date: string; carrierDotNumber: string }>();
+  for (const [vin, ids] of inspectionIdsByVin) {
+    for (const id of ids) {
+      const inspection = inspections.get(id);
+      if (!inspection?.date || !inspection.dotNumber) {
+        incompleteVins.add(vin);
+        continue;
+      }
+      const current = latest.get(vin);
+      if (!current || inspection.date > current.date) {
+        latest.set(vin, { date: inspection.date, carrierDotNumber: inspection.dotNumber });
+      }
+    }
+  }
+  for (const vin of incompleteVins) latest.delete(vin);
+  return latest;
+}
 
 export interface PlateResult {
   sightings: UnitSighting[];
@@ -225,6 +316,7 @@ export function summarizeFleet(
         companyUnits: sighting.companyUnit ? [sighting.companyUnit] : [],
         inspectionCount: 1,
         lastSeen: sighting,
+        latestInspection: null,
         firstSeenDate: sighting.date,
       });
       continue;
@@ -298,11 +390,22 @@ export async function getCarrierFleet(dot: string): Promise<SectionResult<Carrie
     .flatMap((chunk) => chunk ?? [])
     .map((unit) => toSighting(unit, byId.get(unit.inspectionId)));
   const truncated = inspections.length >= FLEET_INSPECTION_CAP;
+  const fleet = summarizeFleet(sightings, inspections, truncated);
+  const latestByVin = await latestInspectionByVin(fleet.vehicles.map((vehicle) => vehicle.vin));
+  fleet.vehicles = fleet.vehicles.map((vehicle) => ({
+    ...vehicle,
+    latestInspection: latestByVin.get(vehicle.vin) ?? null,
+  }));
+  const latestLookupIncomplete = fleet.vehicles.some((vehicle) => vehicle.latestInspection === null);
   return {
     status: failedChunk ? 'unavailable' : 'hit',
-    data: summarizeFleet(sightings, inspections, truncated),
+    data: fleet,
     source: { ...FMCSA_SOURCE, fetchedAt },
-    note: failedChunk ? 'Some inspected units could not be loaded.' : undefined,
+    note: failedChunk
+      ? 'Some inspected units could not be loaded.'
+      : latestLookupIncomplete
+        ? 'The latest inspection carrier could not be verified for every VIN.'
+        : undefined,
   };
 }
 
