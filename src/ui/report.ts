@@ -340,7 +340,7 @@ export function renderReport(
           'div',
           {},
           registered,
-          inspections ? renderOdometer(result, findLinks(guidedLinks, 'state-emissions')) : null,
+          inspections ? renderOdometer(result, findLinks(guidedLinks, 'state-emissions'), registered ? registration.data?.[0] : undefined) : null,
         ),
       );
     }),

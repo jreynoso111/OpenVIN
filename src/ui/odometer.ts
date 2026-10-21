@@ -1,6 +1,6 @@
 /** Section 6 — odometer history: inline SVG chart, rollback check, table. */
 
-import type { GuidedLink, NyInspectionDetail, OdometerReading, SectionResult } from '../lib/types';
+import type { GuidedLink, NyInspectionDetail, NyRegistration, OdometerReading, SectionResult } from '../lib/types';
 import { el, formatDate, formatNumber, svgEl } from './dom';
 import { guidedLinkRow } from './links';
 import { factList } from './panel';
@@ -294,17 +294,20 @@ function resultTag(result: string | null): Node | string {
   return el('span', { class: 'tag', 'data-tone': tone }, sentence(result));
 }
 
-/** What the NY record says about the vehicle itself, from its most recent inspection. */
-function nyVehicleFacts(latest: NyInspectionDetail): HTMLElement | null {
+/**
+ * What the NY record says about the vehicle itself, from its most recent inspection.
+ * Fuel and registration class are left out when the registration block already shows them.
+ */
+function nyVehicleFacts(latest: NyInspectionDetail, registration: NyRegistration | undefined): HTMLElement | null {
   const vehicle = latest.vehicle;
   const name = [vehicle.year, vehicle.make, vehicle.model].filter(Boolean).join(' ');
   return factList([
     ['Vehicle (as recorded by NY)', name || null],
-    ['Fuel', vehicle.fuel ? sentence(vehicle.fuel) : null],
+    ['Fuel', !registration?.fuel && vehicle.fuel ? sentence(vehicle.fuel) : null],
     ['Transmission', vehicle.transmission ? sentence(vehicle.transmission) : null],
     ['Hybrid', vehicle.hybrid === null ? null : vehicle.hybrid ? 'Yes' : 'No'],
     ['Weight class (lb)', vehicle.weightClass],
-    ['Registration class', vehicle.registrationClass],
+    ['Registration class', !registration?.registrationClass ? vehicle.registrationClass : null],
     ['Emissions area', latest.metroArea ? sentence(latest.metroArea) : null],
   ]);
 }
@@ -401,6 +404,7 @@ function nyHistory(readings: readonly OdometerReading[]): HTMLElement {
 export function renderOdometer(
   result: SectionResult<OdometerReading[]>,
   stateEmissionLinks: readonly GuidedLink[],
+  registration?: NyRegistration,
 ): HTMLElement {
   if (result.status === 'hit' && result.data && result.data.length > 0) {
     const readings = sortReadings(result.data);
@@ -415,7 +419,7 @@ export function renderOdometer(
       buildChart(points),
       drops.length > 0 ? rollbackCallout(drops) : null,
       observation ? el('p', { class: 'note ny-observation' }, observation) : null,
-      latestDetail ? nyVehicleFacts(latestDetail) : null,
+      latestDetail ? nyVehicleFacts(latestDetail, registration) : null,
       hasNy ? nyHistory(readings) : readingsTable(readings),
     );
   }
