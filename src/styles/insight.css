@@ -923,7 +923,6 @@
 
   /* Keep the report focused on evidence; omit the auxiliary source rail. */
   .desk__rail,
-  #where,
   #timeline,
   #ny {
     display: none !important;
@@ -2187,5 +2186,96 @@
   #roadside .log tbody tr:first-child {
     break-before: avoid;
     page-break-before: avoid;
+  }
+}
+
+/* ---------- Print: VIN "Where it has been seen" ----------
+   A compact panel between the summary and connections, small enough to take
+   the space a page would otherwise leave empty without moving what follows. */
+
+@media print {
+  #where {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  #where .panel__head {
+    padding-block: 0.25rem;
+  }
+
+  #where .panel__body {
+    padding: 0.35rem 0.5rem;
+  }
+
+  #where .panel__hint {
+    font-size: 0.52rem;
+  }
+
+  #where .where {
+    grid-template-columns: 12rem minmax(0, 1fr);
+    gap: 0.6rem;
+    align-items: start;
+  }
+
+  #where .where__lead {
+    display: block;
+    margin: 0;
+  }
+
+  #where .last-seen__place {
+    font-size: 0.85rem;
+  }
+
+  #where .where__lead .facts {
+    display: block;
+    margin-top: 0.25rem;
+  }
+
+  #where .where__lead .facts > div {
+    margin: 0 0 0.1rem;
+  }
+
+  #where .where__lead .facts dt {
+    font-size: 0.5rem;
+  }
+
+  #where .where__lead .facts dd {
+    font-size: 0.58rem;
+    line-height: 1.15;
+  }
+
+  #where .where__grid:has(> .usmap) {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 0.5rem;
+    align-items: start;
+  }
+
+  #where .where__grid:has(> .usmap) > .usmap {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+
+  #where .where__grid:has(> .usmap) > .chips {
+    grid-column: 2;
+  }
+
+  #where .usmap__svg {
+    display: block;
+    max-height: 32mm;
+    margin-inline: auto;
+  }
+
+  #where .chips__list {
+    gap: 0.2rem;
+  }
+
+  #where .chip {
+    padding: 0.05rem 0.35rem;
+    font-size: 0.52rem;
+  }
+
+  #where .where__bases {
+    margin: 0.2rem 0 0;
+    font-size: 0.52rem;
   }
 }
