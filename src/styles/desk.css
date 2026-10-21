@@ -783,6 +783,7 @@
 
 .log {
   width: 100%;
+  min-width: 78rem;
   border-collapse: collapse;
   font-size: var(--text-small);
 }
@@ -824,7 +825,7 @@
 .log__vin {
   font-family: var(--font-mono);
   font-size: var(--text-micro);
-  overflow-wrap: anywhere;
+  white-space: nowrap;
 }
 
 .log__type-warning {
@@ -877,6 +878,15 @@
   .log tr,
   .log td {
     display: block;
+  }
+
+  .log {
+    min-width: 0;
+  }
+
+  .log__vin {
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   .log tr {
