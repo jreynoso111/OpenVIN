@@ -28,7 +28,7 @@ function matchesFilter(vehicle: FleetVehicle, term: string): boolean {
   return haystack.includes(term.toUpperCase().replace(/[\s-]/g, ''));
 }
 
-type FleetSortKey = 'vin' | 'plates' | 'unit' | 'lastInspection' | 'latestInspection' | 'result' | 'inspectionCount';
+type FleetSortKey = 'vin' | 'plates' | 'unit' | 'lastInspection' | 'result' | 'inspectionCount';
 type FleetSortValue = string | number | null;
 type FleetSortDirection = 'ascending' | 'descending';
 
@@ -37,7 +37,6 @@ const fleetSortColumns: Array<{ key: FleetSortKey; label: string }> = [
   { key: 'plates', label: 'Plates' },
   { key: 'unit', label: 'Unit #' },
   { key: 'lastInspection', label: 'Last inspection' },
-  { key: 'latestInspection', label: 'Latest inspection' },
   { key: 'result', label: 'Result' },
   { key: 'inspectionCount', label: 'Inspection count' },
 ];
@@ -50,10 +49,11 @@ function fleetSortValue(vehicle: FleetVehicle, key: FleetSortKey): FleetSortValu
       return vehicle.plates.join(' ') || null;
     case 'unit':
       return vehicle.companyUnits.join(' ') || null;
-    case 'lastInspection':
-      return vehicle.lastSeen.date;
-    case 'latestInspection':
-      return vehicle.latestInspection?.date ?? null;
+    case 'lastInspection': {
+      // The most recent inspection on record, whichever carrier it was under.
+      const dates = [vehicle.lastSeen.date, vehicle.latestInspection?.date ?? null].filter((date): date is string => Boolean(date));
+      return dates.length > 0 ? dates.reduce((a, b) => (a >= b ? a : b)) : null;
+    }
     case 'result':
       if (!vehicle.latestInspection || vehicle.latestInspection.vehicleOutOfService === null) return 0;
       return vehicle.latestInspection.vehicleOutOfService > 0 ? 2 : 1;
@@ -76,14 +76,13 @@ function compareFleetValues(a: FleetSortValue, b: FleetSortValue, direction: Fle
 function fleetRow(vehicle: FleetVehicle, viewedDot: string): HTMLElement {
   const last = vehicle.lastSeen;
   const latest = vehicle.latestInspection;
-  const latestAge = ageLabel(latest?.date ?? null);
   const currentDot = viewedDot.replace(/\D/g, '').replace(/^0+(?=\d)/, '');
   const latestIsAnotherCarrier = Boolean(latest && latest.carrierDotNumber !== currentDot);
-  const latestCarrier = !latest
-    ? 'Carrier not verified'
-    : latestIsAnotherCarrier
-      ? 'Another carrier · USDOT ' + latest.carrierDotNumber
-      : 'This carrier · USDOT ' + latest.carrierDotNumber;
+  // The place is only known for the last stop under this USDOT. Add a second
+  // line only when the newest exact-VIN record is a different date or carrier.
+  const latestDiffers = Boolean(latest && (latestIsAnotherCarrier || latest.date !== last.date));
+  const lastAge = ageLabel(last.date);
+  const latestAge = ageLabel(latest?.date ?? null);
   const inspectionResult = latest?.vehicleOutOfService === null || !latest
     ? el('span', { class: 'muted' }, 'Unavailable')
     : latest.vehicleOutOfService > 0
@@ -114,17 +113,19 @@ function fleetRow(vehicle: FleetVehicle, viewedDot: string): HTMLElement {
       ),
     ),
     el('td', { 'data-label': 'Unit #' }, vehicle.companyUnits.slice(0, 2).join(' · ') || '—'),
-    el('td', { 'data-label': 'Last inspection' }, placeText(last), el('span', { class: 'sub' }, last.date ? formatDate(last.date) : '—')),
     el(
       'td',
-      { 'data-label': 'Latest inspection' },
-      latest ? (latestAge ?? 'Date unavailable') : 'Unavailable',
-      el('span', { class: 'sub' }, latest?.date ? formatDate(latest.date) : 'Date unavailable'),
-      el(
-        'span',
-        { class: 'sub carrier-fleet__latest-carrier', 'data-tone': latestIsAnotherCarrier ? 'warn' : 'muted' },
-        latestCarrier,
-      ),
+      { 'data-label': 'Last inspection' },
+      placeText(last),
+      el('span', { class: 'sub' }, last.date ? [formatDate(last.date), lastAge].filter(Boolean).join(' · ') : '—'),
+      latest && latestDiffers
+        ? el(
+            'span',
+            { class: 'sub carrier-fleet__latest-carrier', 'data-tone': latestIsAnotherCarrier ? 'warn' : 'muted' },
+            'Latest ' + formatDate(latest.date) + (latestAge ? ' · ' + latestAge : '') +
+              (latestIsAnotherCarrier ? ' · another carrier, USDOT ' + latest.carrierDotNumber : ' · this carrier'),
+          )
+        : null,
     ),
     el('td', { 'data-label': 'Inspection result' }, inspectionResult),
     el('td', { 'data-label': 'Inspection count', class: 'num' }, formatNumber(vehicle.inspectionCount)),
@@ -198,7 +199,7 @@ function fleetTable(fleet: CarrierFleet, dot: string): HTMLElement {
       'p',
       { class: 'panel__hint fleet__explanation' },
       'A VIN appears here when an FMCSA roadside inspection lists it under USDOT ' + dot +
-        '. The latest-inspection column compares exact-VIN records across carriers in the available FMCSA files; “Another carrier” identifies the USDOT on that record, not the vehicle’s current operator or ownership. Result is based on vehicle out-of-service findings: Passed means none were recorded; Didn’t pass means FMCSA recorded the unit as out of service. Inspection count is the number of distinct records for this USDOT in the date range below.',
+        '. When a newer exact-VIN record exists, the last-inspection column adds a “Latest” line comparing records across carriers in the available FMCSA files; “another carrier” identifies the USDOT on that record, not the vehicle’s current operator or ownership. Result refers to that latest record and is based on vehicle out-of-service findings: Passed means none were recorded; Didn’t pass means FMCSA recorded the unit as out of service. Inspection count is the number of distinct records for this USDOT in the date range below.',
     ),
     el('div', { class: 'filter' }, input, count),
     el(

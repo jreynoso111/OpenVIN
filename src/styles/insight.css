@@ -1247,3 +1247,298 @@
     font-size: 0.65rem;
   }
 }
+
+/* ---------- Print: carrier file ----------
+   The census profile and operating area lead, then the fleet runs as a dense
+   table with a repeating header so the report uses as few pages as possible. */
+
+@media print {
+  .desk__main:has(#carrier-profile) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.5rem;
+  }
+
+  .desk__main:has(#carrier-profile) > * {
+    margin-bottom: 0;
+  }
+
+  #carrier-profile { order: 1; }
+  #carrier-area { order: 2; }
+  #carrier-fleet { order: 3; }
+
+  #carrier-profile,
+  #carrier-area,
+  #carrier-fleet {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  #carrier-profile .panel__head,
+  #carrier-area .panel__head,
+  #carrier-fleet .panel__head {
+    padding-block: 0.25rem;
+  }
+
+  #carrier-profile .panel__body,
+  #carrier-area .panel__body,
+  #carrier-fleet .panel__body {
+    padding: 0.4rem 0.6rem;
+  }
+
+  /* Profile: facts across the page, authority beside standing, then the rest */
+  #carrier-profile .panel__body > div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.35rem 0.6rem;
+    align-items: start;
+  }
+
+  #carrier-profile .facts {
+    display: block;
+    grid-column: 1 / -1;
+    column-count: 4;
+    column-gap: 0.8rem;
+  }
+
+  #carrier-profile .facts > div {
+    margin-bottom: 0.3rem;
+    break-inside: avoid;
+  }
+
+  #carrier-profile .facts dt {
+    font-size: 0.52rem;
+  }
+
+  #carrier-profile .facts dd {
+    margin-top: 0;
+    font-size: 0.64rem;
+    line-height: 1.25;
+  }
+
+  #carrier-profile .authority,
+  #carrier-profile .standing,
+  #carrier-profile .insurance,
+  #carrier-profile .crashes {
+    margin: 0;
+    padding: 0.3rem 0.45rem;
+    font-size: 0.62rem;
+    line-height: 1.25;
+  }
+
+  #carrier-profile .insurance,
+  #carrier-profile .crashes {
+    grid-column: 1 / -1;
+  }
+
+  #carrier-profile .authority__title,
+  #carrier-profile .standing__title,
+  #carrier-profile .insurance__title {
+    margin-bottom: 0.15rem;
+    font-size: 0.55rem;
+  }
+
+  #carrier-profile .authority__current {
+    gap: 0;
+  }
+
+  #carrier-profile .authority__current > li {
+    padding: 0.15rem 0;
+  }
+
+  #carrier-profile .authority__row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.1rem 0.4rem;
+  }
+
+  #carrier-profile .authority__detail {
+    display: inline;
+    margin: 0 0.6rem 0 0;
+    font-size: 0.56rem;
+  }
+
+  #carrier-profile .authority__foot,
+  #carrier-profile .standing__foot,
+  #carrier-profile .insurance__note,
+  #carrier-profile .crashes__foot {
+    margin-top: 0.15rem;
+    font-size: 0.52rem;
+    line-height: 1.2;
+  }
+
+  #carrier-profile .standing__note,
+  #carrier-profile .crashes__history {
+    display: none;
+  }
+
+  #carrier-profile .standing__list {
+    gap: 0.05rem;
+  }
+
+  #carrier-profile .standing__list > div {
+    grid-template-columns: 6.5rem minmax(0, 1fr);
+    gap: 0.3rem;
+  }
+
+  #carrier-profile .insurance__list {
+    gap: 0.05rem;
+  }
+
+  #carrier-profile .insurance__list li {
+    grid-template-columns: 6rem 5.5rem minmax(0, 1fr);
+    gap: 0.1rem 0.4rem;
+  }
+
+  #carrier-profile .insurance__who {
+    font-size: 0.56rem;
+  }
+
+  #carrier-profile .authority__history,
+  #carrier-profile .insurance__history {
+    margin-top: 0.15rem;
+  }
+
+  /* Operating area: stop summary beside a map that fits in about a third of a page */
+  #carrier-area .panel__body {
+    break-inside: avoid-page;
+  }
+
+  #carrier-area .where {
+    grid-template-columns: 10rem minmax(0, 1fr);
+    gap: 0.6rem;
+    align-items: start;
+  }
+
+  #carrier-area .where__lead {
+    display: block;
+    margin: 0;
+  }
+
+  #carrier-area .last-seen__place {
+    font-size: 0.9rem;
+  }
+
+  #carrier-area .usmap__svg {
+    display: block;
+    max-height: 56mm;
+    margin-inline: auto;
+  }
+
+  #carrier-area .usmap__caption .chips__list {
+    gap: 0.2rem;
+  }
+
+  #carrier-area .chip {
+    padding: 0.05rem 0.35rem;
+    font-size: 0.55rem;
+  }
+
+  /* Fleet: a real table again, not one card per unit */
+  #carrier-fleet .fleet__explanation {
+    margin: 0 0 0.3rem;
+    max-width: none;
+    font-size: 0.55rem;
+    line-height: 1.25;
+  }
+
+  #carrier-fleet .panel__hint,
+  #carrier-fleet .carrier-fleet__sort-indicator {
+    display: none;
+  }
+
+  #carrier-fleet .log-wrap {
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+
+  #carrier-fleet .log {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    font-size: 0.6rem;
+    line-height: 1.2;
+  }
+
+  #carrier-fleet .log thead { display: table-header-group; }
+  #carrier-fleet .log tbody { display: table-row-group; width: auto; }
+
+  #carrier-fleet .log tr {
+    display: table-row;
+    padding: 0;
+    border: 0;
+  }
+
+  #carrier-fleet .log th,
+  #carrier-fleet .log td {
+    display: table-cell;
+    padding: 0.12rem 0.35rem 0.12rem 0;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+  }
+
+  #carrier-fleet .log td {
+    border-bottom: 1px solid #ddd;
+  }
+
+  #carrier-fleet .log td::before {
+    content: none;
+  }
+
+  #carrier-fleet .log th {
+    border-bottom: 1px solid #000;
+    font-size: 0.5rem;
+    white-space: normal;
+    color: #333;
+  }
+
+  /* A button inside the header cells stops the browser repeating the header on
+     every page; print the label as plain text instead. */
+  #carrier-fleet .carrier-fleet__sort {
+    display: contents;
+  }
+
+  #carrier-fleet .log th:nth-child(1) { width: 25%; }
+  #carrier-fleet .log th:nth-child(2) { width: 15%; }
+  #carrier-fleet .log th:nth-child(3) { width: 10%; }
+  #carrier-fleet .log th:nth-child(4) { width: 31%; }
+  #carrier-fleet .log th:nth-child(5) { width: 10%; }
+  #carrier-fleet .log th:nth-child(6) { width: 9%; text-align: right; }
+
+  #carrier-fleet .log th:nth-child(3),
+  #carrier-fleet .log td:nth-child(3) { text-align: left; }
+
+  #carrier-fleet .pivot,
+  #carrier-fleet .log__vin {
+    font-size: 0.6rem;
+    line-height: 1.25;
+  }
+
+  #carrier-fleet .log .sub {
+    margin-top: 0;
+    font-size: 0.52rem;
+  }
+
+  #carrier-fleet .stack {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0 0.4rem;
+  }
+
+  #carrier-fleet .tag {
+    margin-left: 0;
+    white-space: nowrap;
+    padding: 0 0.3rem;
+    font-size: 0.5rem;
+  }
+
+  #carrier-fleet .log tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  #carrier-fleet .panel__foot {
+    margin-top: 0.3rem;
+    font-size: 0.52rem;
+  }
+}
