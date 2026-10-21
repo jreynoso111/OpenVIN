@@ -824,6 +824,42 @@
     page-break-inside: avoid;
   }
 
+  #connections .rel--plate-record,
+  #connections .rel--same-inspection {
+    gap: 0.1rem 0.55rem;
+    padding-block: 0.35rem;
+  }
+
+  #connections .rel--plate-record {
+    grid-template-columns: 3.5rem minmax(0, 1fr) minmax(0, 9rem);
+  }
+
+  #connections .rel--same-inspection {
+    grid-template-columns: 5.1rem minmax(0, 1fr) minmax(0, 9rem);
+  }
+
+  #connections .rel--plate-record .rel__kind,
+  #connections .rel--same-inspection .rel__kind {
+    min-width: 0;
+    line-height: 1.05;
+    white-space: normal;
+    overflow-wrap: normal;
+  }
+
+  /* Start the roadside evidence on a fresh page, with the title attached to
+     its first log card. Let the long section continue across later pages. */
+  #roadside {
+    break-before: page;
+    page-break-before: always;
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  #roadside .panel__head {
+    break-after: avoid-page;
+    page-break-after: avoid;
+  }
+
   .reveal {
     animation: none !important;
   }
@@ -866,6 +902,16 @@
     border-bottom: 1px solid #bbb;
     break-inside: avoid-page;
     page-break-inside: avoid;
+  }
+
+  #roadside .log tr {
+    width: 100%;
+    box-sizing: border-box;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr) minmax(0, 1.3fr);
+    grid-template-areas:
+      'date class result'
+      'where plate carrier'
+      'units units units';
   }
 
   .log td {

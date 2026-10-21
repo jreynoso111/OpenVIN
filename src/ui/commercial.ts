@@ -168,9 +168,11 @@ function companions(records: readonly CommercialInspection[]): Companion[] {
 }
 
 function relation(kind: string, subject: Node, detail: Node | string, evidence: string): HTMLElement {
+  const kindClass =
+    kind === 'Plate record' ? ' rel--plate-record' : kind === 'Same inspection' ? ' rel--same-inspection' : '';
   return el(
     'li',
-    { class: 'rel' },
+    { class: 'rel' + kindClass },
     el('span', { class: 'rel__kind' }, kind),
     el('span', { class: 'rel__subject' }, subject),
     el('div', { class: 'rel__detail' }, detail),
