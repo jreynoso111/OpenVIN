@@ -262,6 +262,14 @@
   color: var(--color-text-tertiary);
 }
 
+.fleet__explanation {
+  margin: 0 0 0.85rem;
+  max-width: 95ch;
+  font-size: var(--text-small);
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
 .panel__body {
   padding: 1rem;
 }
@@ -824,24 +832,30 @@
    its columns inside the panel instead of inheriting the wide-log minimum. */
 @media screen and (min-width: 721px) {
   #carrier-fleet .log {
+    width: 100%;
     min-width: 0;
     table-layout: fixed;
   }
 
+  #carrier-fleet .log th,
+  #carrier-fleet .log td {
+    padding-right: 0.45rem;
+  }
+
   #carrier-fleet .log th:nth-child(1),
-  #carrier-fleet .log td:nth-child(1) { width: 22%; }
+  #carrier-fleet .log td:nth-child(1) { width: 24%; }
 
   #carrier-fleet .log th:nth-child(2),
-  #carrier-fleet .log td:nth-child(2) { width: 17%; }
+  #carrier-fleet .log td:nth-child(2) { width: 16%; }
 
   #carrier-fleet .log th:nth-child(3),
-  #carrier-fleet .log td:nth-child(3) { width: 13%; }
+  #carrier-fleet .log td:nth-child(3) { width: 12%; }
 
   #carrier-fleet .log th:nth-child(4),
-  #carrier-fleet .log td:nth-child(4) { width: 36%; }
+  #carrier-fleet .log td:nth-child(4) { width: 34%; }
 
   #carrier-fleet .log th:nth-child(5),
-  #carrier-fleet .log td:nth-child(5) { width: 12%; }
+  #carrier-fleet .log td:nth-child(5) { width: 14%; }
 
   #carrier-fleet .log__vin {
     white-space: normal;

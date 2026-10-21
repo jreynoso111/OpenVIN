@@ -251,7 +251,7 @@ export interface FleetVehicle {
   unitType: string | null;
   plates: string[];
   companyUnits: string[];
-  sightings: number;
+  inspectionCount: number;
   lastSeen: UnitSighting;
   firstSeenDate: string | null;
 }

@@ -186,9 +186,14 @@ export function summarizeFleet(
   truncated: boolean,
 ): CarrierFleet {
   const byVin = new Map<string, FleetVehicle>();
+  const inspectionIdsByVin = new Map<string, Set<string>>();
   for (const sighting of [...sightings].sort(newestFirst)) {
     if (!sighting.vin) continue;
     const vehicle = byVin.get(sighting.vin);
+    const inspectionIds = inspectionIdsByVin.get(sighting.vin) ?? new Set<string>();
+    const isNewInspection = !inspectionIds.has(sighting.inspectionId);
+    inspectionIds.add(sighting.inspectionId);
+    inspectionIdsByVin.set(sighting.vin, inspectionIds);
     const plate = sighting.plate
       ? sighting.plate + (sighting.plateState ? ' ' + sighting.plateState : '')
       : null;
@@ -199,13 +204,13 @@ export function summarizeFleet(
         unitType: sighting.unitType,
         plates: plate ? [plate] : [],
         companyUnits: sighting.companyUnit ? [sighting.companyUnit] : [],
-        sightings: 1,
+        inspectionCount: 1,
         lastSeen: sighting,
         firstSeenDate: sighting.date,
       });
       continue;
     }
-    vehicle.sightings += 1;
+    if (isNewInspection) vehicle.inspectionCount += 1;
     if (plate && !vehicle.plates.includes(plate)) vehicle.plates.push(plate);
     if (sighting.companyUnit && !vehicle.companyUnits.includes(sighting.companyUnit)) {
       vehicle.companyUnits.push(sighting.companyUnit);
