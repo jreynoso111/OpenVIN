@@ -236,6 +236,8 @@ export interface CarrierProfile {
 /** One inspected unit at one roadside inspection (any search entry point). */
 export interface UnitSighting {
   inspectionId: string;
+  /** FMCSA unit identifier within the inspection; needed for exact violation joins. */
+  unitId?: string | null;
   date: string | null;
   state: string | null;
   site: string | null;
@@ -250,6 +252,8 @@ export interface UnitSighting {
   /** 1 = power unit, 2+ = towed units in the same inspection. */
   position: number | null;
   vehicleOutOfService: number | null;
+  /** Unit-level findings; null means the violation source could not be joined. */
+  vehicleFindings?: CommercialInspectionViolation[] | null;
 }
 
 /** Vehicles seen in a carrier's recent inspections, grouped by VIN. */

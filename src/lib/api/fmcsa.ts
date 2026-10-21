@@ -39,6 +39,7 @@ import {
 } from './fmcsaShared';
 
 const MAX_UNITS = 500;
+const VIOLATION_BATCH_SIZE = 150;
 
 function parseVehicleViolation(value: unknown): {
   inspectionId: string;
@@ -137,9 +138,44 @@ export async function loadUnitsForInspections(
   return rows.map(parseUnit).filter((unit): unit is UnitRow => unit !== null);
 }
 
-export function toSighting(unit: UnitRow, inspection: InspectionRow | undefined): UnitSighting {
+/** Vehicle findings keyed by the exact inspection and unit ID; null means a source query failed. */
+export async function loadVehicleFindingsByUnit(
+  ids: readonly string[],
+): Promise<Map<string, CommercialInspectionViolation[]> | null> {
+  const inspectionIds = [...new Set(ids.filter((id) => /^\d+$/.test(id)))];
+  const findings = new Map<string, CommercialInspectionViolation[]>();
+  for (let offset = 0; offset < inspectionIds.length; offset += VIOLATION_BATCH_SIZE) {
+    const batch = inspectionIds.slice(offset, offset + VIOLATION_BATCH_SIZE);
+    const response = await fetchJson(
+      socrataUrl(VIOLATION_DATASET, {
+        where: 'inspection_id in (' + numericList(batch) + ')',
+        select: 'inspection_id,insp_unit_id,viol_code,viol_desc,part_no,out_of_service_indicator',
+        limit: 2000,
+      }),
+    );
+    const rows = response.ok ? asArray(response.data) : null;
+    if (!rows) return null;
+    for (const value of rows) {
+      const parsed = parseVehicleViolation(value);
+      if (!parsed) continue;
+      const key = parsed.inspectionId + ':' + parsed.unitId;
+      const unitFindings = findings.get(key) ?? [];
+      unitFindings.push(parsed.finding);
+      findings.set(key, unitFindings);
+    }
+  }
+  return findings;
+}
+
+export function toSighting(
+  unit: UnitRow,
+  inspection: InspectionRow | undefined,
+  vehicleFindings?: CommercialInspectionViolation[] | null,
+): UnitSighting {
+  const hasExactFindings = vehicleFindings !== undefined;
   return {
     inspectionId: unit.inspectionId,
+    unitId: unit.unitId,
     date: inspection?.date ?? null,
     state: inspection?.state ?? null,
     site: inspection?.site ?? null,
@@ -151,7 +187,12 @@ export function toSighting(unit: UnitRow, inspection: InspectionRow | undefined)
     unitType: unitTypeLabel(unit.typeCode),
     companyUnit: unit.companyUnit,
     position: unit.position,
-    vehicleOutOfService: inspection?.vehicleOutOfService ?? null,
+    vehicleOutOfService: hasExactFindings
+      ? vehicleFindings === null
+        ? null
+        : vehicleFindings.some((finding) => finding.outOfService) ? 1 : 0
+      : inspection?.vehicleOutOfService ?? null,
+    ...(hasExactFindings ? { vehicleFindings } : {}),
   };
 }
 
@@ -202,28 +243,11 @@ export async function getCommercialInspections(
   }
 
   const inspectionIds = [...new Set(units.map((unit) => unit.inspectionId))];
-  const [inspectionMap, allUnits, violationResponse] = await Promise.all([
+  const [inspectionMap, allUnits, findingsByUnit] = await Promise.all([
     loadInspections(inspectionIds),
     loadUnitsForInspections(inspectionIds),
-    fetchJson(
-      socrataUrl(VIOLATION_DATASET, {
-        where: 'inspection_id in (' + numericList(inspectionIds) + ')',
-        select: 'inspection_id,insp_unit_id,viol_code,viol_desc,part_no,out_of_service_indicator',
-        limit: 2000,
-      }),
-    ),
+    loadVehicleFindingsByUnit(inspectionIds),
   ]);
-
-  const violationRows = violationResponse.ok ? asArray(violationResponse.data) : null;
-  const findingsByUnit = new Map<string, CommercialInspectionViolation[]>();
-  for (const value of violationRows ?? []) {
-    const parsed = parseVehicleViolation(value);
-    if (!parsed) continue;
-    const key = parsed.inspectionId + ':' + parsed.unitId;
-    const findings = findingsByUnit.get(key) ?? [];
-    findings.push(parsed.finding);
-    findingsByUnit.set(key, findings);
-  }
 
   const carrierDots = [...(inspectionMap?.values() ?? [])]
     .map((row) => row.dotNumber)
@@ -242,7 +266,7 @@ export async function getCommercialInspections(
     const inspection = inspectionMap?.get(unit.inspectionId);
     const dot = inspection?.dotNumber ?? null;
     const carrier = dot ? carrierMap?.get(dot) : undefined;
-    const unitFindings = unit.unitId
+    const unitFindings = unit.unitId && findingsByUnit
       ? findingsByUnit.get(unit.inspectionId + ':' + unit.unitId) ?? []
       : null;
     return {
@@ -280,9 +304,9 @@ export async function getCommercialInspections(
       // The inspection dataset's vehicle totals cover the entire inspection.
       // Use the citation rows joined to this exact unit ID instead, or leave
       // the unit result unknown when that join is unavailable.
-      vehicleViolations: violationRows && unitFindings ? unitFindings.length : null,
+      vehicleViolations: findingsByUnit && unitFindings ? unitFindings.length : null,
       vehicleOutOfService:
-        violationRows && unitFindings
+        findingsByUnit && unitFindings
           ? unitFindings.some((finding) => finding.outOfService) ? 1 : 0
           : null,
       vehicleFindings: (unitFindings ?? []).sort((a, b) => {
@@ -300,7 +324,7 @@ export async function getCommercialInspections(
   } else if (inspectionMap.size < inspectionIds.length) {
     notes.push('Some inspection details did not join to the VIN rows.');
   }
-  if (!violationRows) notes.push('Unit-level violation descriptions are temporarily unavailable.');
+  if (!findingsByUnit) notes.push('Unit-level violation descriptions are temporarily unavailable.');
   if (!allUnits) notes.push('Units inspected together could not be loaded.');
   if (carrierDots.length > 0 && !carrierMap) {
     notes.push('Carrier census enrichment was unavailable; USDOT numbers remain.');

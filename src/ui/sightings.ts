@@ -145,7 +145,7 @@ export function frequencyChips(
   );
 }
 
-type Column = 'date' | 'place' | 'vin' | 'plate' | 'unit' | 'carrier' | 'oos';
+type Column = 'date' | 'place' | 'vin' | 'plate' | 'unit' | 'carrier' | 'oos' | 'findings';
 
 const HEAD: Readonly<Record<Column, string>> = {
   date: 'Date',
@@ -155,6 +155,7 @@ const HEAD: Readonly<Record<Column, string>> = {
   unit: 'Unit',
   carrier: 'Carrier',
   oos: 'Result',
+  findings: 'Vehicle findings',
 };
 
 function cell(sighting: UnitSighting, column: Column, carrierNames: ReadonlyMap<string, string>): Node | string {
@@ -176,13 +177,42 @@ function cell(sighting: UnitSighting, column: Column, carrierNames: ReadonlyMap<
         ? dotPivot(sighting.carrierDotNumber, carrierNames.get(sighting.carrierDotNumber))
         : '—';
     case 'oos':
-      return (sighting.vehicleOutOfService ?? 0) > 0
+      return sighting.vehicleOutOfService === null
+        ? el('span', { class: 'muted' }, 'Not available')
+        : sighting.vehicleOutOfService > 0
         ? el(
             'span',
-            { class: 'tag', 'data-tone': 'danger', title: 'FMCSA recorded the vehicle as out of service during this inspection.' },
-            "Didn't pass",
+            { class: 'tag', 'data-tone': 'danger', title: 'FMCSA recorded this exact unit as out of service during this inspection.' },
+            'Vehicle OOS',
           )
-        : el('span', { class: 'muted' }, 'Inspected');
+        : el('span', { class: 'muted' }, 'No vehicle OOS recorded');
+    case 'findings': {
+      if (sighting.vehicleFindings === null || sighting.vehicleFindings === undefined) {
+        return el('span', { class: 'muted' }, 'Not available');
+      }
+      if (sighting.vehicleFindings.length === 0) {
+        return el('span', { class: 'muted' }, 'No vehicle violations recorded');
+      }
+      return el(
+        'details',
+        { class: 'findings' },
+        el('summary', {}, formatNumber(sighting.vehicleFindings.length) + ' vehicle finding' + (sighting.vehicleFindings.length === 1 ? '' : 's')),
+        el(
+          'ul',
+          {},
+          ...sighting.vehicleFindings.map((finding) =>
+            el(
+              'li',
+              { 'data-oos': finding.outOfService ? 'true' : 'false' },
+              finding.code ? finding.code + ' · ' : '',
+              finding.description ?? 'Description not reported',
+              finding.part ? ' · Part ' + finding.part : '',
+              finding.outOfService ? ' · Out of service' : '',
+            ),
+          ),
+        ),
+      );
+    }
   }
 }
 

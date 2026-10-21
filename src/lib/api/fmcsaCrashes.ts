@@ -4,13 +4,19 @@
  * driver fields or carrier contact fields from the source rows.
  */
 
+import type { SectionResult } from '../types';
 import { asArray, asRecord, fetchJson } from './http';
-import { isoDate, numberField, socrataUrl, textField } from './fmcsaShared';
+import { isoDate, numberField, socrataUrl, soqlString, textField } from './fmcsaShared';
 
 export const CRASH_DATASET = 'aayw-vxb3';
 
 /** Look-back window for the crash summary. */
 export const CRASH_MONTHS = 24;
+
+const PLATE_CRASH_SOURCE = {
+  name: 'FMCSA Crash File (U.S. DOT Open Data)',
+  url: 'https://www.fmcsa.dot.gov/registration/fmcsa-data-dissemination-program',
+} as const;
 
 export interface CrashSummary {
   dotNumber: string;
@@ -39,8 +45,27 @@ export interface CrashHistory extends CrashSummary {
   events: CrashEvent[];
 }
 
+export interface PlateCrashEvent {
+  id: string;
+  date: string | null;
+  reportState: string | null;
+  plate: string;
+  plateState: string | null;
+  vin: string | null;
+  fatalities: number | null;
+  injuries: number | null;
+  towAway: boolean | null;
+}
+
+export interface PlateCrashHistory {
+  events: PlateCrashEvent[];
+  since: string;
+  capped: boolean;
+}
+
 const ROW_CAP = 2000;
 const cache = new Map<string, Promise<CrashHistory | null>>();
+const plateCache = new Map<string, Promise<SectionResult<PlateCrashHistory>>>();
 
 function windowStart(now: Date): Date {
   const start = new Date(now);
@@ -162,4 +187,119 @@ export function getCrashSummary(dot: string, now: Date = new Date()): Promise<Cr
     const { events: _events, ...summary } = history;
     return summary;
   });
+}
+
+function normalizeLicense(value: string | null): string {
+  return (value ?? '').toUpperCase().replace(/[\s-]/g, '');
+}
+
+/** Recent reported FMCSA crash rows matching the exact plate and, when supplied, issuing state. */
+export function getPlateCrashHistory(
+  rawPlate: string,
+  rawState: string | null,
+  now: Date = new Date(),
+): Promise<SectionResult<PlateCrashHistory>> {
+  const plate = normalizeLicense(rawPlate);
+  const state = rawState?.trim().toUpperCase() || null;
+  const fetchedAt = new Date().toISOString();
+  const source = { ...PLATE_CRASH_SOURCE, fetchedAt };
+  if (!/^[A-Z0-9]{2,10}$/.test(plate) || (state && !/^[A-Z]{2}$/.test(state))) {
+    return Promise.resolve({ status: 'unavailable', source, note: 'Enter a valid plate and two-letter state.' });
+  }
+  const start = windowStart(now);
+  const since = isoDay(start);
+  const key = [plate, state ?? '*', since].join('|');
+  const cached = plateCache.get(key);
+  if (cached) return cached;
+
+  const clauses = [
+    'upper(vehicle_license_number) in (' +
+      [...new Set([plate, rawPlate.trim().toUpperCase().replace(/\s+/g, ' ')])]
+        .filter((form) => /^[A-Z0-9 -]{2,12}$/.test(form))
+        .map(soqlString)
+        .join(',') +
+      ')',
+    "report_date>='" + compactDate(start) + "'",
+  ];
+  if (state) clauses.push('upper(vehicle_lic_state)=' + soqlString(state));
+  const run = fetchJson(
+    socrataUrl(CRASH_DATASET, {
+      where: clauses.join(' AND '),
+      select: 'crash_id,report_state,report_number,report_date,report_time,report_seq_no,vehicle_identification_number,vehicle_license_number,vehicle_lic_state,fatalities,injuries,tow_away',
+      limit: ROW_CAP,
+      order: 'report_date DESC',
+    }),
+  ).then((response): SectionResult<PlateCrashHistory> => {
+    const rows = response.ok ? asArray(response.data) : null;
+    if (!rows) {
+      plateCache.delete(key);
+      return {
+        status: 'unavailable',
+        source,
+        note: response.ok ? 'FMCSA returned an unexpected crash-file response.' : response.note,
+      };
+    }
+    const events = new Map<string, PlateCrashEvent>();
+    for (const [index, value] of rows.entries()) {
+      const row = asRecord(value);
+      if (!row) continue;
+      const rowPlate = normalizeLicense(textField(row['vehicle_license_number']));
+      const rowState = textField(row['vehicle_lic_state'])?.trim().toUpperCase() ?? null;
+      if (rowPlate !== plate || (state && rowState !== state)) continue;
+      const reportState = textField(row['report_state'])?.trim().toUpperCase() ?? null;
+      const date = isoDate(row['report_date']);
+      const reportNumber = textField(row['report_number']);
+      const time = textField(row['report_time']);
+      const sequence = textField(row['report_seq_no']);
+      const crashId = textField(row['crash_id']);
+      const identity = [reportState, reportNumber, date, time].every(Boolean)
+        ? [reportState, reportNumber, date, time].join('|')
+        : [reportState, reportNumber, date, time, sequence].filter(Boolean).join('|') || crashId || `row-${index}`;
+      const vin = textField(row['vehicle_identification_number'])?.trim().toUpperCase() ?? null;
+      const id = identity + '|' + (vin ?? 'no-vin');
+      const fatalities = numberField(row['fatalities']);
+      const injuries = numberField(row['injuries']);
+      const towAwayValue = textField(row['tow_away'])?.trim().toUpperCase();
+      const towAway = towAwayValue === 'Y' ? true : towAwayValue === 'N' ? false : null;
+      const existing = events.get(id);
+      if (existing) {
+        events.set(id, {
+          ...existing,
+          fatalities: existing.fatalities ?? fatalities,
+          injuries: existing.injuries ?? injuries,
+          towAway: existing.towAway === true || towAway === true ? true : existing.towAway ?? towAway,
+        });
+        continue;
+      }
+      events.set(id, {
+        id,
+        date,
+        reportState,
+        plate,
+        plateState: rowState,
+        vin,
+        fatalities,
+        injuries,
+        towAway,
+      });
+    }
+    const ordered = [...events.values()].sort((a, b) =>
+      (b.date ?? '').localeCompare(a.date ?? '') || (a.reportState ?? '').localeCompare(b.reportState ?? ''),
+    );
+    return {
+      status: ordered.length > 0 ? 'hit' : 'miss',
+      data: { events: ordered, since, capped: rows.length >= ROW_CAP },
+      source,
+      note: ordered.length > 0 ? undefined : 'No matching plate record in the FMCSA crash file for this period.',
+    };
+  }).catch((error: unknown): SectionResult<PlateCrashHistory> => {
+    plateCache.delete(key);
+    return {
+      status: 'unavailable',
+      source,
+      note: error instanceof Error ? error.message : 'FMCSA crash-file lookup failed.',
+    };
+  });
+  plateCache.set(key, run);
+  return run;
 }

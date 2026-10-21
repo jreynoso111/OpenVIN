@@ -1000,6 +1000,59 @@
   color: var(--color-danger);
 }
 
+.plate-vehicle-details {
+  margin-top: 0.3rem;
+  font-size: var(--text-micro);
+}
+
+.plate-vehicle-details summary {
+  cursor: pointer;
+  color: var(--color-link);
+}
+
+.plate-vehicle-details__body {
+  min-width: 15rem;
+  padding: 0.6rem 0;
+}
+
+.plate-vehicle-details h4 {
+  margin: 0.65rem 0 0.35rem;
+  font-size: var(--text-small);
+}
+
+.plate-vehicle-readings,
+.plate-crashes {
+  margin: 0.5rem 0;
+  padding-left: 1.2rem;
+}
+
+.plate-vehicle-readings li {
+  display: grid;
+  grid-template-columns: auto auto minmax(8rem, 1fr);
+  gap: 0.3rem 0.7rem;
+  align-items: baseline;
+  padding: 0.35rem 0;
+  border-bottom: var(--rule);
+  font-size: var(--text-micro);
+}
+
+.plate-crashes__event {
+  padding: 0.55rem 0;
+  border-bottom: var(--rule);
+}
+
+.plate-crashes__heading,
+.plate-crashes__facts,
+.plate-crashes__severity {
+  margin: 0.15rem 0;
+  font-size: var(--text-small);
+}
+
+.plate-crashes__facts,
+.plate-crashes__severity {
+  color: var(--color-text-secondary);
+}
+
 @media (max-width: 720px) {
   .log-wrap {
     margin-inline: 0;

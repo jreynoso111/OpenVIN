@@ -32,6 +32,7 @@ import {
 import {
   loadCarriers,
   loadInspections,
+  loadVehicleFindingsByUnit,
   loadUnitsForInspections,
   newestFirst,
   toSighting,
@@ -75,7 +76,12 @@ export async function searchByPlate(
   if (!rows) {
     return unavailable(FMCSA_SOURCE, response.ok ? 'Unexpected FMCSA response.' : response.note);
   }
-  const units = rows.map(parseUnit).filter((unit): unit is UnitRow => unit !== null);
+  const requestedState = state?.toUpperCase() ?? null;
+  const units = rows
+    .map(parseUnit)
+    .filter((unit): unit is UnitRow => unit !== null)
+    .filter((unit) => normalizePlate(unit.plate ?? '') === plate)
+    .filter((unit) => !requestedState || unit.plateState === requestedState);
   if (units.length === 0) {
     return {
       status: 'miss',
@@ -84,18 +90,31 @@ export async function searchByPlate(
       note: 'No roadside inspection recorded this plate in the current FMCSA files.',
     };
   }
-  const inspections = await loadInspections([...new Set(units.map((unit) => unit.inspectionId))]);
+  const inspectionIds = [...new Set(units.map((unit) => unit.inspectionId))];
+  const [inspections, findingsByUnit] = await Promise.all([
+    loadInspections(inspectionIds),
+    loadVehicleFindingsByUnit(inspectionIds),
+  ]);
   const sightings = units
-    .map((unit) => toSighting(unit, inspections?.get(unit.inspectionId)))
+    .map((unit) => toSighting(
+      unit,
+      inspections?.get(unit.inspectionId),
+      findingsByUnit && unit.unitId
+        ? findingsByUnit.get(unit.inspectionId + ':' + unit.unitId) ?? []
+        : null,
+    ))
     .sort(newestFirst);
   const carriers = await loadCarriers(
     sightings.map((s) => s.carrierDotNumber).filter((dot): dot is string => dot !== null),
   );
   return {
-    status: inspections && carriers ? 'hit' : 'unavailable',
+    status: inspections && carriers && findingsByUnit ? 'hit' : 'unavailable',
     data: { sightings, carriers: [...(carriers?.values() ?? [])] },
     source: { ...FMCSA_SOURCE, fetchedAt },
-    note: inspections && carriers ? undefined : 'Some inspection or carrier details could not be joined.',
+    note:
+      inspections && carriers && findingsByUnit
+        ? undefined
+        : 'Some inspection, vehicle finding, or carrier details could not be joined.',
   };
 }
 
