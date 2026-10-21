@@ -150,7 +150,7 @@ export function renderReport(
   main.replaceChildren(
     caseLayout(
       header.root,
-      [summary.root, where.root, links.root, timeline.root, log.root, carriers.root, odometer.root],
+      [summary.root, where.root, links.root, timeline.root, carriers.root, log.root, odometer.root],
       [
         ledger.root,
         checks,

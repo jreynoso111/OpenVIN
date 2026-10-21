@@ -962,13 +962,19 @@
     page-break-after: avoid;
   }
 
-  /* Keep the requested report sections together when they fit on one page. */
-  #summary,
-  #connections,
-  #roadside,
-  #carriers {
+  /* Keep the short report sections whole; connections and the roadside log
+     are allowed to continue onto the next page. */
+  #summary {
     break-inside: avoid-page;
     page-break-inside: avoid;
+  }
+
+  #connections,
+  #roadside,
+  #carriers,
+  #plate-carriers {
+    break-inside: auto;
+    page-break-inside: auto;
   }
 
   #connections .rel--plate-record,
@@ -991,20 +997,6 @@
     line-height: 1.05;
     white-space: normal;
     overflow-wrap: normal;
-  }
-
-  /* Start the roadside evidence on a fresh page, with the title attached to
-     its first log card. Let the long section continue across later pages. */
-  #roadside {
-    break-before: page;
-    page-break-before: always;
-    break-inside: auto;
-    page-break-inside: auto;
-  }
-
-  #roadside .panel__head {
-    break-after: avoid-page;
-    page-break-after: avoid;
   }
 
   .reveal {
@@ -1049,16 +1041,6 @@
     border-bottom: 1px solid #bbb;
     break-inside: avoid-page;
     page-break-inside: avoid;
-  }
-
-  #roadside .log tr {
-    width: 100%;
-    box-sizing: border-box;
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr) minmax(0, 1.3fr);
-    grid-template-areas:
-      'date class result'
-      'where plate carrier'
-      'units units units';
   }
 
   .log td {
@@ -1326,13 +1308,15 @@
 
   /* Facts: five-wide rows of inline cells; long cargo lists take three cells */
   #carrier-profile .facts,
-  #plate-carriers .carrier-card .facts {
+  #plate-carriers .carrier-card .facts,
+  #carriers .carrier-card .facts {
     display: block;
     font-size: 0;
   }
 
   #carrier-profile .facts > div,
-  #plate-carriers .carrier-card .facts > div {
+  #plate-carriers .carrier-card .facts > div,
+  #carriers .carrier-card .facts > div {
     display: inline-block;
     width: 19.4%;
     margin: 0 0.6% 0.12rem 0;
@@ -1346,18 +1330,22 @@
   #carrier-profile .facts > [data-fact='Cargo types reported'],
   #carrier-profile .facts > [data-fact='Other cargo detail'],
   #plate-carriers .carrier-card .facts > [data-fact='Cargo types reported'],
-  #plate-carriers .carrier-card .facts > [data-fact='Other cargo detail'] {
+  #plate-carriers .carrier-card .facts > [data-fact='Other cargo detail'],
+  #carriers .carrier-card .facts > [data-fact='Cargo types reported'],
+  #carriers .carrier-card .facts > [data-fact='Other cargo detail'] {
     width: 79%;
   }
 
   #carrier-profile .facts dt,
-  #plate-carriers .carrier-card .facts dt {
+  #plate-carriers .carrier-card .facts dt,
+  #carriers .carrier-card .facts dt {
     font-size: 0.5rem;
     line-height: 1.2;
   }
 
   #carrier-profile .facts dd,
-  #plate-carriers .carrier-card .facts dd {
+  #plate-carriers .carrier-card .facts dd,
+  #carriers .carrier-card .facts dd {
     margin-top: 0;
     font-size: 0.58rem;
     line-height: 1.1;
@@ -1370,7 +1358,11 @@
   #plate-carriers .carrier-card .authority,
   #plate-carriers .carrier-card .standing,
   #plate-carriers .carrier-card .insurance,
-  #plate-carriers .carrier-card .crashes {
+  #plate-carriers .carrier-card .crashes,
+  #carriers .carrier-card .authority,
+  #carriers .carrier-card .standing,
+  #carriers .carrier-card .insurance,
+  #carriers .carrier-card .crashes {
     box-sizing: border-box;
     margin: 0 0 0.2rem;
     padding: 0.2rem 0.35rem;
@@ -1385,41 +1377,50 @@
   #carrier-profile .insurance__title,
   #plate-carriers .carrier-card .authority__title,
   #plate-carriers .carrier-card .standing__title,
-  #plate-carriers .carrier-card .insurance__title {
+  #plate-carriers .carrier-card .insurance__title,
+  #carriers .carrier-card .authority__title,
+  #carriers .carrier-card .standing__title,
+  #carriers .carrier-card .insurance__title {
     margin-bottom: 0.05rem;
     font-size: 0.5rem;
   }
 
   /* One compact run per authority: docket, type, status, then its filings */
   #carrier-profile .authority__current,
-  #plate-carriers .carrier-card .authority__current {
+  #plate-carriers .carrier-card .authority__current,
+  #carriers .carrier-card .authority__current {
     display: block;
   }
 
   #carrier-profile .authority__current > li,
-  #plate-carriers .carrier-card .authority__current > li {
+  #plate-carriers .carrier-card .authority__current > li,
+  #carriers .carrier-card .authority__current > li {
     display: block;
     padding: 0.04rem 0;
   }
 
   #carrier-profile .authority__row,
-  #plate-carriers .carrier-card .authority__row {
+  #plate-carriers .carrier-card .authority__row,
+  #carriers .carrier-card .authority__row {
     display: inline;
   }
 
   #carrier-profile .authority__row > *,
-  #plate-carriers .carrier-card .authority__row > * {
+  #plate-carriers .carrier-card .authority__row > *,
+  #carriers .carrier-card .authority__row > * {
     margin-right: 0.3rem;
   }
 
   #carrier-profile .authority__row .tag,
-  #plate-carriers .carrier-card .authority__row .tag {
+  #plate-carriers .carrier-card .authority__row .tag,
+  #carriers .carrier-card .authority__row .tag {
     padding: 0 0.3rem;
     font-size: 0.5rem;
   }
 
   #carrier-profile .authority__detail,
-  #plate-carriers .carrier-card .authority__detail {
+  #plate-carriers .carrier-card .authority__detail,
+  #carriers .carrier-card .authority__detail {
     display: inline;
     margin: 0 0.3rem 0 0;
     font-size: 0.5rem;
@@ -1430,7 +1431,10 @@
   #carrier-profile .crashes__foot,
   #plate-carriers .carrier-card .authority__foot,
   #plate-carriers .carrier-card .insurance__note,
-  #plate-carriers .carrier-card .crashes__foot {
+  #plate-carriers .carrier-card .crashes__foot,
+  #carriers .carrier-card .authority__foot,
+  #carriers .carrier-card .insurance__note,
+  #carriers .carrier-card .crashes__foot {
     margin-top: 0.05rem;
     font-size: 0.5rem;
     line-height: 1.1;
@@ -1441,18 +1445,23 @@
   #carrier-profile .crashes__history,
   #plate-carriers .carrier-card .standing__note,
   #plate-carriers .carrier-card .standing__foot,
-  #plate-carriers .carrier-card .crashes__history {
+  #plate-carriers .carrier-card .crashes__history,
+  #carriers .carrier-card .standing__note,
+  #carriers .carrier-card .standing__foot,
+  #carriers .carrier-card .crashes__history {
     display: none;
   }
 
   #carrier-profile .standing__list,
-  #plate-carriers .carrier-card .standing__list {
+  #plate-carriers .carrier-card .standing__list,
+  #carriers .carrier-card .standing__list {
     display: block;
     font-size: 0;
   }
 
   #carrier-profile .standing__list > div,
-  #plate-carriers .carrier-card .standing__list > div {
+  #plate-carriers .carrier-card .standing__list > div,
+  #carriers .carrier-card .standing__list > div {
     display: inline-grid;
     box-sizing: border-box;
     width: 49.5%;
@@ -1467,26 +1476,31 @@
   }
 
   #carrier-profile .insurance__list,
-  #plate-carriers .carrier-card .insurance__list {
+  #plate-carriers .carrier-card .insurance__list,
+  #carriers .carrier-card .insurance__list {
     display: block;
   }
 
   #carrier-profile .insurance__list li,
-  #plate-carriers .carrier-card .insurance__list li {
+  #plate-carriers .carrier-card .insurance__list li,
+  #carriers .carrier-card .insurance__list li {
     grid-template-columns: 5rem 4.9rem minmax(0, 1fr);
     gap: 0 0.35rem;
     line-height: 1.1;
   }
 
   #carrier-profile .insurance__who,
-  #plate-carriers .carrier-card .insurance__who {
+  #plate-carriers .carrier-card .insurance__who,
+  #carriers .carrier-card .insurance__who {
     font-size: 0.5rem;
   }
 
   #carrier-profile .authority__history,
   #carrier-profile .insurance__history,
   #plate-carriers .carrier-card .authority__history,
-  #plate-carriers .carrier-card .insurance__history {
+  #plate-carriers .carrier-card .insurance__history,
+  #carriers .carrier-card .authority__history,
+  #carriers .carrier-card .insurance__history {
     margin-top: 0.1rem;
   }
 
@@ -1687,7 +1701,6 @@
 
   /* Short panels stay whole; the two long ones may continue on the next page */
   #plate-where,
-  #plate-carriers,
   #plate-crashes {
     break-inside: avoid-page;
     page-break-inside: avoid;
@@ -1877,34 +1890,42 @@
   }
 
   /* Carrier cards: the compact carrier-profile rules above apply inside */
-  #plate-carriers .carrier-stack {
+  #plate-carriers .carrier-stack,
+  #carriers .carrier-stack {
     display: block;
   }
 
-  #plate-carriers .carrier-card {
+  #plate-carriers .carrier-card,
+  #carriers .carrier-card {
     break-inside: avoid;
     page-break-inside: avoid;
     margin-bottom: 0.3rem;
     font-size: 0.62rem;
   }
 
-  #plate-carriers .carrier-card + .carrier-card {
+  #plate-carriers .carrier-card + .carrier-card,
+  #carriers .carrier-card + .carrier-card {
     padding-top: 0.3rem;
   }
 
-  #plate-carriers .carrier-card__evidence {
+  #plate-carriers .carrier-card__evidence,
+  #carriers .carrier-card__evidence {
     margin: 0.1rem 0;
     font-size: 0.56rem;
   }
 
   /* Links to other screens mean nothing on paper */
-  #plate-carriers .carrier-card__actions {
+  #plate-carriers .carrier-card__actions,
+  #carriers .carrier-card__actions {
     display: none;
   }
 
   #plate-carriers .carrier-card .standing,
   #plate-carriers .carrier-card .insurance,
-  #plate-carriers .carrier-card .crashes {
+  #plate-carriers .carrier-card .crashes,
+  #carriers .carrier-card .standing,
+  #carriers .carrier-card .insurance,
+  #carriers .carrier-card .crashes {
     display: block;
     width: auto;
   }
@@ -1926,5 +1947,224 @@
   #plate-crashes .plate-crashes__severity {
     margin: 0;
     font-size: 0.58rem;
+  }
+}
+
+/* ---------- Print: VIN file ----------
+   The roadside log is a dense table (no repeated VIN column: the VIN is the
+   report title), carriers use the compact card, and nothing forces a page
+   break, so the report runs without blank areas. */
+
+@media print {
+  .desk__main:has(#roadside) {
+    display: block;
+  }
+
+  .desk__main:has(#roadside) > * {
+    margin-bottom: 0.45rem;
+  }
+
+  #summary .panel__head,
+  #connections .panel__head,
+  #roadside .panel__head,
+  #carriers .panel__head {
+    padding-block: 0.25rem;
+  }
+
+  #summary .panel__body,
+  #connections .panel__body,
+  #roadside .panel__body,
+  #carriers .panel__body {
+    padding: 0.35rem 0.5rem;
+  }
+
+  #connections .panel__hint,
+  #roadside .panel__hint,
+  #summary .panel__hint {
+    font-size: 0.52rem;
+    line-height: 1.2;
+  }
+
+  /* Connections: tight rows, one line of detail, no per-row boilerplate */
+  #connections .rel-groups {
+    gap: 0.35rem;
+  }
+
+  #connections .rel-group__title {
+    font-size: 0.65rem;
+  }
+
+  #connections .rel-group__hint {
+    margin: 0.05rem 0 0.2rem;
+    font-size: 0.52rem;
+    line-height: 1.2;
+  }
+
+  #connections .rel {
+    gap: 0 0.5rem;
+    padding: 0.15rem 0;
+    font-size: 0.6rem;
+    line-height: 1.2;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  #connections .rel__kind {
+    font-size: 0.5rem;
+  }
+
+  #connections .rel__evidence {
+    font-size: 0.52rem;
+  }
+
+  #connections .rel__detail > div {
+    display: inline;
+  }
+
+  #connections .rel__unit-plate {
+    display: inline;
+    margin: 0 0 0 0.6rem;
+    font-size: 0.58rem;
+  }
+
+  #connections .rel__explanation {
+    display: none;
+  }
+
+  /* Links that open other screens mean nothing on paper */
+  #connections .rel__proof,
+  #carriers .carrier-card__actions {
+    display: none;
+  }
+
+  #roadside .log-wrap {
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+
+  #roadside .log {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    font-size: 0.6rem;
+    line-height: 1.2;
+  }
+
+  #roadside .log thead { display: table-header-group; }
+  #roadside .log tbody { display: table-row-group; width: auto; }
+
+  #roadside .log tr {
+    display: table-row;
+    padding: 0;
+    border: 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  #roadside .log th,
+  #roadside .log td {
+    display: table-cell;
+    padding: 0.12rem 0.35rem 0.12rem 0;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+  }
+
+  /* The searched VIN is the report title; drop its column (first) */
+  #roadside .log th:first-child,
+  #roadside .log td:first-child {
+    display: none;
+  }
+
+  #roadside .log td {
+    border-bottom: 1px solid #ddd;
+  }
+
+  #roadside .log td::before {
+    content: none;
+  }
+
+  #roadside .log th {
+    border-bottom: 1px solid #000;
+    font-size: 0.5rem;
+    white-space: normal;
+    overflow-wrap: normal;
+    color: #333;
+  }
+
+  #roadside .pivot,
+  #roadside .log__vin {
+    font-size: 0.58rem;
+    line-height: 1.25;
+  }
+
+  #roadside .log .sub {
+    margin-top: 0;
+    font-size: 0.52rem;
+  }
+
+  #roadside .stack {
+    gap: 0;
+  }
+
+  #roadside .tag {
+    margin-left: 0;
+    padding: 0 0.3rem;
+    white-space: nowrap;
+    font-size: 0.5rem;
+  }
+
+  /* Class | Date | Where | Plate | Carrier | Other units | Result */
+  #roadside .log th:nth-child(2) { width: 11%; }
+  #roadside .log th:nth-child(3) { width: 11%; }
+  #roadside .log th:nth-child(4) { width: 15%; }
+  #roadside .log th:nth-child(5) { width: 13%; }
+  #roadside .log th:nth-child(6) { width: 17%; }
+  #roadside .log th:nth-child(7) { width: 22%; }
+  #roadside .log th:nth-child(8) { width: 11%; }
+
+  #roadside .log__type-warning {
+    display: block;
+    margin: 0.1rem 0 0;
+  }
+
+  #roadside .log__companion {
+    display: flex;
+    margin: 0 0 0.15rem;
+  }
+
+  #roadside .findings ul {
+    margin-top: 0.1rem;
+    padding-left: 0.8rem;
+    font-size: 0.52rem;
+  }
+
+  #roadside .panel__head,
+  #roadside .log thead {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  #roadside .log tbody tr:first-child {
+    break-before: avoid;
+    page-break-before: avoid;
+  }
+}
+
+/* A carrier card may continue on the next page between its blocks (standing,
+   insurance, crashes stay whole), so a tall card does not strand blank space. */
+@media print {
+  #carriers .carrier-card,
+  #plate-carriers .carrier-card {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  #carriers .carrier-line,
+  #plate-carriers .carrier-line,
+  #carriers .carrier-card .facts,
+  #plate-carriers .carrier-card .facts {
+    break-after: avoid;
+    page-break-after: avoid;
   }
 }
