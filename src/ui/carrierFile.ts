@@ -288,7 +288,7 @@ export function renderCarrierFile(
   ledger.add('fleet', 'Roadside inspections · FMCSA');
   const actions = el('div');
   main.replaceChildren(
-    caseLayout(header.root, [fleet.root, area.root, profile.root], [
+    caseLayout(header.root, [profile.root, area.root, fleet.root], [
       ledger.root,
       actions,
       limitsNote('These units were listed during roadside inspections associated with this USDOT on the dates shown. The list is not a confirmed current fleet or ownership roster; leased or sold units can still appear. Inspection count is the number of records where the VIN was listed under this USDOT.'),

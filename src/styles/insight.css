@@ -1253,19 +1253,15 @@
    table with a repeating header so the report uses as few pages as possible. */
 
 @media print {
+  /* Plain block flow (no grid/flex) so Safari and Chrome both honour page
+     breaks between the panels; the DOM order is already profile, area, fleet. */
   .desk__main:has(#carrier-profile) {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.5rem;
+    display: block;
   }
 
   .desk__main:has(#carrier-profile) > * {
-    margin-bottom: 0;
+    margin-bottom: 0.5rem;
   }
-
-  #carrier-profile { order: 1; }
-  #carrier-area { order: 2; }
-  #carrier-fleet { order: 3; }
 
   #carrier-profile,
   #carrier-area,
