@@ -962,17 +962,16 @@
     page-break-after: avoid;
   }
 
-  /* Keep the short report sections whole; connections and the roadside log
-     are allowed to continue onto the next page. */
-  #summary {
+  /* Short report sections stay whole (a title is never left at the foot of a
+     page); only the roadside log, which can be long, may continue. */
+  #summary,
+  #connections,
+  #carriers {
     break-inside: avoid-page;
     page-break-inside: avoid;
   }
 
-  #connections,
-  #roadside,
-  #carriers,
-  #plate-carriers {
+  #roadside {
     break-inside: auto;
     page-break-inside: auto;
   }
@@ -1246,27 +1245,39 @@
   }
 
   /* Masthead of this file only: tighter, so the census profile ends on page one */
-  .desk:has(#carrier-profile) {
+  .desk:has(#carrier-profile),
+  .desk:has(#roadside),
+  .desk:has(#plate-vehicles) {
     padding-top: 0;
   }
 
-  .desk:has(#carrier-profile) .case {
+  .desk:has(#carrier-profile) .case,
+  .desk:has(#roadside) .case,
+  .desk:has(#plate-vehicles) .case {
     padding-bottom: 0.5rem;
   }
 
-  .desk:has(#carrier-profile) .case::before {
+  .desk:has(#carrier-profile) .case::before,
+  .desk:has(#roadside) .case::before,
+  .desk:has(#plate-vehicles) .case::before {
     margin-bottom: 0.25rem;
     padding-bottom: 0.2rem;
   }
 
-  .desk:has(#carrier-profile) .case__title {
+  .desk:has(#carrier-profile) .case__title,
+  .desk:has(#roadside) .case__title,
+  .desk:has(#plate-vehicles) .case__title {
     margin-top: 0.15rem;
     font-size: 1.05rem;
     line-height: 1.1;
   }
 
   .desk:has(#carrier-profile) .case__body,
-  .desk:has(#carrier-profile) .case__ids {
+  .desk:has(#carrier-profile) .case__ids,
+  .desk:has(#roadside) .case__body,
+  .desk:has(#roadside) .case__ids,
+  .desk:has(#plate-vehicles) .case__body,
+  .desk:has(#plate-vehicles) .case__ids {
     margin-top: 0.1rem;
   }
 
@@ -1701,6 +1712,7 @@
 
   /* Short panels stay whole; the two long ones may continue on the next page */
   #plate-where,
+  #plate-carriers,
   #plate-crashes {
     break-inside: avoid-page;
     page-break-inside: avoid;
@@ -2148,23 +2160,5 @@
   #roadside .log tbody tr:first-child {
     break-before: avoid;
     page-break-before: avoid;
-  }
-}
-
-/* A carrier card may continue on the next page between its blocks (standing,
-   insurance, crashes stay whole), so a tall card does not strand blank space. */
-@media print {
-  #carriers .carrier-card,
-  #plate-carriers .carrier-card {
-    break-inside: auto;
-    page-break-inside: auto;
-  }
-
-  #carriers .carrier-line,
-  #plate-carriers .carrier-line,
-  #carriers .carrier-card .facts,
-  #plate-carriers .carrier-card .facts {
-    break-after: avoid;
-    page-break-after: avoid;
   }
 }
