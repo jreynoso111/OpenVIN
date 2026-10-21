@@ -20,14 +20,14 @@ export const NATIONAL_VEHICLE_OOS_RATE = 0.22;
 export interface OosOrder {
   active: boolean;
   date: string | null;
-  rescindDate: string | null;
+  rescindDate?: string | null;
   reason: string | null;
 }
 
 export interface Revocation {
   kind: string;
   effectiveDate: string | null;
-  reinstatedDate: string | null;
+  reinstatedDate?: string | null;
 }
 
 export interface SmsMeasures {
