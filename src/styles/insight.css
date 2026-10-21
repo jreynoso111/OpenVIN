@@ -1282,26 +1282,31 @@
     padding: 0.4rem 0.6rem;
   }
 
-  /* Profile: facts in four columns, then the authority/standing blocks share
-     the row (a lone block takes the full width), then insurance and crashes */
+  /* Profile: built to fit the first page even for carriers with many authority
+     and insurance rows. Facts in five columns, authority beside standing,
+     insurance beside crashes; caveats are kept but set small. */
+  #carrier-profile .panel__hint {
+    display: none;
+  }
+
   #carrier-profile .panel__body > div {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.35rem 0.6rem;
+    gap: 0.3rem 0.5rem;
     align-items: flex-start;
   }
 
   #carrier-profile .facts {
     display: grid;
     flex: 1 1 100%;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     grid-auto-flow: dense;
-    gap: 0.3rem 0.8rem;
+    gap: 0.2rem 0.6rem;
   }
 
   #carrier-profile .facts > [data-fact='Cargo types reported'],
   #carrier-profile .facts > [data-fact='Other cargo detail'] {
-    grid-column: span 2;
+    grid-column: span 3;
   }
 
   #carrier-profile .facts > div {
@@ -1310,13 +1315,13 @@
   }
 
   #carrier-profile .facts dt {
-    font-size: 0.52rem;
+    font-size: 0.5rem;
   }
 
   #carrier-profile .facts dd {
     margin-top: 0;
-    font-size: 0.64rem;
-    line-height: 1.25;
+    font-size: 0.62rem;
+    line-height: 1.2;
   }
 
   #carrier-profile .authority,
@@ -1324,88 +1329,110 @@
   #carrier-profile .insurance,
   #carrier-profile .crashes {
     margin: 0;
-    padding: 0.3rem 0.45rem;
-    font-size: 0.62rem;
-    line-height: 1.25;
+    padding: 0.25rem 0.4rem;
+    font-size: 0.6rem;
+    line-height: 1.2;
   }
 
-  #carrier-profile .authority,
-  #carrier-profile .standing {
+  /* Authority leads at full width; standing and crashes share the next row
+     (either one alone takes it all); insurance closes the profile. */
+  #carrier-profile .authority {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  #carrier-profile .standing,
+  #carrier-profile .crashes {
     flex: 1 1 45%;
     min-width: 0;
   }
 
-  #carrier-profile .insurance,
-  #carrier-profile .crashes {
+  #carrier-profile .crashes { order: 2; }
+
+  #carrier-profile .insurance {
     flex: 1 1 100%;
     min-width: 0;
+    order: 3;
   }
 
   #carrier-profile .authority__title,
   #carrier-profile .standing__title,
   #carrier-profile .insurance__title {
-    margin-bottom: 0.15rem;
-    font-size: 0.55rem;
+    margin-bottom: 0.1rem;
+    font-size: 0.52rem;
   }
 
+  /* One compact line per authority: docket, type, status, then its filings */
   #carrier-profile .authority__current {
     gap: 0;
   }
 
   #carrier-profile .authority__current > li {
-    padding: 0.15rem 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.5rem;
+    padding: 0.1rem 0;
   }
 
   #carrier-profile .authority__row {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: 0.1rem 0.4rem;
+    display: flex;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.4rem;
+  }
+
+  #carrier-profile .authority__row .tag {
+    padding: 0 0.3rem;
+    font-size: 0.5rem;
   }
 
   #carrier-profile .authority__detail {
     display: inline;
-    margin: 0 0.6rem 0 0;
-    font-size: 0.56rem;
+    margin: 0 0.4rem 0 0;
+    font-size: 0.54rem;
   }
 
   #carrier-profile .authority__foot,
-  #carrier-profile .standing__foot,
   #carrier-profile .insurance__note,
   #carrier-profile .crashes__foot {
-    margin-top: 0.15rem;
-    font-size: 0.52rem;
-    line-height: 1.2;
+    margin-top: 0.1rem;
+    font-size: 0.5rem;
+    line-height: 1.15;
   }
 
   #carrier-profile .standing__note,
+  #carrier-profile .standing__foot,
   #carrier-profile .crashes__history {
     display: none;
   }
 
   #carrier-profile .standing__list {
-    gap: 0.05rem;
+    gap: 0;
   }
 
   #carrier-profile .standing__list > div {
-    grid-template-columns: 6.5rem minmax(0, 1fr);
+    grid-template-columns: 7.2rem minmax(0, 1fr);
     gap: 0.3rem;
   }
 
   #carrier-profile .insurance__list {
-    gap: 0.05rem;
+    gap: 0;
   }
 
   #carrier-profile .insurance__list li {
     grid-template-columns: 6rem 5.5rem minmax(0, 1fr);
-    gap: 0.1rem 0.4rem;
+    gap: 0 0.4rem;
   }
 
   #carrier-profile .insurance__who {
-    font-size: 0.56rem;
+    font-size: 0.52rem;
   }
 
   #carrier-profile .authority__history,
   #carrier-profile .insurance__history {
-    margin-top: 0.15rem;
+    margin-top: 0.1rem;
   }
 
   /* Operating area: always starts a fresh page, so its title is never split
