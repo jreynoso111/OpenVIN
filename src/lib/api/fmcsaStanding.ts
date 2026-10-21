@@ -20,7 +20,7 @@ export const NATIONAL_VEHICLE_OOS_RATE = 0.22;
 export interface OosOrder {
   active: boolean;
   date: string | null;
-  rescindDate: string | null;
+  rescindDate?: string | null;
   reason: string | null;
 }
 
