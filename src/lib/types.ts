@@ -319,3 +319,24 @@ export interface CarrierFleet {
   newestDate: string | null;
   oldestDate: string | null;
 }
+
+/**
+ * A NY DMV registration record reduced to facts about the vehicle itself.
+ * Registrant, location (city/state/ZIP/county) and the scofflaw, suspension
+ * and revocation indicators are deliberately never requested or kept.
+ */
+export interface NyRegistration {
+  recordType: string | null;
+  registrationClass: string | null;
+  bodyType: string | null;
+  fuel: string | null;
+  color: string | null;
+  unladenWeight: number | null;
+  maxGrossWeight: number | null;
+  passengers: number | null;
+  /** ISO dates */
+  validFrom: string | null;
+  expires: string | null;
+  modelYear: string | null;
+  make: string | null;
+}

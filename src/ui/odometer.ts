@@ -283,7 +283,7 @@ function readingsTable(readings: readonly OdometerReading[]): HTMLElement {
 
 /** "INITIAL INSPECTION" → "Initial inspection". */
 function sentence(text: string): string {
-  const lower = text.toLowerCase().replace(/nyma/g, 'NYMA');
+  const lower = text.toLowerCase().replace(/nyma/g, 'NYMA').replace(/ ii( |$)/g, ' II$1');
   return lower.charAt(0).toUpperCase() + lower.slice(1);
 }
 

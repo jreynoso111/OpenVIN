@@ -9,6 +9,7 @@ import type {
   CommercialInspection,
   ComplaintsSummary,
   GuidedLink,
+  NyRegistration,
   OdometerReading,
   RecallCampaign,
   SafetyRating,
@@ -18,7 +19,7 @@ import type {
 } from './types';
 import { normalizeVin } from './vin';
 import { decodeVin } from './api/vpic';
-import { getNyInspections } from './api/ny';
+import { getNyInspections, getNyRegistration } from './api/ny';
 import { getCommercialInspections } from './api/fmcsa';
 import { getRecalls } from './api/recalls';
 import { getComplaints } from './api/complaints';
@@ -37,6 +38,7 @@ export interface PlateLink {
 export interface ReportHandle {
   identity: Promise<SectionResult<VehicleIdentity>>;
   nyInspections: Promise<SectionResult<OdometerReading[]>>;
+  nyRegistration: Promise<SectionResult<NyRegistration[]>>;
   commercialInspections: Promise<SectionResult<CommercialInspection[]>>;
   /** NHTSA campaigns and complaints for the decoded year/make/model line. */
   recalls: Promise<SectionResult<RecallCampaign[]>>;
@@ -81,6 +83,13 @@ export function startReport(vin: string): ReportHandle {
     unavailable<OdometerReading[]>(
       'NY State inspections (data.ny.gov)',
       'The NY inspection lookup failed unexpectedly.',
+    ),
+  );
+
+  const nyRegistration = getNyRegistration(normalized).catch(() =>
+    unavailable<NyRegistration[]>(
+      'NY State registrations (data.ny.gov)',
+      'The NY registration lookup failed unexpectedly.',
     ),
   );
 
@@ -139,6 +148,7 @@ export function startReport(vin: string): ReportHandle {
   return {
     identity,
     nyInspections,
+    nyRegistration,
     commercialInspections,
     recalls,
     complaints,

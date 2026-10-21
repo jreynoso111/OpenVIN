@@ -5,7 +5,7 @@
  * Dataset: https://data.ny.gov/resource/vezn-fmmk
  */
 
-import type { NyInspectionDetail, OdometerReading, SectionResult } from '../types';
+import type { NyInspectionDetail, NyRegistration, OdometerReading, SectionResult } from '../types';
 import { asArray, asRecord, fetchJson, intOrNull, stringOrNull } from './http';
 
 const NY_URL = 'https://data.ny.gov/resource/vezn-fmmk.json';
@@ -135,4 +135,88 @@ export async function getNyInspections(vin: string): Promise<SectionResult<Odome
     source,
     note: `${readings.length} odometer reading(s) from NY State inspections.`,
   };
+}
+
+/* ---------- Registration record (vehicle facts only) ---------- */
+
+const NY_REGISTRATION_URL = 'https://data.ny.gov/resource/w4pv-hbkt.json';
+
+/**
+ * The only registration fields ever requested. Anything that identifies or
+ * locates the registrant (city, ZIP, county) or describes the person's record
+ * (scofflaw, suspension, revocation) is left out of the query itself.
+ */
+export const REGISTRATION_FIELDS = [
+  'record_type',
+  'registration_class',
+  'body_type',
+  'fuel_type',
+  'unladen_weight',
+  'maximum_gross_weight',
+  'passengers',
+  'color',
+  'reg_valid_date',
+  'reg_expiration_date',
+  'model_year',
+  'make',
+] as const;
+
+const REGISTRATION_SOURCE = {
+  name: 'NY State registrations (data.ny.gov)',
+  url: 'https://data.ny.gov/Transportation/Vehicle-Snowmobile-and-Boat-Registrations/w4pv-hbkt',
+} as const;
+
+function isoDay(value: unknown): string | null {
+  const text = stringOrNull(value);
+  return text ? text.slice(0, 10) : null;
+}
+
+export function mapRegistrationRow(record: Record<string, unknown>): NyRegistration {
+  return {
+    recordType: field(record, 'record_type'),
+    registrationClass: field(record, 'registration_class'),
+    bodyType: field(record, 'body_type'),
+    fuel: field(record, 'fuel_type'),
+    color: field(record, 'color'),
+    unladenWeight: intOrNull(record['unladen_weight']),
+    maxGrossWeight: intOrNull(record['maximum_gross_weight']),
+    passengers: intOrNull(record['passengers']),
+    validFrom: isoDay(record['reg_valid_date']),
+    expires: isoDay(record['reg_expiration_date']),
+    modelYear: field(record, 'model_year'),
+    make: field(record, 'make'),
+  };
+}
+
+export function parseRegistrations(body: unknown): NyRegistration[] | null {
+  const rows = asArray(body);
+  if (!rows) return null;
+  return rows
+    .map(asRecord)
+    .filter((record): record is Record<string, unknown> => record !== null)
+    .map(mapRegistrationRow)
+    .sort((a, b) => (b.expires ?? '').localeCompare(a.expires ?? ''));
+}
+
+export async function getNyRegistration(vin: string): Promise<SectionResult<NyRegistration[]>> {
+  const source = { ...REGISTRATION_SOURCE, fetchedAt: new Date().toISOString() };
+  const url =
+    `${NY_REGISTRATION_URL}?vin=${encodeURIComponent(vin.toUpperCase())}` +
+    `&$select=${REGISTRATION_FIELDS.join(',')}&$limit=5`;
+  const fetched = await fetchJson(url);
+  if (!fetched.ok) {
+    return { status: 'unavailable', source, note: `NY registration lookup failed. ${fetched.note}` };
+  }
+  const registrations = parseRegistrations(fetched.data);
+  if (registrations === null) {
+    return { status: 'unavailable', source, note: 'The NY open-data service returned an unexpected response shape.' };
+  }
+  if (registrations.length === 0) {
+    return {
+      status: 'miss',
+      source,
+      note: 'No active New York registration record. Registrations expired more than two years ago are not published.',
+    };
+  }
+  return { status: 'hit', data: registrations, source };
 }

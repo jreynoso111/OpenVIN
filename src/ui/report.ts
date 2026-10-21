@@ -11,6 +11,7 @@ import type {
   CommercialInspection,
   ComplaintsSummary,
   GuidedLink,
+  NyRegistration,
   OdometerReading,
   RecallCampaign,
   SafetyRating,
@@ -30,6 +31,7 @@ import { caseHeader, caseLayout, limitsNote, officialChecks } from './case';
 import { renderIdentity } from './identity';
 import { findLinks } from './links';
 import { renderOdometer } from './odometer';
+import { renderNyRegistration } from './nyRegistration';
 import { createLedger, createPanel } from './panel';
 import { dotPivot, platePivot } from './pivot';
 import { renderComplaints, renderRecalls } from './modelLine';
@@ -42,6 +44,7 @@ import { renderNhtsaOdi } from './nhtsaOdi';
 export interface ReportHandles {
   readonly identity: Promise<SectionResult<VehicleIdentity>>;
   readonly nyInspections: Promise<SectionResult<OdometerReading[]>>;
+  readonly nyRegistration: Promise<SectionResult<NyRegistration[]>>;
   readonly commercialInspections: Promise<SectionResult<CommercialInspection[]>>;
   readonly recalls: Promise<SectionResult<RecallCampaign[]>>;
   readonly complaints: Promise<SectionResult<ComplaintsSummary>>;
@@ -134,7 +137,7 @@ export function renderReport(
   const nhtsaOdiPanel = handles.nhtsaOdi
     ? createPanel({ id: 'odi', title: 'Investigations & manufacturer communications', hint: 'NHTSA TSBs, campaigns, and investigation records for the decoded model line.', lines: 3 })
     : null;
-  const odometer = createPanel({ id: 'ny', title: 'New York inspections', lines: 3 });
+  const odometer = createPanel({ id: 'ny', title: 'New York records', lines: 3 });
 
   const ledger = createLedger();
   ledger.add('vpic', 'VIN decode · NHTSA vPIC');
@@ -145,6 +148,7 @@ export function renderReport(
   ledger.add('safety', 'Safety ratings and investigations · NHTSA');
   if (nhtsaOdiPanel) ledger.add('odi', 'ODI investigations and communications · NHTSA');
   ledger.add('ny', 'NY inspections · data.ny.gov');
+  ledger.add('nyreg', 'NY registration · data.ny.gov');
   const checks = el('div');
 
   main.replaceChildren(
@@ -317,14 +321,28 @@ export function renderReport(
     );
   }
 
-  void Promise.all([settle(handles.nyInspections, 'NY State inspections'), guided]).then(
-    live(([result, guidedLinks]) => {
+  void Promise.all([
+    settle(handles.nyInspections, 'NY State inspections'),
+    settle(handles.nyRegistration, 'NY State registrations'),
+    guided,
+  ]).then(
+    live(([result, registration, guidedLinks]) => {
       ledger.set('ny', result.status, result.source, result.status === 'hit' ? formatNumber(result.data?.length ?? 0) + ' readings' : undefined);
-      if (result.status === 'hit' && (result.data?.length ?? 0) > 0) {
-        odometer.fill(renderOdometer(result, findLinks(guidedLinks, 'state-emissions')));
-      } else {
+      ledger.set('nyreg', registration.status, registration.source, registration.status === 'hit' ? 'Registration found' : undefined);
+      const inspections = result.status === 'hit' && (result.data?.length ?? 0) > 0;
+      const registered = registration.status === 'hit' ? renderNyRegistration(registration.data ?? []) : null;
+      if (!inspections && !registered) {
         odometer.drop();
+        return;
       }
+      odometer.fill(
+        el(
+          'div',
+          {},
+          registered,
+          inspections ? renderOdometer(result, findLinks(guidedLinks, 'state-emissions')) : null,
+        ),
+      );
     }),
   );
 }

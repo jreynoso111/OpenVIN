@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { mapInspectionRow, parseInspections } from '../src/lib/api/ny';
+import { REGISTRATION_FIELDS, mapRegistrationRow, mapInspectionRow, parseInspections, parseRegistrations } from '../src/lib/api/ny';
 
 // Trimmed from a real data.ny.gov vezn-fmmk row; only vehicle fields kept.
 const NY_ROW = {
@@ -104,5 +104,56 @@ describe('parseInspections', () => {
   test('non-array bodies yield null', () => {
     expect(parseInspections({ error: true })).toBeNull();
     expect(parseInspections(null)).toBeNull();
+  });
+});
+
+describe('NY registration (vehicle facts only)', () => {
+  test('never requests registrant, location or person-level flag fields', () => {
+    const banned = ['city', 'state', 'zip', 'county', 'scofflaw_indicator', 'suspension_indicator', 'revocation_indicator'];
+    for (const name of banned) expect(REGISTRATION_FIELDS).not.toContain(name);
+  });
+
+  test('maps the vehicle fields and ignores anything else the row carries', () => {
+    const row = {
+      vin: '4T1BF3EK8BU189748',
+      record_type: 'VEH',
+      registration_class: 'PAS',
+      body_type: '4DSD',
+      fuel_type: 'GAS',
+      unladen_weight: '3263',
+      color: 'GY',
+      reg_valid_date: '2025-12-27T00:00:00.000',
+      reg_expiration_date: '2028-01-10T00:00:00.000',
+      model_year: '2011',
+      make: 'TOYOT',
+      city: 'SOMEWHERE',
+      zip: '12345',
+      suspension_indicator: 'Y',
+    };
+    const mapped = mapRegistrationRow(row);
+    expect(mapped).toEqual({
+      recordType: 'VEH',
+      registrationClass: 'PAS',
+      bodyType: '4DSD',
+      fuel: 'GAS',
+      color: 'GY',
+      unladenWeight: 3263,
+      maxGrossWeight: null,
+      passengers: null,
+      validFrom: '2025-12-27',
+      expires: '2028-01-10',
+      modelYear: '2011',
+      make: 'TOYOT',
+    });
+    expect(JSON.stringify(mapped)).not.toMatch(/SOMEWHERE|12345/);
+  });
+
+  test('sorts newest expiry first and rejects a non-array body', () => {
+    const rows = parseRegistrations([
+      { reg_expiration_date: '2024-01-01T00:00:00.000' },
+      { reg_expiration_date: '2028-01-01T00:00:00.000' },
+    ]);
+    expect(rows?.map((r) => r.expires)).toEqual(['2028-01-01', '2024-01-01']);
+    expect(parseRegistrations({ error: true })).toBeNull();
   });
 });
