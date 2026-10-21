@@ -817,7 +817,7 @@
     animation: none !important;
   }
 
-  /* Tables: never clip, repeat the header on each page */
+  /* Keep tables printable without forcing the screen layout's wide columns. */
   .log-wrap,
   .htl,
   .htl-wrap {
@@ -827,11 +827,80 @@
 
   .log {
     width: 100%;
-    table-layout: auto;
+    min-width: 0 !important;
+    table-layout: fixed;
   }
 
   .log thead {
-    display: table-header-group;
+    display: none;
+  }
+
+  .log tbody {
+    display: block;
+    width: 100%;
+  }
+
+  /* Each roadside stop prints as a compact two-column evidence card. The
+     searched VIN is already printed in the report heading and panel hint. */
+  .log tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      'date class'
+      'where plate'
+      'carrier result'
+      'units units';
+    gap: 0.2rem 0.8rem;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid #bbb;
+    break-inside: avoid;
+  }
+
+  .log td {
+    display: block;
+    min-width: 0;
+    padding: 0.1rem 0;
+    border: 0;
+    overflow-wrap: anywhere;
+    break-inside: avoid;
+  }
+
+  .log td:first-child {
+    display: none;
+  }
+
+  .log td:nth-child(2) { grid-area: class; }
+  .log td:nth-child(3) { grid-area: date; }
+  .log td:nth-child(4) { grid-area: where; }
+  .log td:nth-child(5) { grid-area: plate; }
+  .log td:nth-child(6) { grid-area: carrier; }
+  .log td:nth-child(7) { grid-area: units; }
+  .log td:nth-child(8) { grid-area: result; }
+
+  .log td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 0.05rem;
+    color: #444;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .log__vin {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .log__type-warning {
+    display: inline-block;
+    margin-left: 0;
+  }
+
+  .log__companion {
+    display: inline-flex;
+    margin-right: 0.6rem;
   }
 
   /* Timeline: wrap into rows instead of scrolling sideways */
