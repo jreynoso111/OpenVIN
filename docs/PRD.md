@@ -1,4 +1,4 @@
-# PRD — OpenVIN: Free Vehicle History Reports
+# PRD — HighView: Free Vehicle History Reports
 
 ## 1. Vision & positioning
 

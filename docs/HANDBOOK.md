@@ -1,4 +1,4 @@
-# OpenVIN Handbook — Current State & Hands-On Guide
+# HighView Handbook — Current State & Hands-On Guide
 
 > The practical "pick up the project here" document. What is actually built and live,
 > how it works, the invariants you must not break, and what to do next.
@@ -7,13 +7,13 @@
 
 ## 1. Snapshot
 
-- **Live**: https://francoischastel.github.io/OpenVIN/ (GitHub Pages, auto-deploys on
+- **Live**: https://highview-chi.vercel.app/ (GitHub Pages, auto-deploys on
   every push to `master` via `.github/workflows/deploy.yml`: test → build → deploy).
 - **Stack**: Vite + vanilla TypeScript (strict), **zero runtime dependencies**,
   PostgreSQL-free — fully static; all data is fetched in the visitor's browser.
 - **Size**: ~22.6 kB gzipped JS + ~6.2 kB CSS (budget: 80 kB).
 - **Tests**: 117 vitest unit tests (`npm test`). `npm run build` runs `tsc --noEmit` first.
-- **Scope**: the static MVP ("OpenVIN Lite") — see [STATIC_MVP.md](./STATIC_MVP.md) for
+- **Scope**: the static MVP ("HighView Lite") — see [STATIC_MVP.md](./STATIC_MVP.md) for
   what is deliberately excluded until a backend exists.
 
 ## 2. What the app does (as shipped)
@@ -113,7 +113,7 @@ npm install
 npm run dev        # local dev server
 npm test           # 117 unit tests
 npm run build      # tsc --noEmit + vite build → dist/
-npm run preview    # serve dist at :4173 (path /OpenVIN/)
+npm run preview    # serve dist at :4173 (path /HighView/)
 git push           # → auto test + build + deploy to Pages
 ```
 

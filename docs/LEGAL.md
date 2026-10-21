@@ -1,4 +1,4 @@
-# Legal Guardrails — OpenVIN
+# Legal Guardrails — HighView
 
 These are design constraints, not advice; before public launch, have a lawyer review
 this checklist, the site ToS, and the disclaimer text. Everything below is enforced in

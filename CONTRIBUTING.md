@@ -1,6 +1,6 @@
-# Contributing to OpenVIN
+# Contributing to HighView
 
-Thanks for your interest! OpenVIN is at the **planning/early-implementation stage**, and
+Thanks for your interest! HighView is at the **planning/early-implementation stage**, and
 contributions are valuable right now — you don't need to wait for code to land.
 
 ## Ground rules (read first)

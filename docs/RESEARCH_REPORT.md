@@ -1,4 +1,4 @@
-# OpenVIN — Full Research Report: Building a Free Carfax-Equivalent
+# HighView — Full Research Report: Building a Free Carfax-Equivalent
 
 > Consolidated from five parallel deep-research passes + one supply-chain verification
 > pass (2026-08-23). Endpoints marked ✅ were live-tested. This is the master reference;

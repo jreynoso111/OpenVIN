@@ -1,12 +1,12 @@
 {
-  "name": "openvin",
+  "name": "highview",
   "private": true,
   "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "build:pages": "tsc --noEmit && vite build --base=/OpenVIN/",
+    "build:pages": "tsc --noEmit && vite build --base=/HighView/",
     "preview": "vite preview",
     "test": "vitest run"
   },

@@ -121,7 +121,7 @@ sheets). ~36 billion records, 165k+ sources, ~5.9M records added daily (their cl
 
 ---
 
-## 4. What this means for OpenVIN
+## 4. What this means for HighView
 
 Sort Carfax's pipes by whether the **first-hand originator** is reachable without Carfax:
 

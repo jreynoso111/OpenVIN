@@ -1,14 +1,14 @@
-# OpenVIN
+# HighView
 
 **Free, open-source vehicle history reports.** Enter a VIN, get the most complete
 history report legally assemblable from open data — with every section labeled by
 source and coverage, including what *no* report (free or paid) can see.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-[![Deploy](https://github.com/FrancoisChastel/OpenVIN/actions/workflows/deploy.yml/badge.svg)](https://github.com/FrancoisChastel/OpenVIN/actions/workflows/deploy.yml)
+[![Deploy](https://github.com/jreynoso111/HighView/actions/workflows/deploy.yml/badge.svg)](https://github.com/jreynoso111/HighView/actions/workflows/deploy.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 
-**Try it: <https://francoischastel.github.io/OpenVIN/>**
+**Try it: <https://highview-chi.vercel.app/>**
 
 > **Status: static MVP live** ([scope](./docs/STATIC_MVP.md)) — a fully client-side
 > report built on CORS-enabled public APIs, deployed on GitHub Pages: single-page report,
@@ -25,7 +25,7 @@ federally mandated NMVTIS title system. The rest comes from private relationship
 *no* competitor — free or paid — can replicate, and the incumbents bury that limitation
 in fine print.
 
-OpenVIN's bet is that **radical transparency beats false completeness**: assemble
+HighView's bet is that **radical transparency beats false completeness**: assemble
 everything that is legally free, link the user to the free official sources they must
 query themselves (NMVTIS, NICB, manufacturer recall checkers), and disclose exactly what
 was checked, what was found, and what nobody can see.
@@ -36,7 +36,7 @@ was checked, what was found, and what nobody can see.
 |---|---|
 | ✅ Free report features | VIN decode & specs (NHTSA vPIC, 154 fields) · recalls · complaints/TSBs/investigations · safety ratings · window stickers (GM, Stellantis, Ford, Hyundai) · market range from visible comps · fatal-crash flag · theft/total-loss check (guided NICB) |
 | 🟡 Near-parity | Federal title brands & total loss — free via an official NMVTIS provider link-out · odometer history — free in ~15 states (NY publishes full-VIN inspection data as bulk open data) · ownership estimate — inferred from listing history |
-| 🔴 Structural gaps (for everyone) | Police-reported non-fatal accidents (open crash data deliberately strips VINs) and dealer service records (proprietary, contractually locked). OpenVIN handles both with a labeled proxy-signal stack and crowdsourced owner uploads — never by pretending |
+| 🔴 Structural gaps (for everyone) | Police-reported non-fatal accidents (open crash data deliberately strips VINs) and dealer service records (proprietary, contractually locked). HighView handles both with a labeled proxy-signal stack and crowdsourced owner uploads — never by pretending |
 
 ## Documentation
 
@@ -91,7 +91,7 @@ introduce owner personal information will be declined regardless of technical qu
 
 ## Legal
 
-OpenVIN is an independent open-source project. It is **not affiliated with, endorsed
+HighView is an independent open-source project. It is **not affiliated with, endorsed
 by, or connected to CARFAX, Inc.**, Experian (AutoCheck), or any data provider named in
 the documentation; trademarks belong to their owners and are referenced only for
 identification and comparison. No vehicle history source — free or paid — is complete:
