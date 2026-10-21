@@ -1325,12 +1325,14 @@
   }
 
   /* Facts: five-wide rows of inline cells; long cargo lists take three cells */
-  #carrier-profile .facts {
+  #carrier-profile .facts,
+  #plate-carriers .carrier-card .facts {
     display: block;
     font-size: 0;
   }
 
-  #carrier-profile .facts > div {
+  #carrier-profile .facts > div,
+  #plate-carriers .carrier-card .facts > div {
     display: inline-block;
     width: 19.4%;
     margin: 0 0.6% 0.12rem 0;
@@ -1342,16 +1344,20 @@
 
   /* Long cargo lists take a near-full row, so they wrap to fewer lines */
   #carrier-profile .facts > [data-fact='Cargo types reported'],
-  #carrier-profile .facts > [data-fact='Other cargo detail'] {
+  #carrier-profile .facts > [data-fact='Other cargo detail'],
+  #plate-carriers .carrier-card .facts > [data-fact='Cargo types reported'],
+  #plate-carriers .carrier-card .facts > [data-fact='Other cargo detail'] {
     width: 79%;
   }
 
-  #carrier-profile .facts dt {
+  #carrier-profile .facts dt,
+  #plate-carriers .carrier-card .facts dt {
     font-size: 0.5rem;
     line-height: 1.2;
   }
 
-  #carrier-profile .facts dd {
+  #carrier-profile .facts dd,
+  #plate-carriers .carrier-card .facts dd {
     margin-top: 0;
     font-size: 0.58rem;
     line-height: 1.1;
@@ -1360,7 +1366,11 @@
   #carrier-profile .authority,
   #carrier-profile .standing,
   #carrier-profile .insurance,
-  #carrier-profile .crashes {
+  #carrier-profile .crashes,
+  #plate-carriers .carrier-card .authority,
+  #plate-carriers .carrier-card .standing,
+  #plate-carriers .carrier-card .insurance,
+  #plate-carriers .carrier-card .crashes {
     box-sizing: border-box;
     margin: 0 0 0.2rem;
     padding: 0.2rem 0.35rem;
@@ -1372,35 +1382,44 @@
 
   #carrier-profile .authority__title,
   #carrier-profile .standing__title,
-  #carrier-profile .insurance__title {
+  #carrier-profile .insurance__title,
+  #plate-carriers .carrier-card .authority__title,
+  #plate-carriers .carrier-card .standing__title,
+  #plate-carriers .carrier-card .insurance__title {
     margin-bottom: 0.05rem;
     font-size: 0.5rem;
   }
 
   /* One compact run per authority: docket, type, status, then its filings */
-  #carrier-profile .authority__current {
+  #carrier-profile .authority__current,
+  #plate-carriers .carrier-card .authority__current {
     display: block;
   }
 
-  #carrier-profile .authority__current > li {
+  #carrier-profile .authority__current > li,
+  #plate-carriers .carrier-card .authority__current > li {
     display: block;
     padding: 0.04rem 0;
   }
 
-  #carrier-profile .authority__row {
+  #carrier-profile .authority__row,
+  #plate-carriers .carrier-card .authority__row {
     display: inline;
   }
 
-  #carrier-profile .authority__row > * {
+  #carrier-profile .authority__row > *,
+  #plate-carriers .carrier-card .authority__row > * {
     margin-right: 0.3rem;
   }
 
-  #carrier-profile .authority__row .tag {
+  #carrier-profile .authority__row .tag,
+  #plate-carriers .carrier-card .authority__row .tag {
     padding: 0 0.3rem;
     font-size: 0.5rem;
   }
 
-  #carrier-profile .authority__detail {
+  #carrier-profile .authority__detail,
+  #plate-carriers .carrier-card .authority__detail {
     display: inline;
     margin: 0 0.3rem 0 0;
     font-size: 0.5rem;
@@ -1408,7 +1427,10 @@
 
   #carrier-profile .authority__foot,
   #carrier-profile .insurance__note,
-  #carrier-profile .crashes__foot {
+  #carrier-profile .crashes__foot,
+  #plate-carriers .carrier-card .authority__foot,
+  #plate-carriers .carrier-card .insurance__note,
+  #plate-carriers .carrier-card .crashes__foot {
     margin-top: 0.05rem;
     font-size: 0.5rem;
     line-height: 1.1;
@@ -1416,16 +1438,21 @@
 
   #carrier-profile .standing__note,
   #carrier-profile .standing__foot,
-  #carrier-profile .crashes__history {
+  #carrier-profile .crashes__history,
+  #plate-carriers .carrier-card .standing__note,
+  #plate-carriers .carrier-card .standing__foot,
+  #plate-carriers .carrier-card .crashes__history {
     display: none;
   }
 
-  #carrier-profile .standing__list {
+  #carrier-profile .standing__list,
+  #plate-carriers .carrier-card .standing__list {
     display: block;
     font-size: 0;
   }
 
-  #carrier-profile .standing__list > div {
+  #carrier-profile .standing__list > div,
+  #plate-carriers .carrier-card .standing__list > div {
     display: inline-grid;
     box-sizing: border-box;
     width: 49.5%;
@@ -1439,22 +1466,27 @@
     page-break-inside: avoid;
   }
 
-  #carrier-profile .insurance__list {
+  #carrier-profile .insurance__list,
+  #plate-carriers .carrier-card .insurance__list {
     display: block;
   }
 
-  #carrier-profile .insurance__list li {
+  #carrier-profile .insurance__list li,
+  #plate-carriers .carrier-card .insurance__list li {
     grid-template-columns: 5rem 4.9rem minmax(0, 1fr);
     gap: 0 0.35rem;
     line-height: 1.1;
   }
 
-  #carrier-profile .insurance__who {
+  #carrier-profile .insurance__who,
+  #plate-carriers .carrier-card .insurance__who {
     font-size: 0.5rem;
   }
 
   #carrier-profile .authority__history,
-  #carrier-profile .insurance__history {
+  #carrier-profile .insurance__history,
+  #plate-carriers .carrier-card .authority__history,
+  #plate-carriers .carrier-card .insurance__history {
     margin-top: 0.1rem;
   }
 
@@ -1614,5 +1646,285 @@
   #carrier-fleet .panel__foot {
     margin-top: 0.3rem;
     font-size: 0.52rem;
+  }
+}
+
+/* ---------- Print: plate file ----------
+   Same rules as the carrier file: plain block flow (Safari will not split
+   flex/grid), real tables with a repeating header, small panels kept whole,
+   and the long roadside log last so it can run across pages. */
+
+@media print {
+  .desk__main:has(#plate-vehicles) {
+    display: block;
+  }
+
+  .desk__main:has(#plate-vehicles) > * {
+    margin-bottom: 0.45rem;
+  }
+
+  #plate-vehicles .panel__hint,
+  #plate-crashes .panel__hint,
+  #plate-vehicles .plate-vehicle-details {
+    display: none;
+  }
+
+  #plate-vehicles .panel__head,
+  #plate-where .panel__head,
+  #plate-carriers .panel__head,
+  #plate-crashes .panel__head,
+  #plate-log .panel__head {
+    padding-block: 0.25rem;
+  }
+
+  #plate-vehicles .panel__body,
+  #plate-where .panel__body,
+  #plate-carriers .panel__body,
+  #plate-crashes .panel__body,
+  #plate-log .panel__body {
+    padding: 0.35rem 0.5rem;
+  }
+
+  /* Short panels stay whole; the two long ones may continue on the next page */
+  #plate-where,
+  #plate-carriers,
+  #plate-crashes {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  #plate-vehicles,
+  #plate-log {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  #plate-vehicles .note,
+  #plate-crashes .note {
+    margin: 0 0 0.25rem;
+    font-size: 0.55rem;
+    line-height: 1.2;
+  }
+
+  /* Vehicles and roadside log: dense real tables */
+  #plate-vehicles .log-wrap,
+  #plate-log .log-wrap {
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+
+  #plate-vehicles .log,
+  #plate-log .log {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    font-size: 0.6rem;
+    line-height: 1.2;
+  }
+
+  #plate-vehicles .log thead,
+  #plate-log .log thead { display: table-header-group; }
+
+  #plate-vehicles .log tbody,
+  #plate-log .log tbody { display: table-row-group; width: auto; }
+
+  #plate-vehicles .log tr,
+  #plate-log .log tr {
+    display: table-row;
+    padding: 0;
+    border: 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  #plate-vehicles .log th,
+  #plate-vehicles .log td,
+  #plate-log .log th,
+  #plate-log .log td {
+    display: table-cell;
+    padding: 0.12rem 0.35rem 0.12rem 0;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+  }
+
+  #plate-vehicles .log td,
+  #plate-log .log td {
+    border-bottom: 1px solid #ddd;
+  }
+
+  #plate-vehicles .log td::before,
+  #plate-log .log td::before {
+    content: none;
+  }
+
+  #plate-vehicles .log th,
+  #plate-log .log th {
+    border-bottom: 1px solid #000;
+    font-size: 0.5rem;
+    white-space: normal;
+    overflow-wrap: normal;
+    color: #333;
+  }
+
+  #plate-vehicles .pivot,
+  #plate-vehicles .log__vin,
+  #plate-log .pivot,
+  #plate-log .log__vin {
+    font-size: 0.58rem;
+    line-height: 1.25;
+  }
+
+  #plate-vehicles .log .sub,
+  #plate-log .log .sub {
+    margin-top: 0;
+    font-size: 0.52rem;
+  }
+
+  #plate-vehicles .stack,
+  #plate-log .stack {
+    gap: 0;
+  }
+
+  #plate-log .tag {
+    margin-left: 0;
+    padding: 0 0.3rem;
+    white-space: nowrap;
+    font-size: 0.5rem;
+  }
+
+  /* Vehicles: VIN | Unit | Carrier | Seen | Last stop */
+  #plate-vehicles .log th:nth-child(1) { width: 22%; }
+  #plate-vehicles .log th:nth-child(2) { width: 14%; }
+  #plate-vehicles .log th:nth-child(3) { width: 24%; }
+  #plate-vehicles .log th:nth-child(4) { width: 26%; }
+  #plate-vehicles .log th:nth-child(5) { width: 14%; }
+
+  /* Roadside log: Date | Where | VIN | Unit | Carrier | Result | Findings */
+  #plate-log .log th:nth-child(1) { width: 11%; }
+  #plate-log .log th:nth-child(2) { width: 17%; }
+  #plate-log .log th:nth-child(3) { width: 17%; }
+  #plate-log .log th:nth-child(4) { width: 15%; }
+  #plate-log .log th:nth-child(5) { width: 17%; }
+  #plate-log .log th:nth-child(6) { width: 10%; }
+  #plate-log .log th:nth-child(7) { width: 13%; }
+
+  /* Never strand a panel title or a table header at the foot of a page */
+  #plate-vehicles .panel__head,
+  #plate-log .panel__head,
+  #plate-vehicles .log thead,
+  #plate-log .log thead {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  #plate-vehicles .log tbody tr:first-child,
+  #plate-log .log tbody tr:first-child {
+    break-before: avoid;
+    page-break-before: avoid;
+  }
+
+  #plate-log .findings ul {
+    margin-top: 0.1rem;
+    padding-left: 0.8rem;
+    font-size: 0.52rem;
+  }
+
+  /* Where seen: summary beside a map that stays small */
+  #plate-where .where {
+    grid-template-columns: 10rem minmax(0, 1fr);
+    gap: 0.6rem;
+    align-items: start;
+  }
+
+  #plate-where .where__lead {
+    display: block;
+    margin: 0;
+  }
+
+  #plate-where .last-seen__place {
+    font-size: 0.9rem;
+  }
+
+  #plate-where .where__grid:has(> .usmap) {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 0.5rem;
+    align-items: start;
+  }
+
+  #plate-where .where__grid:has(> .usmap) > .usmap {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+
+  #plate-where .where__grid:has(> .usmap) > .chips {
+    grid-column: 2;
+  }
+
+  #plate-where .usmap__svg {
+    display: block;
+    max-height: 44mm;
+    margin-inline: auto;
+  }
+
+  #plate-where .chips__list {
+    gap: 0.2rem;
+  }
+
+  #plate-where .chip {
+    padding: 0.05rem 0.35rem;
+    font-size: 0.55rem;
+  }
+
+  /* Carrier cards: the compact carrier-profile rules above apply inside */
+  #plate-carriers .carrier-stack {
+    display: block;
+  }
+
+  #plate-carriers .carrier-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 0.3rem;
+    font-size: 0.62rem;
+  }
+
+  #plate-carriers .carrier-card + .carrier-card {
+    padding-top: 0.3rem;
+  }
+
+  #plate-carriers .carrier-card__evidence {
+    margin: 0.1rem 0;
+    font-size: 0.56rem;
+  }
+
+  /* Links to other screens mean nothing on paper */
+  #plate-carriers .carrier-card__actions {
+    display: none;
+  }
+
+  #plate-carriers .carrier-card .standing,
+  #plate-carriers .carrier-card .insurance,
+  #plate-carriers .carrier-card .crashes {
+    display: block;
+    width: auto;
+  }
+
+  /* Crash records: one tight line per event */
+  #plate-crashes .plate-crashes {
+    margin: 0.2rem 0;
+    padding-left: 1rem;
+  }
+
+  #plate-crashes .plate-crashes__event {
+    padding: 0.15rem 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  #plate-crashes .plate-crashes__heading,
+  #plate-crashes .plate-crashes__facts,
+  #plate-crashes .plate-crashes__severity {
+    margin: 0;
+    font-size: 0.58rem;
   }
 }

@@ -127,7 +127,7 @@ export function renderPlateFile(
   ledger.add('crashes', 'Crash records · FMCSA');
 
   main.replaceChildren(
-    caseLayout(header.root, [vehicles.root, where.root, carriers.root, log.root, crashes.root], [
+    caseLayout(header.root, [vehicles.root, where.root, carriers.root, crashes.root, log.root], [
       ledger.root,
       el(
         'section',

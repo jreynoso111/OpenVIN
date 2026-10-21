@@ -10,6 +10,17 @@ export interface CaseHeader {
   setIdentifiers(content: Node | null): void;
 }
 
+/** Paper cannot expand a collapsed list, so open the plate log's findings while printing. */
+let reopened: HTMLDetailsElement[] = [];
+window.addEventListener('beforeprint', () => {
+  reopened = [...document.querySelectorAll<HTMLDetailsElement>('#plate-log details.findings:not([open])')];
+  reopened.forEach((details) => (details.open = true));
+});
+window.addEventListener('afterprint', () => {
+  reopened.forEach((details) => (details.open = false));
+  reopened = [];
+});
+
 /** Copy-link and save-as-PDF (the browser's print dialog) for the open file. */
 function caseActions(): HTMLElement {
   const copy = el(
