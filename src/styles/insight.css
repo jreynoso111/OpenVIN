@@ -2279,3 +2279,50 @@
     font-size: 0.52rem;
   }
 }
+
+/* ---------- Print: carrier past authority events ----------
+   Opened while printing (see case.ts); laid out as two compact columns of
+   short entries so the full list stays inside the census profile page. */
+
+@media print {
+  #carrier-profile .authority__history > summary {
+    list-style: none;
+    font-size: 0.56rem;
+  }
+
+  #carrier-profile .authority__history > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  #carrier-profile .authority__history ol {
+    display: block;
+    margin: 0.1rem 0 0;
+    padding: 0;
+    font-size: 0;
+  }
+
+  #carrier-profile .authority__history li {
+    display: inline-block;
+    box-sizing: border-box;
+    width: 49.5%;
+    margin: 0;
+    padding: 0.05rem 0.4rem 0.05rem 0;
+    vertical-align: top;
+    font-size: 0.5rem;
+    line-height: 1.15;
+    border-top: 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  #carrier-profile .authority__history li strong,
+  #carrier-profile .authority__history li span {
+    display: inline;
+    margin: 0;
+    font-size: 0.5rem;
+  }
+
+  #carrier-profile .authority__history li span::before {
+    content: ' · ';
+  }
+}

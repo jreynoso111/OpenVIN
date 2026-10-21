@@ -10,10 +10,10 @@ export interface CaseHeader {
   setIdentifiers(content: Node | null): void;
 }
 
-/** Paper cannot expand a collapsed list, so open the roadside findings while printing. */
+/** Paper cannot expand a collapsed list, so open the findings and authority history while printing. */
 let reopened: HTMLDetailsElement[] = [];
 window.addEventListener('beforeprint', () => {
-  reopened = [...document.querySelectorAll<HTMLDetailsElement>('#plate-log details.findings:not([open]), #roadside details.findings:not([open])')];
+  reopened = [...document.querySelectorAll<HTMLDetailsElement>('#plate-log details.findings:not([open]), #roadside details.findings:not([open]), #carrier-profile details.authority__history:not([open])')];
   reopened.forEach((details) => (details.open = true));
 });
 window.addEventListener('afterprint', () => {
