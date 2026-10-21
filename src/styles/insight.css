@@ -771,6 +771,8 @@
 /* ---------- Carrier insurance ---------- */
 
 .insurance {
+  box-sizing: border-box;
+  min-width: 0;
   margin: 0.7rem 0 0;
   padding: 0.5rem 0.7rem;
   border: var(--rule);
@@ -801,15 +803,22 @@
   display: grid;
   gap: 0.25rem;
   margin: 0;
+  min-width: 0;
   padding: 0;
   list-style: none;
 }
 
 .insurance__list li {
   display: grid;
-  grid-template-columns: 8.5rem 6rem 1fr;
+  grid-template-columns: minmax(0, min(8.5rem, 34%)) minmax(0, min(6rem, 24%)) minmax(0, 1fr);
   gap: 0.2rem 0.6rem;
   align-items: baseline;
+  min-width: 0;
+}
+
+.insurance__list li > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .insurance__kind {
@@ -854,7 +863,7 @@
   }
 
   .insurance__list li {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) minmax(0, min(6rem, 38%));
   }
 
   .insurance__who {
