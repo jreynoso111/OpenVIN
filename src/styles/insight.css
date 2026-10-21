@@ -787,11 +787,12 @@
     margin-bottom: 0.8rem;
   }
 
-  /* Long sections may break across pages; small units may not */
+  /* Move each report section as a unit when it cannot fit in the remaining page. */
   .panel {
     box-shadow: none;
     overflow: visible;
-    break-inside: auto;
+    break-inside: avoid-page;
+    page-break-inside: avoid;
   }
 
   .panel__head,
@@ -805,19 +806,22 @@
   .htl__event,
   .mrow,
   .log tr {
-    break-inside: avoid;
+    break-inside: avoid-page;
+    page-break-inside: avoid;
   }
 
   .panel__head {
-    break-after: avoid;
+    break-after: avoid-page;
+    page-break-after: avoid;
   }
 
-  /* Short sections stay whole so a heading is never stranded at a page foot */
+  /* Keep the requested report sections together when they fit on one page. */
   #summary,
-  #where,
-  #recalls,
-  #complaints {
-    break-inside: avoid;
+  #connections,
+  #roadside,
+  #carriers {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
   }
 
   .reveal {
@@ -860,7 +864,8 @@
     gap: 0.2rem 0.8rem;
     padding: 0.35rem 0;
     border-bottom: 1px solid #bbb;
-    break-inside: avoid;
+    break-inside: avoid-page;
+    page-break-inside: avoid;
   }
 
   .log td {
