@@ -1282,36 +1282,36 @@
     padding: 0.4rem 0.6rem;
   }
 
-  /* Profile: built to fit the first page even for carriers with many authority
-     and insurance rows. Facts in five columns, authority beside standing,
-     insurance beside crashes; caveats are kept but set small. */
+  /* Profile: compact, and built from plain block flow (no flex/grid around
+     the body) because Safari treats a flex/grid container as one unsplittable
+     piece and moves it whole to the next page, leaving the panel empty. */
   #carrier-profile .panel__hint {
     display: none;
   }
 
   #carrier-profile .panel__body > div {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.3rem 0.5rem;
-    align-items: flex-start;
+    display: block;
   }
 
+  /* Facts: five-wide rows of inline cells; long cargo lists take three cells */
   #carrier-profile .facts {
-    display: grid;
-    flex: 1 1 100%;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    grid-auto-flow: dense;
-    gap: 0.2rem 0.6rem;
+    display: block;
+    font-size: 0;
+  }
+
+  #carrier-profile .facts > div {
+    display: inline-block;
+    width: 19.4%;
+    margin: 0 0.6% 0.2rem 0;
+    vertical-align: top;
+    font-size: 0.62rem;
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   #carrier-profile .facts > [data-fact='Cargo types reported'],
   #carrier-profile .facts > [data-fact='Other cargo detail'] {
-    grid-column: span 3;
-  }
-
-  #carrier-profile .facts > div {
-    min-width: 0;
-    break-inside: avoid;
+    width: 59.4%;
   }
 
   #carrier-profile .facts dt {
@@ -1328,31 +1328,13 @@
   #carrier-profile .standing,
   #carrier-profile .insurance,
   #carrier-profile .crashes {
-    margin: 0;
+    box-sizing: border-box;
+    margin: 0 0 0.3rem;
     padding: 0.25rem 0.4rem;
     font-size: 0.6rem;
     line-height: 1.2;
-  }
-
-  /* Authority leads at full width; standing and crashes share the next row
-     (either one alone takes it all); insurance closes the profile. */
-  #carrier-profile .authority {
-    flex: 1 1 100%;
-    min-width: 0;
-  }
-
-  #carrier-profile .standing,
-  #carrier-profile .crashes {
-    flex: 1 1 45%;
-    min-width: 0;
-  }
-
-  #carrier-profile .crashes { order: 2; }
-
-  #carrier-profile .insurance {
-    flex: 1 1 100%;
-    min-width: 0;
-    order: 3;
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   #carrier-profile .authority__title,
@@ -1362,25 +1344,22 @@
     font-size: 0.52rem;
   }
 
-  /* One compact line per authority: docket, type, status, then its filings */
+  /* One compact run per authority: docket, type, status, then its filings */
   #carrier-profile .authority__current {
-    gap: 0;
+    display: block;
   }
 
   #carrier-profile .authority__current > li {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0 0.5rem;
+    display: block;
     padding: 0.1rem 0;
   }
 
   #carrier-profile .authority__row {
-    display: flex;
-    flex: 0 0 auto;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0 0.4rem;
+    display: inline;
+  }
+
+  #carrier-profile .authority__row > * {
+    margin-right: 0.4rem;
   }
 
   #carrier-profile .authority__row .tag {
@@ -1409,16 +1388,25 @@
   }
 
   #carrier-profile .standing__list {
-    gap: 0;
+    display: block;
+    font-size: 0;
   }
 
   #carrier-profile .standing__list > div {
-    grid-template-columns: 7.2rem minmax(0, 1fr);
+    display: inline-grid;
+    box-sizing: border-box;
+    width: 49.5%;
+    padding-right: 0.4rem;
+    vertical-align: top;
+    font-size: 0.6rem;
+    grid-template-columns: 5.2rem minmax(0, 1fr);
     gap: 0.3rem;
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   #carrier-profile .insurance__list {
-    gap: 0;
+    display: block;
   }
 
   #carrier-profile .insurance__list li {
