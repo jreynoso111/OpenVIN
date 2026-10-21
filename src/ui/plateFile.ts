@@ -59,7 +59,12 @@ function vehiclesTable(uses: readonly VehicleUse[], names: ReadonlyMap<string, s
         'tr',
         {},
         el('td', { 'data-label': 'VIN' }, vinPivot(use.vin)),
-        el('td', { 'data-label': 'Unit' }, [use.unitType, use.make].filter(Boolean).join(' · ') || '—'),
+        el(
+          'td',
+          { 'data-label': 'Unit' },
+          use.unitType || use.make || '—',
+          use.unitType && use.make ? el('span', { class: 'sub' }, use.make) : null,
+        ),
         el('td', { 'data-label': 'Carrier' }, el('span', { class: 'stack' }, ...[...use.carriers].map((dot) => dotPivot(dot, names.get(dot))))),
         el('td', { 'data-label': 'Seen' }, formatNumber(use.count) + '×', el('span', { class: 'sub' }, (use.first ? formatDate(use.first) : '—') + ' – ' + (use.last.date ? formatDate(use.last.date) : '—'))),
         el('td', { 'data-label': 'Last stop' }, placeText(use.last)),

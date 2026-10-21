@@ -842,6 +842,34 @@
     white-space: normal;
     overflow-wrap: anywhere;
   }
+
+  /* The plate's vehicle summary is a compact five-column table; keep its
+     VINs, carrier links and last-stop labels inside the available panel. */
+  #plate-vehicles .log {
+    min-width: 0;
+    table-layout: fixed;
+  }
+
+  #plate-vehicles .log th:nth-child(1),
+  #plate-vehicles .log td:nth-child(1) { width: 24%; }
+
+  #plate-vehicles .log th:nth-child(2),
+  #plate-vehicles .log td:nth-child(2) { width: 16%; }
+
+  #plate-vehicles .log th:nth-child(3),
+  #plate-vehicles .log td:nth-child(3) { width: 18%; }
+
+  #plate-vehicles .log th:nth-child(4),
+  #plate-vehicles .log td:nth-child(4) { width: 18%; }
+
+  #plate-vehicles .log th:nth-child(5),
+  #plate-vehicles .log td:nth-child(5) { width: 24%; }
+
+  #plate-vehicles .log__vin,
+  #plate-vehicles .log td {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
 }
 
 .sub {
