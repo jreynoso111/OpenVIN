@@ -1,11 +1,11 @@
 # Vektor TMS integration discovery
 
-Checked 2026-10-19. This is a source and architecture note; HighView does not
+Checked 2026-10-19. This is a source and architecture note; VinOrbits does not
 currently call Vektor or store Vektor records.
 
-## Free FMCSA data now connected to High View
+## Free FMCSA data now connected to VinOrbits
 
-High View now queries the public FMCSA datasets directly from the browser, without
+VinOrbits now queries the public FMCSA datasets directly from the browser, without
 an API key or a Vektor subscription. `src/lib/api/fmcsa.ts` joins Inspections Per
 Unit to the Vehicle Inspection File by `inspection_id`, then joins violation
 descriptions by both `inspection_id` and the exact `insp_unit_id` matched to the
@@ -50,7 +50,7 @@ Vektor's TMS integration pages describe load feeds, tracking/status, bills of la
 proofs of delivery, and partner integrations. They do not describe these as vehicle
 title, lien, theft, or owner-registration records.
 
-## HighView integration constraints
+## VinOrbits integration constraints
 
 - The current app is a static Vite client. Never put a Vektor API key in browser code,
   a `VITE_*` variable, GitHub Pages, or a public Vercel bundle.
@@ -66,7 +66,7 @@ title, lien, theft, or owner-registration records.
   canonical once its reverse proxy is live. Confirm the supported HTTPS API base with
   Vektor before sending an API key.
 - The API does not replace state title or lien portals, NMVTIS, NICB, or other
-  VIN-specific official checks already represented in HighView.
+  VIN-specific official checks already represented in VinOrbits.
 
 ## Automation path to confirm
 

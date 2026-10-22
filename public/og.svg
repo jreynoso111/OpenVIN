@@ -1,16 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
-  <rect width="1200" height="630" fill="#101318"/>
-  <radialGradient id="glow" cx="0.5" cy="0.32" r="0.7">
-    <stop offset="0" stop-color="#3573F0" stop-opacity="0.22"/>
-    <stop offset="1" stop-color="#3573F0" stop-opacity="0"/>
-  </radialGradient>
+  <defs>
+    <radialGradient id="glow" cx=".78" cy=".42" r=".72">
+      <stop offset="0" stop-color="#26759b" stop-opacity=".48"/>
+      <stop offset="1" stop-color="#07111e" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="#07111e"/>
   <rect width="1200" height="630" fill="url(#glow)"/>
-  <g transform="translate(508 140) scale(3)">
-    <rect width="64" height="64" rx="12" fill="#1C2A44"/>
-  <path d="M12 23V12H23M41 12H52V23M52 41V52H41M23 52H12V41" fill="none" stroke="#E8EEF8" stroke-width="3.5" stroke-linecap="square"/>
-  <path d="M19 38 32 24 45 38" fill="none" stroke="#4D9BFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="32" cy="45.5" r="3" fill="#E8EEF8"/>
+  <g transform="translate(98 132) scale(1.12)">
+    <rect width="64" height="64" rx="16" fill="#14243A"/>
+    <ellipse cx="32" cy="32" rx="23" ry="10" transform="rotate(-34 32 32)" fill="none" stroke="#85D7EC" stroke-width="2.5"/>
+    <ellipse cx="32" cy="32" rx="17" ry="7" transform="rotate(38 32 32)" fill="none" stroke="#E9A95B" stroke-width="1.5" opacity=".8"/>
+    <path d="M24 23 32 42 40 23" fill="none" stroke="#F5F3EA" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="48" cy="18" r="3.5" fill="#F4A64D"/>
   </g>
-  <text x="600" y="430" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Roboto, sans-serif" font-size="84" font-weight="700" letter-spacing="-2" fill="#F4F6F9">High View</text>
-  <text x="600" y="500" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Roboto, sans-serif" font-size="28" fill="#9AA3B0">Truck investigation desk</text>
+  <text x="98" y="300" font-family="Inter, -apple-system, 'Segoe UI', sans-serif" font-size="86" font-weight="700" letter-spacing="-4" fill="#F4F2EA">VinOrbits</text>
+  <text x="102" y="365" font-family="Inter, -apple-system, 'Segoe UI', sans-serif" font-size="24" font-weight="700" letter-spacing="5" fill="#85D7EC">VEHICLE RESEARCH, REIMAGINED</text>
+  <text x="102" y="438" font-family="Inter, -apple-system, 'Segoe UI', sans-serif" font-size="28" fill="#B8C4D2">A clearer view of every vehicle's story.</text>
+  <rect x="102" y="490" width="260" height="46" rx="23" fill="#18283D" stroke="#E9A95B" stroke-opacity=".55"/>
+  <circle cx="126" cy="513" r="5" fill="#F4A64D"/>
+  <text x="145" y="520" font-family="Inter, -apple-system, 'Segoe UI', sans-serif" font-size="15" font-weight="700" letter-spacing="2" fill="#FFE1B8">UNDER CONSTRUCTION</text>
 </svg>

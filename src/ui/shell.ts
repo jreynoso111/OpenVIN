@@ -1,15 +1,17 @@
 /** Page shell: header with the search box, landing page, footer. */
 
 import { describeQuery, queryHref, type SearchQuery } from '../lib/query';
-import { clear, el, svgEl } from './dom';
+import { clear, el } from './dom';
+import { createBrandMark } from './brand';
 import { createSearchForm, type SearchForm } from './searchForm';
 
 const DISCLAIMER =
-  'High View assembles public U.S. DOT, NHTSA and New York State records in your browser. ' +
+  'VinOrbits assembles public U.S. DOT, NHTSA and New York State records in your browser. ' +
   'It is not affiliated with any data provider, holds no DMV registration or owner data, and ' +
   'shows historical inspection sites only — never live vehicle location.';
 
-const RECENT_KEY = 'highview.recent';
+const RECENT_KEY = 'vinorbits.recent';
+const LEGACY_RECENT_KEY = 'highview.recent';
 
 export const EXAMPLES: ReadonlyArray<{ query: SearchQuery; note: string }> = [
   { query: { kind: 'vin', value: '3AKJHHDR7KSJX1198', state: null }, note: 'Tractor with plate history' },
@@ -17,31 +19,6 @@ export const EXAMPLES: ReadonlyArray<{ query: SearchQuery; note: string }> = [
   { query: { kind: 'name', value: 'Werner Enterprises', state: null }, note: 'Company name' },
   { query: { kind: 'dot', value: '53467', state: null }, note: 'Carrier fleet' },
 ];
-
-/** Viewfinder corners around an upward chevron: the elevated vantage point. */
-function logoMark(): SVGElement {
-  return svgEl(
-    'svg',
-    { class: 'wordmark__glyph', viewBox: '0 0 64 64', 'aria-hidden': 'true', focusable: 'false' },
-    svgEl('rect', { width: '64', height: '64', rx: '12', fill: 'currentColor', class: 'wordmark__plate' }),
-    svgEl('path', {
-      d: 'M12 23V12H23M41 12H52V23M52 41V52H41M23 52H12V41',
-      fill: 'none',
-      stroke: '#E8EEF8',
-      'stroke-width': '3.5',
-      'stroke-linecap': 'square',
-    }),
-    svgEl('path', {
-      d: 'M19 38 32 24 45 38',
-      fill: 'none',
-      stroke: '#4D9BFF',
-      'stroke-width': '6',
-      'stroke-linecap': 'round',
-      'stroke-linejoin': 'round',
-    }),
-    svgEl('circle', { cx: '32', cy: '45.5', r: '3', fill: '#E8EEF8' }),
-  );
-}
 
 function wordmark(onHome: () => void): HTMLElement {
   return el(
@@ -54,14 +31,18 @@ function wordmark(onHome: () => void): HTMLElement {
         onHome();
       },
     },
-    logoMark(),
-    el('span', { class: 'wordmark__text' }, el('span', { class: 'wordmark__name' }, 'High View')),
+    createBrandMark('wordmark__glyph'),
+    el('span', { class: 'wordmark__text' }, el('span', { class: 'wordmark__name' }, 'VinOrbits')),
   );
 }
 
 export function readRecent(): SearchQuery[] {
   try {
-    const raw = localStorage.getItem(RECENT_KEY);
+    let raw = localStorage.getItem(RECENT_KEY);
+    if (raw === null) {
+      raw = localStorage.getItem(LEGACY_RECENT_KEY);
+      if (raw !== null) localStorage.setItem(RECENT_KEY, raw);
+    }
     const parsed: unknown = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(parsed)) return [];
     return parsed.filter(
@@ -136,7 +117,7 @@ function landing(onSearch: (query: SearchQuery) => void): HTMLElement {
       el(
         'p',
         { class: 'home__lede' },
-        'Start from a VIN, a plate, a company or DBA name, a USDOT or an MC number. High View pulls the roadside inspections behind it and links each plate, carrier and coupled trailer to its own file.',
+        'Start from a VIN, a plate, a company or DBA name, a USDOT or an MC number. VinOrbits pulls the roadside inspections behind it and links each plate, carrier and coupled trailer to its own file.',
       ),
       form.root,
     ),

@@ -152,7 +152,7 @@ export async function getNhtsaOdiVehicleLine(
     return {
       status: 'unavailable',
       source: { ...SOURCE, fetchedAt: new Date().toISOString() },
-      note: 'The NHTSA mirror is available in the Ubuntu-local HighView service.',
+      note: 'The NHTSA mirror is available in the Ubuntu-local VinOrbits service.',
     };
   }
   const { make, model, modelYear } = identity;

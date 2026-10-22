@@ -1,4 +1,4 @@
-# Static MVP ("HighView Lite") — Scope & Rationale
+# Static MVP ("VinOrbits Lite") — Scope & Rationale
 
 The first shipped version is a **fully static site on GitHub Pages** — no backend, no
 database. This document records what that constraint changes relative to

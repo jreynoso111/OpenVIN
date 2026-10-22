@@ -169,7 +169,7 @@ export function mountLocalArchive(
   status.setAttribute('aria-live', 'polite');
   const list = element('ol', 'archive__list');
   const detail = element('div', 'archive__selected');
-  section.append(heading, element('p', 'archive__note', 'Snapshots stay in the High View database on this Ubuntu server.'), status, list, detail);
+  section.append(heading, element('p', 'archive__note', 'Snapshots stay in the VinOrbits database on this Ubuntu server.'), status, list, detail);
   main.append(section);
 
   const refresh = async (): Promise<void> => {

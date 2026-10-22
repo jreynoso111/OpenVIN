@@ -1,4 +1,4 @@
-# Architecture — HighView
+# Architecture — VinOrbits
 
 Design goals: report streams in seconds · every upstream is unreliable by assumption ·
 the local evidence archive compounds forever · legal constraints are enforced in code,

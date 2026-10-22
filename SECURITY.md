@@ -16,21 +16,21 @@ fix before any public disclosure.
 
 Once implementation lands, the following are in scope:
 
-- The HighView web application and API
+- The VinOrbits web application and API
 - Data ingestion pipelines and adapters
 - Anything enabling access to non-public data, other users' uploads, or quota abuse
 
 ## Data-source operators
 
 If you operate a data source referenced by this project (a state agency, government
-portal, or API provider) and have concerns about how HighView accesses it, contact
+portal, or API provider) and have concerns about how VinOrbits accesses it, contact
 **francois@chastel.co**. Per our own policy ([docs/LEGAL.md](./docs/LEGAL.md)), a
 source operator's objection results in the corresponding adapter being disabled within
 24 hours.
 
 ## Privacy issues
 
-HighView is designed to hold **no personal information about vehicle owners**. If you
+VinOrbits is designed to hold **no personal information about vehicle owners**. If you
 find any owner-identifying data in the project's outputs, datasets, or fixtures, report
 it through the channels above — it is treated with the same severity as a security
 vulnerability.

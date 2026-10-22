@@ -1,12 +1,12 @@
 {
-  "name": "highview",
+  "name": "vinorbits",
   "private": true,
   "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "build:pages": "tsc --noEmit && vite build --base=/HighView/",
+    "build:pages": "tsc --noEmit && vite build --base=/OpenVIN/",
     "preview": "vite preview",
     "test": "vitest run"
   },

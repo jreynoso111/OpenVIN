@@ -10,7 +10,7 @@ import { WARRANTY_TERMS, type WarrantyTerm } from './data/warrantyTerms';
 const ASSUMED_IN_SERVICE_MONTH_INDEX = 8; // September
 
 const SOURCE = {
-  name: 'High View estimate (published factory warranty terms)',
+  name: 'VinOrbits estimate (published factory warranty terms)',
 } as const;
 
 function assumedInServiceDate(modelYear: number): { iso: string; year: number } {

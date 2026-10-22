@@ -1,4 +1,4 @@
-/** Tiny DOM builders — the only "framework" in High View. */
+/** Tiny DOM builders — the only "framework" in VinOrbits. */
 
 type Child = Node | string | null | undefined | false;
 
