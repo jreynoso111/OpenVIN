@@ -1,3 +1,5 @@
+/// <reference types="vite/client" />
+
 import { createBrandMark } from './brand';
 import { el } from './dom';
 
