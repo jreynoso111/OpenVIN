@@ -7,9 +7,10 @@
 
 ## 1. Snapshot
 
-- **Live**: https://vinorbits.com/ (Vercel project `vinorbits`; currently the
-  under-construction landing page. The report prototype in this repository is not
-  currently served from the public domain.)
+- **Public domain**: https://vinorbits.com/ serves a static maintenance page through a
+  host-specific Vercel route. The normal app remains the repository root and continues
+  to deploy through the `vinorbits` Vercel project. That deployment does not connect to
+  the Ubuntu database or server; local dataset integration stays separate.
 - **Stack**: Vite + vanilla TypeScript (strict), **zero runtime dependencies**,
   PostgreSQL-free — fully static; all data is fetched in the visitor's browser.
 - **Size**: ~22.6 kB gzipped JS + ~6.2 kB CSS (budget: 80 kB).

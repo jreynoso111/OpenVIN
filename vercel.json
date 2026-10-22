@@ -1,0 +1,16 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "has": [{ "type": "host", "value": "^((www\\.)?vinorbits\\.com)$" }],
+      "status": 404
+    },
+    {
+      "src": "/(.*)",
+      "has": [{ "type": "host", "value": "^((www\\.)?vinorbits\\.com)$" }],
+      "headers": { "Cache-Control": "no-store" },
+      "dest": "/maintenance.html"
+    }
+  ]
+}

@@ -61,16 +61,14 @@ export interface NhtsaOdiLookup {
   fetchedAt: string;
 }
 
-function localArchiveOrigin(): boolean {
-  return (
-    typeof window !== 'undefined' &&
-    window.location.port === '3117' &&
-    (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost')
-  );
+function mirrorOrigin(): boolean {
+  if (typeof window === 'undefined') return false;
+  const { hostname, port } = window.location;
+  return ['127.0.0.1', 'localhost'].includes(hostname) && ['3117', '3118', '4173', '5173'].includes(port);
 }
 
 export function nhtsaOdiMirrorEnabled(): boolean {
-  return localArchiveOrigin();
+  return mirrorOrigin();
 }
 
 function strings(value: unknown): string[] {
@@ -148,7 +146,7 @@ function investigations(value: unknown): NhtsaInvestigation[] | null {
 export async function getNhtsaOdiVehicleLine(
   identity: VehicleIdentity,
 ): Promise<SectionResult<NhtsaOdiLookup>> {
-  if (!localArchiveOrigin()) {
+  if (!mirrorOrigin()) {
     return {
       status: 'unavailable',
       source: { ...SOURCE, fetchedAt: new Date().toISOString() },

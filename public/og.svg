@@ -1,44 +1,37 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" fill="none">
-  <rect width="1200" height="630" fill="#F7F8F7"/>
-  <path d="M0 0h1200v630H0z" fill="#F7F8F7"/>
-
-  <g transform="translate(82 82)">
+  <rect width="1200" height="630" fill="#F5F7F6"/>
+  <path d="M0 476c250-65 475-66 700 0s342 70 500 15v139H0V476Z" fill="#EAF0EF"/>
+  <g transform="translate(78 70)">
     <rect width="52" height="52" rx="14" fill="#14243A"/>
     <ellipse cx="26" cy="26" rx="19" ry="8" transform="rotate(-34 26 26)" stroke="#85D7EC" stroke-width="2"/>
     <ellipse cx="26" cy="26" rx="14" ry="6" transform="rotate(38 26 26)" stroke="#E9A95B" stroke-width="1.5" opacity=".8"/>
     <path d="m19 19 7 15 7-15" stroke="#F5F3EA" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
     <circle cx="39" cy="14" r="3" fill="#F4A64D"/>
   </g>
-  <text x="150" y="117" font-family="Inter, -apple-system, 'Segoe UI', sans-serif" font-size="38" font-weight="700" letter-spacing="-1.6" fill="#172A3D">VinOrbits</text>
-
-  <rect x="82" y="202" width="282" height="38" rx="19" fill="#EEF3F2"/>
-  <circle cx="103" cy="221" r="5" fill="#D99643"/>
-  <text x="119" y="226" font-family="Inter, -apple-system, 'Segoe UI', sans-serif" font-size="13" font-weight="700" letter-spacing="1.8" fill="#586D7C">MAINTENANCE IN PROGRESS</text>
-  <text x="82" y="324" font-family="Inter, -apple-system, 'Segoe UI', sans-serif" font-size="68" font-weight="680" letter-spacing="-4" fill="#172A3D">We’ll be back</text>
-  <text x="82" y="397" font-family="Inter, -apple-system, 'Segoe UI', sans-serif" font-size="68" font-weight="680" letter-spacing="-4" fill="#172A3D">soon.</text>
-  <text x="84" y="465" font-family="Inter, -apple-system, 'Segoe UI', sans-serif" font-size="22" fill="#586975">We’re performing maintenance. Please check</text>
-  <text x="84" y="497" font-family="Inter, -apple-system, 'Segoe UI', sans-serif" font-size="22" fill="#586975">back shortly. Thank you for your patience.</text>
-
-  <rect x="654" y="69" width="472" height="492" rx="25" fill="#EEF3F2" stroke="#E5EBEA" stroke-width="2"/>
-  <circle cx="890" cy="309" r="174" fill="#E3ECEC"/>
-  <circle cx="890" cy="309" r="143" stroke="#D5E1E1" stroke-width="2"/>
-
-  <rect x="708" y="133" width="364" height="305" rx="18" fill="#fff" stroke="#CFDADB" stroke-width="2"/>
-  <path d="M709 151a18 18 0 0 1 18-18h328a18 18 0 0 1 18 18v42H709v-42Z" fill="#F4F7F7"/>
-  <path d="M709 193h364" stroke="#E0E7E7" stroke-width="2"/>
-  <circle cx="735" cy="164" r="5" fill="#D88778"/>
-  <circle cx="754" cy="164" r="5" fill="#DDB86A"/>
-  <circle cx="773" cy="164" r="5" fill="#80A99A"/>
-  <rect x="825" y="156" width="160" height="16" rx="8" fill="#E8EEEE"/>
-
-  <rect x="755" y="217" width="270" height="146" rx="13" fill="#F8FAFA"/>
-  <circle cx="890" cy="279" r="49" fill="#E5EFF0"/>
-  <path d="M902 243a27 27 0 0 0-32 34l-32 32a9 9 0 0 0 13 13l32-32a27 27 0 0 0 34-32l-15 15-13-3-3-13 16-14Z" fill="#294B61"/>
-  <circle cx="891" cy="278" r="7" fill="#D99A4A"/>
-
-  <rect x="824" y="383" width="132" height="7" rx="3.5" fill="#DEE7E7"/>
-  <rect x="824" y="383" width="82" height="7" rx="3.5" fill="#6F9699"/>
-  <circle cx="976" cy="386.5" r="4.5" fill="#D99A4A"/>
-  <rect x="1006" y="412" width="52" height="39" rx="8" fill="#D99A4A"/>
-  <path d="M1018 412v-6a14 14 0 0 1 28 0v6" stroke="#B47C36" stroke-width="5" stroke-linecap="round"/>
+  <text x="146" y="108" font-family="Inter, -apple-system, 'Segoe UI', sans-serif" font-size="38" font-weight="700" letter-spacing="-1.6" fill="#172A3D">VinOrbits</text>
+  <text x="80" y="208" font-family="Inter, -apple-system, 'Segoe UI', sans-serif" font-size="15" font-weight="700" letter-spacing="2" fill="#647782">VEHICLE HISTORY FROM PUBLIC RECORDS</text>
+  <text x="78" y="296" font-family="Inter, -apple-system, 'Segoe UI', sans-serif" font-size="55" font-weight="680" letter-spacing="-2.8" fill="#172A3D">A clearer view of any</text>
+  <text x="78" y="362" font-family="Inter, -apple-system, 'Segoe UI', sans-serif" font-size="55" font-weight="680" letter-spacing="-2.8" fill="#172A3D">vehicle’s public history.</text>
+  <text x="82" y="416" font-family="Inter, -apple-system, 'Segoe UI', sans-serif" font-size="21" fill="#586975">Every finding is labeled by source and coverage.</text>
+  <rect x="676" y="70" width="448" height="490" rx="24" fill="#FFFFFF" stroke="#DFE7E5" stroke-width="2"/>
+  <text x="716" y="116" font-family="Inter, -apple-system, 'Segoe UI', sans-serif" font-size="13" font-weight="700" letter-spacing="1.5" fill="#71818A">SAMPLE VEHICLE REPORT</text>
+  <text x="716" y="160" font-family="Inter, -apple-system, 'Segoe UI', sans-serif" font-size="26" font-weight="700" letter-spacing="-.7" fill="#172A3D">2019 Honda Accord</text>
+  <rect x="716" y="178" width="130" height="29" rx="14.5" fill="#EEF3F2"/>
+  <text x="731" y="198" font-family="Inter, -apple-system, 'Segoe UI', sans-serif" font-size="12" font-weight="650" fill="#506878">VIN decoded</text>
+  <path d="M716 232h368" stroke="#E6ECEB" stroke-width="2"/>
+  <rect x="716" y="254" width="368" height="74" rx="13" fill="#FBFCFC" stroke="#E6ECEB"/>
+  <circle cx="744" cy="291" r="13" fill="#E8F2ED"/><path d="m738 291 4 4 8-9" stroke="#438269" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="770" y="284" font-family="Inter, -apple-system, 'Segoe UI', sans-serif" font-size="15" font-weight="650" fill="#263C4F">Safety recalls</text>
+  <text x="770" y="306" font-family="Inter, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#74838B">NHTSA · checked</text>
+  <text x="1048" y="296" text-anchor="end" font-family="Inter, -apple-system, 'Segoe UI', sans-serif" font-size="13" font-weight="650" fill="#438269">0 found</text>
+  <rect x="716" y="342" width="368" height="74" rx="13" fill="#FBFCFC" stroke="#E6ECEB"/>
+  <circle cx="744" cy="379" r="13" fill="#F6F0E6"/><path d="M744 371v9l6 4" stroke="#B27B36" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="770" y="372" font-family="Inter, -apple-system, 'Segoe UI', sans-serif" font-size="15" font-weight="650" fill="#263C4F">Complaints</text>
+  <text x="770" y="394" font-family="Inter, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#74838B">NHTSA · source linked</text>
+  <text x="1048" y="384" text-anchor="end" font-family="Inter, -apple-system, 'Segoe UI', sans-serif" font-size="13" font-weight="650" fill="#506878">Details</text>
+  <rect x="716" y="430" width="368" height="74" rx="13" fill="#FBFCFC" stroke="#E6ECEB"/>
+  <circle cx="744" cy="467" r="13" fill="#EAF0F4"/><path d="M738 467h12M744 461v12" stroke="#54718A" stroke-width="2" stroke-linecap="round"/>
+  <text x="770" y="460" font-family="Inter, -apple-system, 'Segoe UI', sans-serif" font-size="15" font-weight="650" fill="#263C4F">Coverage notes</text>
+  <text x="770" y="482" font-family="Inter, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#74838B">What public records can show</text>
+  <text x="1048" y="472" text-anchor="end" font-family="Inter, -apple-system, 'Segoe UI', sans-serif" font-size="13" font-weight="650" fill="#506878">Read</text>
 </svg>

@@ -10,10 +10,10 @@ source and coverage, including what *no* report (free or paid) can see.
 
 **Website: <https://vinorbits.com/>**
 
-> **Status: under construction.** The public site is a branded landing page while the
-> vehicle research product is being prepared. The report prototype and its data-source
-> research remain in this repository; reports are not currently served from the public
-> site. See the [scope](./docs/STATIC_MVP.md) and **hands-on state of the project:
+> **Domain status: maintenance page.** The bought domain displays a static maintenance
+> page. The normal vehicle-report application remains the repository root and is built by
+> the Vercel Git deployment; it does not connect to the Ubuntu database or server. See
+> the [scope](./docs/STATIC_MVP.md) and **hands-on state of the project:
 > [docs/HANDBOOK.md](./docs/HANDBOOK.md).** To help, start with
 > [CONTRIBUTING.md](./CONTRIBUTING.md).
 
