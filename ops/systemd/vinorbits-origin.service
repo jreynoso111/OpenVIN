@@ -1,0 +1,29 @@
+[Unit]
+Description=VinOrbits Ubuntu origin for Cloudflare Tunnel
+After=network.target
+
+[Service]
+Type=simple
+DynamicUser=yes
+WorkingDirectory=/srv/vinorbits/current
+ExecStart=/usr/local/bin/node /srv/vinorbits/current/server/origin.mjs
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=10
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictAddressFamilies=AF_INET AF_UNIX
+LimitNOFILE=4096
+
+[Install]
+WantedBy=multi-user.target

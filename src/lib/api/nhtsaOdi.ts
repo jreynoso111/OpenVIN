@@ -64,6 +64,7 @@ export interface NhtsaOdiLookup {
 function mirrorOrigin(): boolean {
   if (typeof window === 'undefined') return false;
   const { hostname, port } = window.location;
+  if (hostname === 'app.vinorbits.com' && window.location.protocol === 'https:') return true;
   return ['127.0.0.1', 'localhost'].includes(hostname) && ['3117', '3118', '4173', '5173'].includes(port);
 }
 
