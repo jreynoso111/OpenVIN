@@ -1,8 +1,8 @@
-import './styles/construction.css';
+import './styles/maintenance.css';
 
-import { mountUnderConstruction } from './ui/underConstruction';
+import { mountMaintenancePage } from './ui/maintenance';
 
 const app = document.getElementById('app');
 if (!app) throw new Error('VinOrbits: #app mount point is missing');
 
-mountUnderConstruction(app);
+mountMaintenancePage(app);
