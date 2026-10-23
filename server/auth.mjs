@@ -63,14 +63,14 @@ function setCookie(name, value, { maxAge, path = '/', sameSite = 'Lax' }) {
 export function sessionCookies(tokens) {
   return [
     setCookie(ACCESS_COOKIE, tokens.access_token, { maxAge: Math.max(60, Number(tokens.expires_in) || 3600) }),
-    setCookie(REFRESH_COOKIE, tokens.refresh_token, { maxAge: REFRESH_MAX_AGE, path: '/auth', sameSite: 'Strict' }),
+    setCookie(REFRESH_COOKIE, tokens.refresh_token, { maxAge: REFRESH_MAX_AGE }),
   ];
 }
 
 export function clearedCookies() {
   return [
     setCookie(ACCESS_COOKIE, '', { maxAge: 0 }),
-    setCookie(REFRESH_COOKIE, '', { maxAge: 0, path: '/auth', sameSite: 'Strict' }),
+    setCookie(REFRESH_COOKIE, '', { maxAge: 0 }),
   ];
 }
 
