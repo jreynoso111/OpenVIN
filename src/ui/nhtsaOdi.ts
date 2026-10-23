@@ -9,6 +9,15 @@ import type { SectionResult } from '../lib/types';
 import { el, formatDate, formatDateTime, formatNumber } from './dom';
 import { emptyNote } from './panel';
 
+/** Records listed per group, and how many of them start expanded. */
+const SHOWN_ROWS = 15;
+const OPEN_ROWS = 3;
+
+function startOpen(row: HTMLElement, index: number): HTMLElement {
+  if (index < OPEN_ROWS) (row as HTMLDetailsElement).open = true;
+  return row;
+}
+
 function detail(label: string, value: string | null): HTMLElement | null {
   return value ? el('p', {}, el('strong', {}, label + ': '), value) : null;
 }
@@ -92,20 +101,20 @@ export function renderNhtsaOdi(result: SectionResult<NhtsaOdiLookup>): HTMLEleme
     if (data.communicationCount > 0) {
       wrap.append(
         el('p', { class: 'mline__sub' }, formatNumber(data.communicationCount) + ' manufacturer communications (TSBs, campaigns, and other notices)'),
-        el('div', { class: 'mrows' }, ...data.communications.slice(0, 10).map(communicationRow)),
+        el('div', { class: 'mrows' }, ...data.communications.slice(0, SHOWN_ROWS).map((record, index) => startOpen(communicationRow(record), index))),
       );
-      if (data.communicationsTruncated || data.communicationCount > 10) {
-        wrap.append(el('p', { class: 'mline__sub' }, 'Showing the 10 most recent; open NHTSA’s public search for the full list.'));
+      if (data.communicationsTruncated || data.communicationCount > SHOWN_ROWS) {
+        wrap.append(el('p', { class: 'mline__sub' }, 'Showing the ' + SHOWN_ROWS + ' most recent; open NHTSA’s public search for the full list.'));
       }
     }
 
     if (data.investigationCount > 0) {
       wrap.append(
         el('p', { class: 'mline__sub' }, formatNumber(data.investigationCount) + ' safety investigations'),
-        el('div', { class: 'mrows' }, ...data.investigations.slice(0, 10).map(investigationRow)),
+        el('div', { class: 'mrows' }, ...data.investigations.slice(0, SHOWN_ROWS).map((record, index) => startOpen(investigationRow(record), index))),
       );
-      if (data.investigationsTruncated || data.investigationCount > 10) {
-        wrap.append(el('p', { class: 'mline__sub' }, 'Showing the 10 most recent; open NHTSA’s public search for the full list.'));
+      if (data.investigationsTruncated || data.investigationCount > SHOWN_ROWS) {
+        wrap.append(el('p', { class: 'mline__sub' }, 'Showing the ' + SHOWN_ROWS + ' most recent; open NHTSA’s public search for the full list.'));
       }
     }
 

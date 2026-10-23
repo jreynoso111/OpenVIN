@@ -7,6 +7,16 @@ import type { ComplaintsSummary, GuidedLink, RecallCampaign, SectionResult } fro
 import { el, formatDate, formatNumber } from './dom';
 import { emptyNote } from './panel';
 
+/** Rows listed before "show more", and how many of them start expanded. */
+const SHOWN_ROWS = 10;
+const OPEN_ROWS = 3;
+
+/** Expand the first few rows so each section reads as a full report, not a list of titles. */
+function startOpen(row: HTMLElement, index: number): HTMLElement {
+  if (index < OPEN_ROWS) (row as HTMLDetailsElement).open = true;
+  return row;
+}
+
 function detail(label: string, text: string): HTMLElement | null {
   return text.trim() ? el('p', {}, el('strong', {}, label + ': '), text) : null;
 }
@@ -54,15 +64,15 @@ export function renderRecalls(
         ' recall campaign' + (result.data.length === 1 ? '' : 's') + ' for this model line',
         urgent > 0 ? el('span', { class: 'tag', 'data-tone': 'danger' }, formatNumber(urgent) + ' say stop driving') : null,
       ),
-      el('div', { class: 'mrows' }, ...result.data.slice(0, 5).map(recallRow)),
+      el('div', { class: 'mrows' }, ...result.data.slice(0, SHOWN_ROWS).map((c, i) => startOpen(recallRow(c), i))),
     );
-    if (result.data.length > 5) {
+    if (result.data.length > SHOWN_ROWS) {
       wrap.append(
         el(
           'details',
           { class: 'state-more' },
-          el('summary', {}, 'Show ' + (result.data.length - 5) + ' more'),
-          el('div', { class: 'mrows' }, ...result.data.slice(5).map(recallRow)),
+          el('summary', {}, 'Show ' + (result.data.length - SHOWN_ROWS) + ' more'),
+          el('div', { class: 'mrows' }, ...result.data.slice(SHOWN_ROWS).map(recallRow)),
         ),
       );
     }
@@ -105,8 +115,8 @@ export function renderComplaints(result: SectionResult<ComplaintsSummary>): HTML
       el(
         'div',
         { class: 'mrows' },
-        ...s.vinMatches.slice(0, 5).map((c) =>
-          el(
+        ...s.vinMatches.slice(0, SHOWN_ROWS).map((c, i) =>
+          startOpen(el(
             'details',
             { class: 'mrow' },
             el(
@@ -115,10 +125,17 @@ export function renderComplaints(result: SectionResult<ComplaintsSummary>): HTML
               el('span', { class: 'mrow__title' }, c.components || 'Complaint'),
               c.crash ? el('span', { class: 'tag', 'data-tone': 'danger' }, 'Crash') : null,
               c.fire ? el('span', { class: 'tag', 'data-tone': 'danger' }, 'Fire') : null,
+              c.numberOfInjuries > 0 ? el('span', { class: 'tag', 'data-tone': 'warn' }, formatNumber(c.numberOfInjuries) + ' injured') : null,
+              c.numberOfDeaths > 0 ? el('span', { class: 'tag', 'data-tone': 'danger' }, formatNumber(c.numberOfDeaths) + ' deaths') : null,
               el('span', { class: 'mrow__date' }, formatDate(c.dateOfIncident ?? c.dateComplaintFiled)),
             ),
-            el('div', { class: 'mrow__body' }, el('p', {}, c.summary || 'No narrative.'), el('p', { class: 'muted' }, 'NHTSA ODI ' + c.odiNumber)),
-          ),
+            el(
+              'div',
+              { class: 'mrow__body' },
+              el('p', {}, c.summary || 'No narrative.'),
+              el('p', { class: 'muted' }, 'Filed ' + formatDate(c.dateComplaintFiled) + (c.dateOfIncident ? ' · incident ' + formatDate(c.dateOfIncident) : '') + ' · NHTSA ODI ' + c.odiNumber),
+            ),
+          ), i),
         ),
       ),
     );

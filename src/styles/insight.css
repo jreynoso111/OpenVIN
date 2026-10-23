@@ -923,6 +923,9 @@
 
   /* Keep the report focused on evidence; omit the auxiliary source rail. */
   .desk__rail,
+  #recalls,
+  #complaints,
+  #odi,
   #timeline,
   #ny {
     display: none !important;
