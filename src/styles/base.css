@@ -289,3 +289,26 @@ code {
 .footer p {
   max-width: 62rem;
 }
+
+.topbar__signout {
+  margin-left: auto;
+  padding: 0.4rem 0.75rem;
+  font: inherit;
+  font-size: var(--text-small);
+  color: inherit;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: var(--radius);
+  opacity: 0.85;
+  cursor: pointer;
+}
+
+.topbar__signout:hover {
+  opacity: 1;
+}
+
+@media print {
+  .topbar__signout {
+    display: none !important;
+  }
+}

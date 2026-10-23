@@ -4,6 +4,10 @@ import { isIP } from 'node:net';
 import { request as httpRequest, createServer } from 'node:http';
 import { extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  ACCESS_COOKIE, REFRESH_COOKIE, clearedCookies, endSession, loadJwtSecret, parseCookies, passwordLogin,
+  readJsonBody, refreshSession, safeNext, sameOrigin, sessionCookies, verifyAccessToken,
+} from './auth.mjs';
 
 const HOST = '127.0.0.1';
 const PORT = 3118;
@@ -22,6 +26,11 @@ const allowedHosts = new Set([
   'localhost:3118',
 ]);
 const rateWindows = new Map();
+const loginWindows = new Map();
+const LOGIN_LIMIT = 8;
+const jwtSecret = loadJwtSecret();
+// Pages that must load before there is a session.
+const publicPaths = new Set(['/login', '/login.js', '/login.css', '/favicon.svg']);
 
 const securityHeaders = {
   'X-Content-Type-Options': 'nosniff',
@@ -124,7 +133,7 @@ async function serveStatic(req, res, pathname) {
   const immutable = pathname.startsWith('/assets/');
   res.writeHead(200, {
     ...securityHeaders,
-    'Cache-Control': immutable ? 'public, max-age=31536000, immutable' : 'no-cache',
+    'Cache-Control': immutable ? 'private, max-age=31536000, immutable' : 'no-cache',
     'Content-Length': info.size,
     'Content-Type': mimeType(file),
   });
@@ -160,7 +169,7 @@ function proxyNhtsaOdi(req, res, url) {
     const headers = {
       'Content-Type': response.headers['content-type'] || 'application/json; charset=utf-8',
       'Cache-Control': response.statusCode === 200
-        ? 'public, max-age=60, s-maxage=300, stale-while-revalidate=900'
+        ? 'private, max-age=60'
         : 'no-store',
     };
     res.writeHead(response.statusCode || 502, { ...securityHeaders, ...headers });
@@ -178,6 +187,65 @@ function proxyNhtsaOdi(req, res, url) {
   upstream.end();
 }
 
+function loginAllowed(req) {
+  const now = Date.now();
+  const key = clientKey(req);
+  let window = loginWindows.get(key);
+  if (!window || now - window.startedAt >= RATE_WINDOW_MS) {
+    window = { startedAt: now, count: 0 };
+    loginWindows.set(key, window);
+  }
+  window.count += 1;
+  return window.count <= LOGIN_LIMIT;
+}
+
+/** The signed-in user for this request, renewing an expired access token from the refresh cookie. */
+async function currentUser(req, res) {
+  const cookies = parseCookies(req.headers.cookie);
+  const payload = verifyAccessToken(cookies[ACCESS_COOKIE], jwtSecret);
+  if (payload) return payload;
+  if (!cookies[REFRESH_COOKIE]) return null;
+  const renewed = await refreshSession(cookies[REFRESH_COOKIE]);
+  if (renewed.status !== 200 || !renewed.json?.access_token) return null;
+  res.setHeader('Set-Cookie', sessionCookies(renewed.json));
+  return verifyAccessToken(renewed.json.access_token, jwtSecret);
+}
+
+async function handleAuth(req, res, url) {
+  const route = url.pathname;
+  if (route === '/auth/session' && req.method === 'GET') {
+    const user = await currentUser(req, res);
+    return user ? sendJson(res, 200, { email: user.email ?? null }) : sendJson(res, 401, { error: 'Not signed in' });
+  }
+  if (req.method !== 'POST') {
+    res.writeHead(405, { ...securityHeaders, Allow: 'GET, POST' });
+    return res.end();
+  }
+  if (!sameOrigin(req)) return sendJson(res, 403, { error: 'Cross-site request refused' });
+
+  if (route === '/auth/login') {
+    if (!loginAllowed(req)) return sendJson(res, 429, { error: 'Too many attempts. Wait a minute.' }, { 'Retry-After': '60' });
+    const body = await readJsonBody(req);
+    const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : '';
+    const password = typeof body?.password === 'string' ? body.password : '';
+    if (!email || email.length > 254 || !password || password.length > 128) {
+      return sendJson(res, 400, { error: 'Email and password are required' });
+    }
+    const result = await passwordLogin(email, password);
+    if (result.status === 200 && result.json?.access_token && result.json?.refresh_token) {
+      return sendJson(res, 200, { ok: true, next: safeNext(body?.next) }, { 'Set-Cookie': sessionCookies(result.json) });
+    }
+    if (result.status === 503) return sendJson(res, 503, { error: 'Sign-in is temporarily unavailable' });
+    return sendJson(res, 401, { error: 'Incorrect email or password' });
+  }
+  if (route === '/auth/logout') {
+    const cookies = parseCookies(req.headers.cookie);
+    await endSession(cookies[ACCESS_COOKIE]);
+    return sendJson(res, 200, { ok: true }, { 'Set-Cookie': clearedCookies() });
+  }
+  return sendJson(res, 404, { error: 'Not found' });
+}
+
 const server = createServer(async (req, res) => {
   if (!hostAllowed(req)) return sendJson(res, 421, { error: 'Unknown host' });
 
@@ -186,6 +254,18 @@ const server = createServer(async (req, res) => {
     url = new URL(req.url, 'http://vinorbits.local');
   } catch {
     return sendJson(res, 400, { error: 'Invalid request' });
+  }
+
+  if (url.pathname.startsWith('/auth/')) return handleAuth(req, res, url);
+
+  const loginPage = url.pathname === '/login';
+  if (!publicPaths.has(url.pathname)) {
+    const user = await currentUser(req, res);
+    if (!user) {
+      if (url.pathname.startsWith('/api/')) return sendJson(res, 401, { error: 'Sign in required' });
+      res.writeHead(302, { ...securityHeaders, 'Cache-Control': 'no-store', Location: `/login?next=${encodeURIComponent(url.pathname + url.search)}` });
+      return res.end();
+    }
   }
 
   if (url.pathname === '/api/v1/nhtsa/odi') {
@@ -200,7 +280,7 @@ const server = createServer(async (req, res) => {
     res.writeHead(405, { ...securityHeaders, Allow: 'GET, HEAD' });
     return res.end();
   }
-  return serveStatic(req, res, url.pathname);
+  return serveStatic(req, res, loginPage ? '/login.html' : url.pathname);
 });
 
 server.headersTimeout = 10_000;

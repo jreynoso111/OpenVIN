@@ -78,6 +78,7 @@ export function mountShell(
   const search: SearchForm = createSearchForm(callbacks.onSearch, { compact: true, id: 'top-search' });
   const headerInner = el('div', { class: 'topbar__inner container' }, wordmark(callbacks.onHome), search.root);
   const header = el('header', { class: 'topbar' }, headerInner);
+  addSignOut(headerInner);
   const main = el('main', { id: 'main' });
   clear(app);
   app.append(header, main, footer());
@@ -94,6 +95,30 @@ export function mountShell(
       search.setValue(query);
     },
   };
+}
+
+/** Show "Sign out" only when the server reports a session (not in local development). */
+function addSignOut(container: HTMLElement): void {
+  void fetch('/auth/session', { credentials: 'same-origin' })
+    .then((response) => {
+      if (!response.ok) return;
+      container.append(
+        el(
+          'button',
+          {
+            class: 'topbar__signout',
+            type: 'button',
+            onclick: () => {
+              void fetch('/auth/logout', { method: 'POST', credentials: 'same-origin' }).finally(() => {
+                window.location.replace('/login');
+              });
+            },
+          },
+          'Sign out',
+        ),
+      );
+    })
+    .catch(() => undefined);
 }
 
 function landing(onSearch: (query: SearchQuery) => void): HTMLElement {

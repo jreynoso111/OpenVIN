@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Sign in — VinOrbits</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/login.css" />
+    <script src="/login.js" defer></script>
+  </head>
+  <body>
+    <main class="login">
+      <h1 class="login__brand">VinOrbits</h1>
+      <p class="login__lead">Sign in to continue.</p>
+      <form class="login__form" id="login-form" novalidate>
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="username" autocapitalize="none" required autofocus />
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required />
+        <p class="login__error" id="login-error" role="alert" hidden></p>
+        <button type="submit" id="login-submit">Sign in</button>
+      </form>
+      <p class="login__note">Access is by invitation. There is no public sign-up.</p>
+    </main>
+  </body>
+</html>
