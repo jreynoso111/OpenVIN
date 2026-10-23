@@ -21,7 +21,7 @@ describe('mapRecallRecord', () => {
   test('maps fields and converts the date to ISO', () => {
     const campaign = mapRecallRecord(RECALL_RECORD);
     expect(campaign.campaignNumber).toBe('19V182000');
-    expect(campaign.reportReceivedDate).toBe('2019-06-03');
+    expect(campaign.reportReceivedDate).toBe('2019-03-06');
     expect(campaign.component).toBe('AIR BAGS:FRONTAL:DRIVER SIDE:INFLATOR MODULE');
     expect(campaign.summary).toMatch(/inflator/);
     expect(campaign.parkIt).toBe(false);
@@ -42,7 +42,7 @@ describe('parseRecallsResponse', () => {
       Count: 2,
       Message: 'Results returned successfully',
       results: [
-        { ...RECALL_RECORD, NHTSACampaignNumber: 'OLD', ReportReceivedDate: '01/15/2004' },
+        { ...RECALL_RECORD, NHTSACampaignNumber: 'OLD', ReportReceivedDate: '15/01/2004' },
         { ...RECALL_RECORD, NHTSACampaignNumber: 'NEW', ReportReceivedDate: '06/03/2019' },
       ],
     };

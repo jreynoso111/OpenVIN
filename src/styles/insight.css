@@ -2329,3 +2329,16 @@
     content: ' · ';
   }
 }
+
+/* Collapsed recall rows carry a one-line preview under the title. */
+.mrow summary .mrow__snippet {
+  flex-basis: 100%;
+  order: 3;
+  font-size: var(--text-micro);
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+.mline .chips__list {
+  margin: 0.4rem 0 0.7rem;
+}

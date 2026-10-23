@@ -8,13 +8,30 @@ import { el, formatDate, formatNumber } from './dom';
 import { emptyNote } from './panel';
 
 /** Rows listed before "show more", and how many of them start expanded. */
-const SHOWN_ROWS = 10;
-const OPEN_ROWS = 3;
+const SHOWN_ROWS = 5;
 
-/** Expand the first few rows so each section reads as a full report, not a list of titles. */
-function startOpen(row: HTMLElement, index: number): HTMLElement {
-  if (index < OPEN_ROWS) (row as HTMLDetailsElement).open = true;
-  return row;
+/** "SERVICE BRAKES, AIR:DISC:CALIPER" -> "Service brakes, air › Disc › Caliper". */
+export function readableComponent(raw: string): string {
+  const text = raw.trim().toLowerCase().split(':').map((part) => part.trim()).filter(Boolean).join(' › ');
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : '';
+}
+
+/** First sentence of a long NHTSA text, cut to fit one line of a collapsed row. */
+function snippet(text: string, max = 170): string {
+  const clean = text.replace(/\s+/g, ' ').trim();
+  if (clean.length <= max) return clean;
+  const cut = clean.slice(0, max);
+  return cut.slice(0, Math.max(cut.lastIndexOf(' '), 60)) + '…';
+}
+
+/** Campaign counts by top-level component, most common first. */
+function componentCounts(campaigns: readonly RecallCampaign[]): Array<[string, number]> {
+  const counts = new Map<string, number>();
+  for (const c of campaigns) {
+    const top = readableComponent((c.component || 'Other').split(':')[0] ?? 'Other');
+    counts.set(top, (counts.get(top) ?? 0) + 1);
+  }
+  return [...counts.entries()].sort((a, b) => b[1] - a[1]);
 }
 
 function detail(label: string, text: string): HTMLElement | null {
@@ -28,11 +45,12 @@ function recallRow(campaign: RecallCampaign): HTMLElement {
     el(
       'summary',
       {},
-      el('span', { class: 'mrow__title' }, campaign.component || 'Recall'),
+      el('span', { class: 'mrow__title' }, readableComponent(campaign.component) || 'Recall'),
       campaign.parkIt ? el('span', { class: 'tag', 'data-tone': 'danger' }, 'Do not drive') : null,
       campaign.parkOutSide ? el('span', { class: 'tag', 'data-tone': 'danger' }, 'Park outside') : null,
       campaign.overTheAirUpdate ? el('span', { class: 'tag', 'data-tone': 'muted' }, 'OTA update') : null,
       el('span', { class: 'mrow__date' }, formatDate(campaign.reportReceivedDate)),
+      campaign.summary ? el('span', { class: 'mrow__snippet' }, snippet(campaign.summary)) : null,
     ),
     el(
       'div',
@@ -48,6 +66,7 @@ function recallRow(campaign: RecallCampaign): HTMLElement {
 export function renderRecalls(
   result: SectionResult<RecallCampaign[]>,
   oemLink: GuidedLink | undefined,
+  line = 'this model line',
 ): HTMLElement {
   const wrap = el('div', { class: 'mline' });
   if (result.status !== 'hit' || !result.data) {
@@ -61,10 +80,23 @@ export function renderRecalls(
         'p',
         { class: 'mline__lead' },
         el('strong', {}, formatNumber(result.data.length)),
-        ' recall campaign' + (result.data.length === 1 ? '' : 's') + ' for this model line',
+        ' recall campaign' + (result.data.length === 1 ? '' : 's') + ' filed for the ' + line,
         urgent > 0 ? el('span', { class: 'tag', 'data-tone': 'danger' }, formatNumber(urgent) + ' say stop driving') : null,
       ),
-      el('div', { class: 'mrows' }, ...result.data.slice(0, SHOWN_ROWS).map((c, i) => startOpen(recallRow(c), i))),
+      el(
+        'p',
+        { class: 'mline__sub' },
+        'Each campaign covers only certain builds, engines and production dates of the model line, so most of these will not apply to this exact truck. ' +
+          'Open a campaign to read which vehicles it names; only the manufacturer or NHTSA’s VIN lookup can say what applies to this VIN.',
+      ),
+      el(
+        'ul',
+        { class: 'chips__list' },
+        ...componentCounts(result.data).map(([name, count]) =>
+          el('li', { class: 'chip' }, el('span', { class: 'chip__label' }, name), el('span', { class: 'chip__count' }, '×' + count)),
+        ),
+      ),
+      el('div', { class: 'mrows' }, ...result.data.slice(0, SHOWN_ROWS).map((c) => recallRow(c))),
     );
     if (result.data.length > SHOWN_ROWS) {
       wrap.append(
@@ -115,8 +147,8 @@ export function renderComplaints(result: SectionResult<ComplaintsSummary>): HTML
       el(
         'div',
         { class: 'mrows' },
-        ...s.vinMatches.slice(0, SHOWN_ROWS).map((c, i) =>
-          startOpen(el(
+        ...s.vinMatches.slice(0, SHOWN_ROWS).map((c) =>
+          (el(
             'details',
             { class: 'mrow' },
             el(
@@ -135,7 +167,7 @@ export function renderComplaints(result: SectionResult<ComplaintsSummary>): HTML
               el('p', {}, c.summary || 'No narrative.'),
               el('p', { class: 'muted' }, 'Filed ' + formatDate(c.dateComplaintFiled) + (c.dateOfIncident ? ' · incident ' + formatDate(c.dateOfIncident) : '') + ' · NHTSA ODI ' + c.odiNumber),
             ),
-          ), i),
+          )),
         ),
       ),
     );

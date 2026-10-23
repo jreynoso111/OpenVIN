@@ -4,7 +4,19 @@
  */
 
 import type { RecallCampaign, SectionResult, VehicleIdentity } from '../types';
-import { asArray, asRecord, fetchJson, stringOrNull, usDateToIso } from './http';
+import { asArray, asRecord, fetchJson, stringOrNull } from './http';
+
+/**
+ * The recall endpoint writes dates day/month/year ("19/11/2014"); the complaint
+ * endpoint is month/day/year. A clear month/day value is read as such, otherwise day first.
+ */
+export function recallDateToIso(value: string): string {
+  const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!match) return value;
+  const [, a = '', b = '', year = ''] = match;
+  const monthFirst = Number(a) <= 12 && Number(b) > 12;
+  return monthFirst ? `${year}-${a}-${b}` : `${year}-${b}-${a}`;
+}
 
 const RECALLS_URL = 'https://api.nhtsa.gov/recalls/recallsByVehicle';
 
@@ -17,7 +29,7 @@ const SOURCE = {
 export function mapRecallRecord(record: Record<string, unknown>): RecallCampaign {
   return {
     campaignNumber: stringOrNull(record['NHTSACampaignNumber']) ?? '',
-    reportReceivedDate: usDateToIso(stringOrNull(record['ReportReceivedDate']) ?? ''),
+    reportReceivedDate: recallDateToIso(stringOrNull(record['ReportReceivedDate']) ?? ''),
     component: stringOrNull(record['Component']) ?? '',
     summary: stringOrNull(record['Summary']) ?? '',
     consequence: stringOrNull(record['Consequence']) ?? '',

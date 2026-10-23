@@ -279,10 +279,12 @@ export function renderReport(
   const guided = handles.guidedLinks.catch((): GuidedLink[] => []);
   void guided.then(live((guidedLinks) => checks.replaceChildren(officialChecks(guidedLinks))));
 
-  void Promise.all([settle(handles.recalls, 'NHTSA Recalls'), guided]).then(
-    live(([result, guidedLinks]) => {
+  void Promise.all([settle(handles.recalls, 'NHTSA Recalls'), guided, settle(handles.identity, 'NHTSA vPIC')]).then(
+    live(([result, guidedLinks, identity]) => {
+      const decoded = identity.data;
+      const line = decoded ? [decoded.modelYear, decoded.make, decoded.model].filter(Boolean).join(' ') + ' line' : undefined;
       ledger.set('recalls', result.status, result.source, result.status === 'hit' ? formatNumber(result.data?.length ?? 0) + ' campaigns' : undefined);
-      recallPanel.fill(renderRecalls(result, findLinks(guidedLinks, 'oem-recall')[0]));
+      recallPanel.fill(renderRecalls(result, findLinks(guidedLinks, 'oem-recall')[0], line));
     }),
   );
 
