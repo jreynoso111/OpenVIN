@@ -16,6 +16,8 @@ const appRoot = resolve(fileURLToPath(new URL('../', import.meta.url)));
 const distRoot = await realpath(resolve(appRoot, 'dist'));
 const allowedHosts = new Set([
   'app.vinorbits.com',
+  'vinorbits.com',
+  'www.vinorbits.com',
   '127.0.0.1:3118',
   'localhost:3118',
 ]);
